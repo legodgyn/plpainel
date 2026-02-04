@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { supabaseServer } from "@/lib/supabase/server";
+
 
 function formatDateBR(iso?: string | null) {
   if (!iso) return "-";
@@ -11,7 +12,8 @@ function formatDateBR(iso?: string | null) {
 }
 
 export default async function DashboardPage() {
-  const supabase = await createClient();
+  const supabase = supabaseServer();
+
 
   // user
   const {
