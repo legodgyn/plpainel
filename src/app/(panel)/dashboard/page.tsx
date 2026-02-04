@@ -3,7 +3,8 @@ import { redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/supabase/server";
 
 export default async function DashboardPage() {
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
+
 
   const { data: authData, error: authErr } = await supabase.auth.getUser();
   if (authErr || !authData?.user) {
