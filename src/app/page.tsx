@@ -2,31 +2,28 @@ import Link from "next/link";
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-white flex items-center justify-center p-8">
-      <div className="max-w-lg text-center">
+    <main className="min-h-screen flex items-center justify-center p-8">
+      <div className="max-w-xl w-full rounded-2xl border border-black/10 p-8">
         <h1 className="text-3xl font-bold">plpainel</h1>
-        <p className="mt-3 text-gray-600">
-          Painel de criação de sites por subdomínio.
+        <p className="mt-2 text-black/70">
+          Acesse o painel para criar e gerenciar seus sites.
         </p>
 
-        <div className="mt-6 flex items-center justify-center gap-3">
+        <div className="mt-6 flex gap-3">
           <Link
-            href="/login"
-            className="px-4 py-2 rounded-lg bg-black text-white"
+            className="rounded-xl bg-black text-white px-5 py-3 font-medium"
+            href="https://app.plpainel.com/login"
           >
-            Entrar
+            Ir para o Painel
           </Link>
+
           <Link
-            href="/register"
-            className="px-4 py-2 rounded-lg border border-black"
+            className="rounded-xl border border-black/10 px-5 py-3 font-medium"
+            href="https://app.plpainel.com/register"
           >
             Criar conta
           </Link>
         </div>
-
-        <p className="mt-6 text-sm text-gray-500">
-          Acesse o painel em <b>app.plpainel.com</b>
-        </p>
       </div>
     </main>
   );
