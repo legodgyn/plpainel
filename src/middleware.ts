@@ -9,51 +9,49 @@ export function middleware(req: NextRequest) {
   if (!host) return NextResponse.next();
 
   const baseDomain =
-    process.env.NEXT_PUBLIC_BASE_DOMAIN || "plpainel.com";
+    process.env.NEXT_PUBLIC_BASE_DOMAIN?.replace(/^https?:\/\//, "") ||
+    "plpainel.com";
 
-  // remove porta se existir (ex: localhost:3000)
-  const hostname = host.split(":")[0].toLowerCase();
-
+  // remove porta (ex: localhost:3000)
+  const hostname = host.split(":")[0];
   const pathname = req.nextUrl.pathname;
 
-  // ============================
-  // 1. Domínio raiz e www → normal
-  // ============================
+  // ===============================
+  // 1. Domínio raiz → normal
+  // ===============================
   if (
     hostname === baseDomain ||
-    hostname === `www.${baseDomain}` ||
-    hostname === `${baseDomain}.` ||
-    hostname === `www.${baseDomain}.`
+    hostname === `www.${baseDomain}`
   ) {
     return NextResponse.next();
   }
 
-  // ============================
-  // 2. Painel app.plpainel.com
-  // ============================
+  // ===============================
+  // 2. Painel → normal
+  // ===============================
   if (hostname === `app.${baseDomain}`) {
     return NextResponse.next();
   }
 
-  // ============================
-  // 3. Wildcard *.plpainel.com
-  // ============================
+  // ===============================
+  // 3. Wildcard → sites dos clientes
+  // ===============================
   if (hostname.endsWith(`.${baseDomain}`)) {
     const slug = hostname.replace(`.${baseDomain}`, "");
 
-    // segurança extra
-    if (!slug || slug === "www" || slug === "app") {
+    // proteção extra
+    if (!slug || slug === "app" || slug === "www") {
       return NextResponse.next();
     }
 
     const url = req.nextUrl.clone();
-    url.pathname = `/_sites/${slug}${pathname === "/" ? "" : pathname}`;
 
-    return NextResponse.rewrite(url);
+    // evita loop
+    if (!pathname.startsWith("/_sites")) {
+      url.pathname = `/_sites/${slug}${pathname === "/" ? "" : pathname}`;
+      return NextResponse.rewrite(url);
+    }
   }
 
-  // ============================
-  // 4. Fallback
-  // ============================
   return NextResponse.next();
 }
