@@ -38,7 +38,7 @@ export function middleware(req: NextRequest) {
     if (!slug) return NextResponse.next();
 
     const url = req.nextUrl.clone();
-    url.pathname = `/_sites/{slug}`;
+    url.pathname = `/_sites/${slug}`;
     return NextResponse.rewrite(url);
   }
 
