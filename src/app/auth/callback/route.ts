@@ -6,7 +6,7 @@ export async function GET(request: Request) {
   const code = searchParams.get("code");
 
   if (code) {
-    const supabase = supabaseServer();
+    const supabase = await supabaseServer(); // <-- AQUI É O PULO DO GATO
     await supabase.auth.exchangeCodeForSession(code);
   }
 
