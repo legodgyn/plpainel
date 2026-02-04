@@ -1,15 +1,19 @@
+"use client";
+
 export default function WhatsappFloat() {
+  // Troque pelo seu link real:
+  const href = "https://wa.me/55SEUNUMEROAQUI";
+
   return (
     <a
-      href="https://wa.me/"
+      href={href}
       target="_blank"
-      className="fixed bottom-6 right-6 h-14 w-14 rounded-full bg-emerald-500 grid place-items-center shadow-[0_18px_40px_rgba(16,185,129,.35)] hover:scale-105 transition"
+      rel="noreferrer"
+      className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500 shadow-lg hover:scale-105 transition"
       aria-label="WhatsApp"
+      title="WhatsApp"
     >
-      <svg viewBox="0 0 32 32" width="26" height="26" fill="white" aria-hidden="true">
-        <path d="M19.11 17.47c-.27-.14-1.6-.79-1.85-.88-.25-.09-.44-.14-.62.14-.18.27-.71.88-.87 1.06-.16.18-.32.2-.59.07-.27-.14-1.14-.42-2.17-1.34-.8-.71-1.35-1.59-1.51-1.86-.16-.27-.02-.42.12-.56.12-.12.27-.32.41-.48.14-.16.18-.27.27-.46.09-.18.05-.34-.02-.48-.07-.14-.62-1.5-.85-2.05-.22-.53-.45-.46-.62-.47h-.53c-.18 0-.48.07-.73.34-.25.27-.96.94-.96 2.3 0 1.36.99 2.67 1.13 2.86.14.18 1.95 2.98 4.73 4.18.66.29 1.17.46 1.57.59.66.21 1.27.18 1.75.11.53-.08 1.6-.65 1.83-1.28.23-.62.23-1.15.16-1.28-.07-.12-.25-.2-.53-.34z"/>
-        <path d="M26.67 5.33A14.63 14.63 0 0 0 16.02 1C7.94 1 1.37 7.57 1.37 15.65c0 2.58.68 5.11 1.97 7.34L1 31l8.19-2.3a14.6 14.6 0 0 0 6.83 1.74h.01c8.08 0 14.65-6.57 14.65-14.65 0-3.91-1.52-7.59-4.01-10.46zm-10.65 22.1h-.01c-2.16 0-4.27-.58-6.1-1.68l-.44-.26-4.86 1.37 1.3-4.74-.29-.49a12.1 12.1 0 0 1-1.86-6.24C3.76 8.92 9.02 3.66 16.02 3.66c3.22 0 6.24 1.25 8.52 3.53a11.92 11.92 0 0 1 3.53 8.52c0 6.99-5.26 12.72-12.05 12.72z"/>
-      </svg>
+      <span className="text-xl">💬</span>
     </a>
   );
 }

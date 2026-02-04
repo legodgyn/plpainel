@@ -1,56 +1,51 @@
-import "../globals.css";
-import { supabaseServer } from "@/lib/supabase/server";
+import "@/app/globals.css";
+import { redirect } from "next/navigation";
 import Sidebar from "@/components/panel/Sidebar";
 import TopBar from "@/components/panel/TopBar";
 import WhatsappFloat from "@/components/panel/WhatsappFloat";
+import { supabaseServer } from "@/lib/supabase/server";
 
-export default async function PanelLayout({ children }: { children: React.ReactNode }) {
+export default async function PanelLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const supabase = supabaseServer();
-  const { data } = await supabase.auth.getUser();
-  const email = data?.user?.email ?? null;
 
-  // opcional: buscar tokens (ajusta conforme sua tabela)
+  const { data } = await supabase.auth.getUser();
+  const user = data.user;
+
+  if (!user) redirect("/login");
+
+  // Se você já tem tabela profiles, aqui você busca tokens.
+  // Se não tiver, deixa 0 por enquanto.
   let tokens = 0;
+
   try {
     const { data: profile } = await supabase
       .from("profiles")
-      .select("tokens, name")
-      .eq("id", data?.user?.id)
+      .select("tokens")
+      .eq("id", user.id)
       .maybeSingle();
 
-    tokens = Number(profile?.tokens ?? 0);
-    const name = (profile?.name as string) ?? null;
-
-    return (
-      <div className="min-h-screen bg-[#070b14] text-white">
-        <div className="absolute inset-0 bg-[radial-gradient(800px_circle_at_20%_10%,rgba(124,58,237,.20),transparent_55%),radial-gradient(700px_circle_at_70%_15%,rgba(59,130,246,.18),transparent_55%),radial-gradient(900px_circle_at_60%_80%,rgba(16,185,129,.10),transparent_60%)]" />
-        <div className="relative flex">
-          <Sidebar email={email} name={name} tokens={tokens} />
-
-          <main className="flex-1 min-w-0">
-            <TopBar />
-            <div className="mx-auto max-w-[1180px] px-6 py-8">
-              {children}
-            </div>
-          </main>
-
-          <WhatsappFloat />
-        </div>
-      </div>
-    );
+    tokens = profile?.tokens ?? 0;
   } catch {
-    // fallback simples se profile/tabela ainda não existir
-    return (
-      <div className="min-h-screen bg-[#070b14] text-white">
-        <div className="relative flex">
-          <Sidebar email={email} name="Painel" tokens={0} />
-          <main className="flex-1 min-w-0">
-            <TopBar />
-            <div className="mx-auto max-w-[1180px] px-6 py-8">{children}</div>
-          </main>
-          <WhatsappFloat />
-        </div>
-      </div>
-    );
+    tokens = 0;
   }
+
+  return (
+    <div className="min-h-screen bg-[#05070F] text-white">
+      <div className="flex min-h-screen">
+        <Sidebar />
+
+        <main className="flex-1">
+          <TopBar email={user.email} tokens={tokens} />
+
+          <div className="mx-auto max-w-[1200px] px-6 py-6">{children}</div>
+        </main>
+      </div>
+
+      <WhatsappFloat />
+    </div>
+  );
 }

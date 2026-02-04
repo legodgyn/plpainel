@@ -1,56 +1,61 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { supabaseBrowser } from "@/lib/supabase/browser";
 
-type SidebarProps = {
-  email?: string | null;
-  name?: string | null;
-  tokens?: number;
-};
+type Item = { href: string; label: string };
 
-export default function Sidebar({ email, name, tokens = 0 }: SidebarProps) {
+const items: Item[] = [
+  { href: "/dashboard", label: "Dashboard" },
+  { href: "/sites", label: "Meus Sites" },
+  { href: "/sites/new", label: "Criar Site" },
+  { href: "/buy", label: "Comprar Tokens" },
+];
+
+export default function Sidebar() {
+  const pathname = usePathname();
+  const supabase = supabaseBrowser();
+
+  async function logout() {
+    await supabase.auth.signOut();
+    window.location.href = "/login";
+  }
+
   return (
-    <aside className="w-[280px] shrink-0 border-r border-white/10 bg-[#0b1220]/70 backdrop-blur-xl">
-      <div className="p-5">
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-500 grid place-items-center shadow-[0_10px_25px_rgba(124,58,237,.25)]">
-            <span className="text-white font-bold">P</span>
-          </div>
-
-          <div className="min-w-0">
-            <div className="text-white font-semibold truncate">{name || "Painel"}</div>
-            <div className="text-white/60 text-sm truncate">{email || "—"}</div>
-          </div>
-        </div>
-
-        <div className="mt-4 inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2">
-          <span className="h-2 w-2 rounded-full bg-violet-400" />
-          <span className="text-white/80 text-sm font-medium">{tokens} Tokens</span>
-        </div>
+    <aside className="w-[260px] shrink-0 border-r border-white/10 bg-[#070A12]/60 backdrop-blur-xl">
+      <div className="px-5 py-5 border-b border-white/10">
+        <div className="text-lg font-semibold">plpainel</div>
+        <div className="text-xs text-white/60">Painel</div>
       </div>
 
-      <nav className="px-3 pb-5">
-        <div className="space-y-1">
-          <NavItem href="/dashboard" label="Dashboard" />
-          <NavItem href="/sites" label="Meus Sites" />
-          <NavItem href="/sites/new" label="Criar Site" />
-          <NavItem href="/tokens" label="Comprar Tokens" />
-        </div>
-
-        <div className="mt-6 border-t border-white/10 pt-4">
-          <NavItem href="/logout" label="Sair" />
-        </div>
+      <nav className="px-3 py-4 space-y-1">
+        {items.map((it) => {
+          const active = pathname === it.href || pathname.startsWith(it.href + "/");
+          return (
+            <Link
+              key={it.href}
+              href={it.href}
+              className={[
+                "flex items-center gap-3 rounded-xl px-3 py-2 transition",
+                active ? "bg-violet-600/20 text-white" : "text-white/80 hover:bg-white/5",
+              ].join(" ")}
+            >
+              <span className="h-2 w-2 rounded-full bg-violet-400/80" />
+              {it.label}
+            </Link>
+          );
+        })}
       </nav>
-    </aside>
-  );
-}
 
-function NavItem({ href, label }: { href: string; label: string }) {
-  return (
-    <Link
-      href={href}
-      className="group flex items-center gap-3 rounded-xl px-3 py-3 text-white/80 hover:text-white hover:bg-white/5 transition"
-    >
-      <span className="h-2 w-2 rounded-full bg-white/20 group-hover:bg-violet-400 transition" />
-      <span className="font-medium">{label}</span>
-    </Link>
+      <div className="mt-auto px-3 pb-4">
+        <button
+          onClick={logout}
+          className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-white/80 hover:bg-white/10"
+        >
+          Sair
+        </button>
+      </div>
+    </aside>
   );
 }

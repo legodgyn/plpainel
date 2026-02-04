@@ -1,23 +1,39 @@
 import Link from "next/link";
 
-export default function TopBar() {
+export default function TopBar({
+  email,
+  tokens,
+}: {
+  email?: string | null;
+  tokens?: number | null;
+}) {
   return (
-    <div className="sticky top-0 z-20">
-      <div className="mx-auto max-w-[1180px] px-6 pt-5">
-        <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl px-5 py-3 flex items-center justify-between">
-          <div className="text-white/70 text-sm">
-            Quer que o nosso time especialista em contingência, automações, WhatsApp API e tudo que envolva WhatsApp te ajude?
+    <header className="sticky top-0 z-10 border-b border-white/10 bg-[#05070F]/60 backdrop-blur-xl">
+      <div className="mx-auto flex h-14 max-w-[1200px] items-center justify-between px-6">
+        <div className="text-sm text-white/70">
+          {email ? (
+            <>
+              Bem-vindo, <span className="text-white">{email}</span>
+            </>
+          ) : (
+            <span className="text-white/60">Gerencie seus sites e tokens.</span>
+          )}
+        </div>
+
+        <div className="flex items-center gap-3">
+          <div className="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-sm">
+            <span className="text-white/60">Tokens:</span>{" "}
+            <span className="text-white font-semibold">{tokens ?? 0}</span>
           </div>
 
           <Link
-            href="https://wa.me/"
-            target="_blank"
-            className="ml-4 shrink-0 rounded-xl bg-violet-600 hover:bg-violet-500 transition px-4 py-2 text-white font-semibold"
+            href="/buy"
+            className="rounded-xl bg-violet-600 px-3 py-1.5 text-sm font-medium hover:bg-violet-500"
           >
-            Nos chame
+            Comprar Tokens
           </Link>
         </div>
       </div>
-    </div>
+    </header>
   );
 }
