@@ -1,24 +1,23 @@
-"use client";
+import Link from "next/link";
 
-export default function Topbar() {
+export default function TopBar() {
   return (
-    <header className="sticky top-0 z-20 border-b border-white/10 bg-[#0b1220]/80 backdrop-blur">
-      <div className="px-6 py-3">
-        <div className="flex items-center justify-between gap-3">
-          <div className="hidden sm:block text-sm text-white/60">
-            Gerencie seus sites e tokens de forma simples e eficiente.
+    <div className="sticky top-0 z-20">
+      <div className="mx-auto max-w-[1180px] px-6 pt-5">
+        <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl px-5 py-3 flex items-center justify-between">
+          <div className="text-white/70 text-sm">
+            Quer que o nosso time especialista em contingência, automações, WhatsApp API e tudo que envolva WhatsApp te ajude?
           </div>
 
-          <div className="flex items-center gap-3">
-            <a
-              href="#"
-              className="hidden md:flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm hover:bg-white/10"
-            >
-              Quer ajuda com WhatsApp API? <span className="text-white/60">Nos chame</span>
-            </a>
-          </div>
+          <Link
+            href="https://wa.me/"
+            target="_blank"
+            className="ml-4 shrink-0 rounded-xl bg-violet-600 hover:bg-violet-500 transition px-4 py-2 text-white font-semibold"
+          >
+            Nos chame
+          </Link>
         </div>
       </div>
-    </header>
+    </div>
   );
 }
