@@ -1,57 +1,59 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 export const config = {
-  matcher: ["/:path*"],
+  matcher: ["/((?!_next|favicon.ico|robots.txt|sitemap.xml).*)"],
 };
 
 export function middleware(req: NextRequest) {
-  const host = req.headers.get("host") || "";
-  const baseDomain = process.env.NEXT_PUBLIC_BASE_DOMAIN || "plpainel.com";
+  const host = req.headers.get("host");
+  if (!host) return NextResponse.next();
 
-  // remove porta
-  const hostname = host.split(":")[0];
+  const baseDomain =
+    process.env.NEXT_PUBLIC_BASE_DOMAIN || "plpainel.com";
+
+  // remove porta se existir (ex: localhost:3000)
+  const hostname = host.split(":")[0].toLowerCase();
+
   const pathname = req.nextUrl.pathname;
 
-  // ignora next assets e arquivos
+  // ============================
+  // 1. Domínio raiz e www → normal
+  // ============================
   if (
-    pathname.startsWith("/_next") ||
-    pathname === "/favicon.ico" ||
-    pathname === "/robots.txt" ||
-    pathname === "/sitemap.xml"
+    hostname === baseDomain ||
+    hostname === `www.${baseDomain}` ||
+    hostname === `${baseDomain}.` ||
+    hostname === `www.${baseDomain}.`
   ) {
     return NextResponse.next();
   }
 
-  // ✅ ignora rotas de sistema/auth/API (isso evita quebrar login/session)
-  if (
-    pathname.startsWith("/api") ||
-    pathname.startsWith("/auth") ||
-    pathname === "/login" ||
-    pathname === "/register"
-  ) {
-    return NextResponse.next();
-  }
-
-  // domínio raiz e www ficam normais
-  if (hostname === baseDomain || hostname === `www.${baseDomain}`) {
-    return NextResponse.next();
-  }
-
-  // painel fica normal
+  // ============================
+  // 2. Painel app.plpainel.com
+  // ============================
   if (hostname === `app.${baseDomain}`) {
     return NextResponse.next();
   }
 
-  // wildcard: extrai subdomínio e reescreve pra rota interna PRESERVANDO PATH
+  // ============================
+  // 3. Wildcard *.plpainel.com
+  // ============================
   if (hostname.endsWith(`.${baseDomain}`)) {
-    const slug = hostname.slice(0, -(`.${baseDomain}`.length));
-    if (!slug) return NextResponse.next();
+    const slug = hostname.replace(`.${baseDomain}`, "");
+
+    // segurança extra
+    if (!slug || slug === "www" || slug === "app") {
+      return NextResponse.next();
+    }
 
     const url = req.nextUrl.clone();
-    // ✅ preserva o caminho original
     url.pathname = `/_sites/${slug}${pathname === "/" ? "" : pathname}`;
+
     return NextResponse.rewrite(url);
   }
 
+  // ============================
+  // 4. Fallback
+  // ============================
   return NextResponse.next();
 }
