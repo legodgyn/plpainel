@@ -10,36 +10,13 @@ export function supabaseServer() {
     {
       cookies: {
         get(name: string) {
-          // Compatível com diferentes versões do Next
-          const c: any = cookieStore as any;
-
-          // Caso 1: cookieStore.get(name) -> { value }
-          if (typeof c.get === "function") {
-            return c.get(name)?.value;
-          }
-
-          // Caso 2: cookieStore() retorna objeto simples { [name]: value }
-          if (typeof c === "object" && c[name]) {
-            return c[name];
-          }
-
-          return undefined;
+          return cookieStore.get(name)?.value;
         },
-
         set(name: string, value: string, options: any) {
-          const c: any = cookieStore as any;
-
-          if (typeof c.set === "function") {
-            c.set({ name, value, ...options });
-          }
+          cookieStore.set({ name, value, ...options });
         },
-
         remove(name: string, options: any) {
-          const c: any = cookieStore as any;
-
-          if (typeof c.set === "function") {
-            c.set({ name, value: "", ...options });
-          }
+          cookieStore.set({ name, value: "", ...options });
         },
       },
     }
