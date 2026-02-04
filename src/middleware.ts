@@ -10,14 +10,24 @@ export function middleware(req: NextRequest) {
 
   // remove porta
   const hostname = host.split(":")[0];
+  const pathname = req.nextUrl.pathname;
 
   // ignora next assets e arquivos
-  const pathname = req.nextUrl.pathname;
   if (
     pathname.startsWith("/_next") ||
-    pathname.startsWith("/favicon.ico") ||
-    pathname.startsWith("/robots.txt") ||
-    pathname.startsWith("/sitemap.xml")
+    pathname === "/favicon.ico" ||
+    pathname === "/robots.txt" ||
+    pathname === "/sitemap.xml"
+  ) {
+    return NextResponse.next();
+  }
+
+  // ✅ ignora rotas de sistema/auth/API (isso evita quebrar login/session)
+  if (
+    pathname.startsWith("/api") ||
+    pathname.startsWith("/auth") ||
+    pathname === "/login" ||
+    pathname === "/register"
   ) {
     return NextResponse.next();
   }
@@ -32,13 +42,14 @@ export function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // wildcard: extrai subdomínio e reescreve pra rota interna
+  // wildcard: extrai subdomínio e reescreve pra rota interna PRESERVANDO PATH
   if (hostname.endsWith(`.${baseDomain}`)) {
-    const slug = hostname.replace(`.${baseDomain}`, "");
+    const slug = hostname.slice(0, -(`.${baseDomain}`.length));
     if (!slug) return NextResponse.next();
 
     const url = req.nextUrl.clone();
-    url.pathname = `/_sites/${slug}`;
+    // ✅ preserva o caminho original
+    url.pathname = `/_sites/${slug}${pathname === "/" ? "" : pathname}`;
     return NextResponse.rewrite(url);
   }
 

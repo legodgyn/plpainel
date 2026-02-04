@@ -1,10 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase/browser";
 
 export default function LoginPage() {
+  const router = useRouter();
   const supabase = supabaseBrowser();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -15,12 +18,24 @@ export default function LoginPage() {
     setLoading(true);
     setErr(null);
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+    if (error) {
+      setLoading(false);
+      return setErr(error.message);
+    }
+
+    // ✅ confirma que a sessão existe (em prod isso pega vários casos)
+    const session = data?.session ?? (await supabase.auth.getSession()).data.session;
 
     setLoading(false);
-    if (error) return setErr(error.message);
 
-    window.location.href = "/dashboard";
+    if (!session) {
+      return setErr("Login efetuado, mas a sessão não foi criada. Tente novamente.");
+    }
+
+    router.replace("/dashboard");
+    router.refresh();
   }
 
   return (
@@ -35,6 +50,7 @@ export default function LoginPage() {
             placeholder="E-mail"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            autoComplete="email"
           />
           <input
             className="w-full rounded-xl bg-white/5 border border-white/10 p-3"
@@ -42,6 +58,7 @@ export default function LoginPage() {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            autoComplete="current-password"
           />
 
           {err && <div className="text-red-300 text-sm">{err}</div>}
