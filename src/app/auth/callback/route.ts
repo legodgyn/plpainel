@@ -1,14 +1,10 @@
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase/server";
 
-export async function GET(request: Request) {
-  const { searchParams, origin } = new URL(request.url);
-  const code = searchParams.get("code");
+export async function POST(req: Request) {
+  const supabase = await supabaseServer();
+  await supabase.auth.signOut();
 
-  if (code) {
-    const supabase = await supabaseServer(); // <-- AQUI É O PULO DO GATO
-    await supabase.auth.exchangeCodeForSession(code);
-  }
-
-  return NextResponse.redirect(`${origin}/dashboard`);
+  const url = new URL("/login", req.url);
+  return NextResponse.redirect(url);
 }
