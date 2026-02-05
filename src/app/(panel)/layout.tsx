@@ -1,35 +1,27 @@
-import "@/app/globals.css";
+import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
-
-import Sidebar from "@/components/panel/sidebar";
-import TopBar from "@/components/panel/topbar";
-import WhatsappFloat from "@/components/panel/whatsapp-float";
-
+import Sidebar from "@/components/panel/Sidebar";
+import TopBar from "@/components/panel/TopBar";
+import WhatsappFloat from "@/components/panel/WhatsappFloat";
 import { supabaseServer } from "@/lib/supabase/server";
 
-import { redirect } from "next/navigation";
+export default async function PanelLayout({ children }: { children: ReactNode }) {
+  const supabase = await supabaseServer();
+  const { data, error } = await supabase.auth.getUser();
 
-export default async function PanelLayout({ children }: { children: React.ReactNode }) {
-  const supabase = supabaseServer();
-  const { data } = await supabase.auth.getUser();
-
-  if (!data?.user) redirect("/login");
-
-  // Se você já salva tokens no profile, depois a gente busca aqui.
-  // Por enquanto mantém 0 ou coloca mock.
-  const tokens = 0;
+  if (error || !data?.user) {
+    redirect("/login");
+  }
 
   return (
-    <div className="min-h-screen bg-[#050A14] text-white">
+    <div className="min-h-screen bg-[#070A12] text-white">
       <div className="flex min-h-screen">
         <Sidebar />
-
-        <main className="flex-1">
-          <TopBar tokens={tokens} />
-          <div className="p-6">{children}</div>
-        </main>
+        <div className="flex-1">
+          <TopBar />
+          <main className="px-6 py-6">{children}</main>
+        </div>
       </div>
-
       <WhatsappFloat />
     </div>
   );
