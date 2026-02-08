@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 function slugify(input: string) {
   return input
@@ -40,14 +40,23 @@ type TokenRow = {
 export default function NewSitePage() {
   const router = useRouter();
 
-  const supabase = useMemo(
-    () =>
-      createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-      ),
-    []
-  );
+  // ✅ cria supabase SOMENTE no browser (evita quebrar build/prerender)
+  const [supabase, setSupabase] = useState<SupabaseClient | null>(null);
+  const [supabaseInitError, setSupabaseInitError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+    if (!url || !key) {
+      setSupabaseInitError(
+        "Variáveis do Supabase não encontradas. Configure NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_ANON_KEY na Vercel (Production/Preview) e faça redeploy."
+      );
+      return;
+    }
+
+    setSupabase(createClient(url, key));
+  }, []);
 
   // ✅ Tokens
   const [balance, setBalance] = useState<number | null>(null);
@@ -102,6 +111,8 @@ export default function NewSitePage() {
 
   // ✅ Carrega saldo de tokens ao abrir a página
   useEffect(() => {
+    if (!supabase) return;
+
     let alive = true;
 
     async function loadBalance() {
@@ -143,6 +154,8 @@ export default function NewSitePage() {
   }, [supabase]);
 
   async function checkSlugExists(s: string) {
+    if (!supabase) return;
+
     const clean = slugify(s);
     if (!clean) return;
 
@@ -161,6 +174,11 @@ export default function NewSitePage() {
   }
 
   async function handleCreate() {
+    if (!supabase) {
+      alert(supabaseInitError || "Supabase não inicializou.");
+      return;
+    }
+
     const cleanSlug = slugify(slug);
 
     // ✅ trava por tokens
@@ -251,7 +269,7 @@ export default function NewSitePage() {
   }
 
   const createDisabled =
-    loading || balanceLoading || noTokens || (slugOk === false) || checkingSlug;
+    loading || balanceLoading || !supabase || noTokens || slugOk === false || checkingSlug;
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10 text-white">
@@ -262,13 +280,19 @@ export default function NewSitePage() {
         </Link>
       </div>
 
+      {supabaseInitError ? (
+        <div className="mb-5 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+          {supabaseInitError}
+        </div>
+      ) : null}
+
       <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
         {/* ✅ tokens */}
         <div className="mb-5 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
           <div className="text-sm text-white/75">
             Tokens disponíveis:{" "}
             <span className="font-semibold text-white">
-              {balanceLoading ? "..." : balance ?? 0}
+              {!supabase ? "..." : balanceLoading ? "..." : balance ?? 0}
             </span>
           </div>
 
@@ -356,7 +380,7 @@ export default function NewSitePage() {
             />
           </Field>
 
-          {/* ✅ meta tag agora é opcional e SEM * */}
+          {/* ✅ meta tag opcional */}
           <Field
             label="Meta tag de verificação"
             required={false}
@@ -416,11 +440,13 @@ export default function NewSitePage() {
         >
           {loading
             ? "Criando..."
-            : balanceLoading
-              ? "Verificando tokens..."
-              : noTokens
-                ? "Sem tokens (compre para criar)"
-                : "Criar site (consome 1 token)"}
+            : !supabase
+              ? "Inicializando Supabase..."
+              : balanceLoading
+                ? "Verificando tokens..."
+                : noTokens
+                  ? "Sem tokens (compre para criar)"
+                  : "Criar site (consome 1 token)"}
         </button>
 
         <p className="mt-3 text-center text-xs text-white/55">
