@@ -1,3 +1,4 @@
+// lib/supabase/server.ts
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 
@@ -7,8 +8,11 @@ function getEnv(name: string) {
   return v;
 }
 
+/**
+ * Supabase Server Client (App Router)
+ * - Next 15/16: cookies() é async => precisa await
+ */
 export async function supabaseServer() {
-  // ✅ AQUI TEM QUE TER await
   const cookieStore = await cookies();
 
   return createServerClient(
@@ -17,7 +21,9 @@ export async function supabaseServer() {
     {
       cookies: {
         getAll() {
-          return cookieStore.getAll();
+          // Next: cookieStore tem getAll(). Em caso de mismatch, cai pra []
+          const anyStore = cookieStore as any;
+          return typeof anyStore.getAll === "function" ? anyStore.getAll() : [];
         },
         setAll(cookiesToSet) {
           try {
@@ -25,7 +31,7 @@ export async function supabaseServer() {
               cookieStore.set(name, value, options);
             });
           } catch {
-            // alguns contextos não permitem set cookie (ok ignorar)
+            // Em alguns contextos (ex: Server Components) não permite set cookie. Ok ignorar.
           }
         },
       },
