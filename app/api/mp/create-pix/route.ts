@@ -9,6 +9,10 @@ function getEnv(name: string) {
   return v;
 }
 
+function optEnv(name: string) {
+  return process.env[name] || "";
+}
+
 export async function POST(req: Request) {
   try {
     const { tokens } = await req.json();
@@ -18,7 +22,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Compra mínima: 5 tokens" }, { status: 400 });
     }
 
-    // Service role no backend
     const supabase = createClient(
       getEnv("NEXT_PUBLIC_SUPABASE_URL"),
       getEnv("SUPABASE_SERVICE_ROLE_KEY")
@@ -40,9 +43,11 @@ export async function POST(req: Request) {
     const totalCents = qty * unitPriceCents;
     const total = totalCents / 100;
 
-    // ✅ NGROK (LOCAL): notification_url precisa ser HTTPS válido
+    // ✅ PRODUÇÃO (VPS): webhook real
+    // Se quiser, você pode colocar isso em env MP_WEBHOOK_URL
     const notificationUrl =
-      "https://florrie-pregame-sagittally.ngrok-free.dev/api/mp/webhook";
+      optEnv("MP_WEBHOOK_URL")?.trim() ||
+      "https://plpainel.com/api/mp/webhook";
 
     // cria order (pending)
     const { data: order, error: orderErr } = await supabase
@@ -59,13 +64,19 @@ export async function POST(req: Request) {
       .single();
 
     if (orderErr || !order?.id) {
-      return NextResponse.json({ error: orderErr?.message || "Erro ao criar order" }, { status: 500 });
+      return NextResponse.json(
+        { error: orderErr?.message || "Erro ao criar order" },
+        { status: 500 }
+      );
     }
+
+    // Token PROD por padrão (em produção use APP_USR)
+    const mpToken = getEnv("MP_ACCESS_TOKEN");
 
     const mpRes = await fetch("https://api.mercadopago.com/v1/payments", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${getEnv("MP_ACCESS_TOKEN")}`,
+        Authorization: `Bearer ${mpToken}`,
         "Content-Type": "application/json",
         "X-Idempotency-Key": order.id,
       },
@@ -87,7 +98,10 @@ export async function POST(req: Request) {
         .update({ status: "failed", mp_status: "error" })
         .eq("id", order.id);
 
-      return NextResponse.json({ error: "Mercado Pago erro", details: mpJson }, { status: 500 });
+      return NextResponse.json(
+        { error: "Mercado Pago erro", details: mpJson },
+        { status: 500 }
+      );
     }
 
     const paymentId = String(mpJson.id ?? "");
@@ -116,6 +130,7 @@ export async function POST(req: Request) {
       qr_base64: qrBase64,
       qr_code: qrCode,
       pix_copy_paste: copyPaste,
+      notification_url: notificationUrl,
     });
   } catch (e: any) {
     return NextResponse.json({ error: e?.message || "Erro" }, { status: 500 });
