@@ -1,37 +1,49 @@
 // middleware.ts
 import { NextRequest, NextResponse } from "next/server";
 
+function getSubdomain(host: string) {
+  const h = host.split(":")[0].toLowerCase();
+
+  // Ajuste os "bloqueados" aqui (subdomínios que NÃO são tenant)
+  const blocked = new Set(["www", "app"]);
+
+  // Se for o domínio raiz
+  if (h === "plpainel.com") return null;
+
+  // Se terminar com .plpainel.com pega a primeira parte
+  if (h.endsWith(".plpainel.com")) {
+    const sub = h.replace(".plpainel.com", "");
+    if (!sub || blocked.has(sub)) return null;
+    return sub;
+  }
+
+  return null;
+}
+
 export function middleware(req: NextRequest) {
   const host = req.headers.get("host") || "";
-  const url = req.nextUrl;
+  const sub = getSubdomain(host);
 
-  // Ignora domínio principal
-  if (
-    host === "plpainel.com" ||
-    host === "www.plpainel.com" ||
-    host.startsWith("localhost")
-  ) {
+  // Se não for tenant, deixa passar normal
+  if (!sub) return NextResponse.next();
+
+  const url = req.nextUrl.clone();
+
+  // evita loop: se já estiver em /s/slug, não reescreve de novo
+  if (url.pathname.startsWith(`/s/${sub}`)) {
     return NextResponse.next();
   }
 
-  // Pega o subdomínio
-  const parts = host.split(".");
-  if (parts.length < 3) {
-    return NextResponse.next();
-  }
+  // Reescreve:
+  // /            -> /s/slug
+  // /abc         -> /s/slug/abc
+  // /privacy     -> /s/slug/privacy
+  url.pathname = `/s/${sub}${url.pathname === "/" ? "" : url.pathname}`;
 
-  const subdomain = parts[0];
-
-  // Evita loops
-  if (url.pathname.startsWith("/s/")) {
-    return NextResponse.next();
-  }
-
-  // Rewrite: subdomínio -> /s/slug
-  url.pathname = `/s/${subdomain}`;
   return NextResponse.rewrite(url);
 }
 
+// ignora assets e api
 export const config = {
-  matcher: ["/((?!_next|api|favicon.ico).*)"],
+  matcher: ["/((?!api|_next|.*\\..*).*)"],
 };
