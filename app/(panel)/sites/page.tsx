@@ -19,22 +19,26 @@ function env(name: string) {
 }
 
 export default async function SitesPage() {
-  const cookieStore = cookies();
+  // ✅ Next (na sua versão) retorna Promise
+  const cookieStore = await cookies();
 
-  // ✅ Client correto pra ler sessão via cookies (App Router)
+  // ✅ lê sessão via cookies (painel)
   const supabaseAuth = createServerClient(
     env("NEXT_PUBLIC_SUPABASE_URL"),
     env("NEXT_PUBLIC_SUPABASE_ANON_KEY"),
     {
       cookies: {
-        get(name) {
-          return cookieStore.get(name)?.value;
+        getAll() {
+          return cookieStore.getAll();
         },
-        set(name, value, options) {
-          cookieStore.set({ name, value, ...options });
-        },
-        remove(name, options) {
-          cookieStore.set({ name, value: "", ...options, maxAge: 0 });
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) => {
+              cookieStore.set(name, value, options);
+            });
+          } catch {
+            // server component: pode falhar em alguns contextos (ok)
+          }
         },
       },
     }
@@ -48,13 +52,11 @@ export default async function SitesPage() {
     return <div className="p-6">Não autenticado</div>;
   }
 
-  // ✅ Service role só pra consultar a tabela (server-side)
+  // ✅ Admin (service role) só pra consultar tabela
   const supabaseAdmin = createClient(
     env("NEXT_PUBLIC_SUPABASE_URL"),
     env("SUPABASE_SERVICE_ROLE_KEY"),
-    {
-      auth: { persistSession: false },
-    }
+    { auth: { persistSession: false } }
   );
 
   const { data: sites, error } = await supabaseAdmin
@@ -64,14 +66,11 @@ export default async function SitesPage() {
     .order("created_at", { ascending: false });
 
   if (error) {
-    return (
-      <div className="p-6">
-        Erro ao carregar sites: {error.message}
-      </div>
-    );
+    return <div className="p-6">Erro ao carregar sites: {error.message}</div>;
   }
 
   const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN || "plpainel.com";
+  const isDev = process.env.NODE_ENV !== "production";
 
   return (
     <div className="p-6">
@@ -88,8 +87,6 @@ export default async function SitesPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {sites?.map((site: Site) => {
-          const isDev = process.env.NODE_ENV !== "production";
-
           const publicUrl = isDev
             ? `/s/${site.slug}`
             : `https://${site.slug}.${ROOT_DOMAIN}`;
