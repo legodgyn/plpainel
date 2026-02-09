@@ -1,43 +1,35 @@
+// middleware.ts
 import { NextRequest, NextResponse } from "next/server";
-
-function getSubdomain(host: string) {
-  // remove porta (ex: localhost:3000)
-  const cleanHost = host.split(":")[0];
-
-  // ajuste se você usar www ou app
-  if (cleanHost === "plpainel.com") return null;
-  if (cleanHost === "www.plpainel.com") return null;
-  if (cleanHost === "app.plpainel.com") return null;
-
-  // pega "teste123" de "teste123.plpainel.com"
-  const parts = cleanHost.split(".");
-  if (parts.length < 3) return null;
-
-  return parts[0];
-}
 
 export function middleware(req: NextRequest) {
   const host = req.headers.get("host") || "";
-  const sub = getSubdomain(host);
+  const url = req.nextUrl;
 
-  // Se for subdomínio, reescreve para /s/{slug} mantendo URL bonita
-  if (sub) {
-    const url = req.nextUrl.clone();
-
-    // não reescreve assets/api
-    if (
-      url.pathname.startsWith("/_next") ||
-      url.pathname.startsWith("/api") ||
-      url.pathname === "/favicon.ico"
-    ) {
-      return NextResponse.next();
-    }
-
-    url.pathname = `/s/${sub}${url.pathname === "/" ? "" : url.pathname}`;
-    return NextResponse.rewrite(url);
+  // Ignora domínio principal
+  if (
+    host === "plpainel.com" ||
+    host === "www.plpainel.com" ||
+    host.startsWith("localhost")
+  ) {
+    return NextResponse.next();
   }
 
-  return NextResponse.next();
+  // Pega o subdomínio
+  const parts = host.split(".");
+  if (parts.length < 3) {
+    return NextResponse.next();
+  }
+
+  const subdomain = parts[0];
+
+  // Evita loops
+  if (url.pathname.startsWith("/s/")) {
+    return NextResponse.next();
+  }
+
+  // Rewrite: subdomínio -> /s/slug
+  url.pathname = `/s/${subdomain}`;
+  return NextResponse.rewrite(url);
 }
 
 export const config = {
