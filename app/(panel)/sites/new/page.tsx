@@ -50,7 +50,7 @@ export default function NewSitePage() {
 
     if (!url || !key) {
       setSupabaseInitError(
-        "Variáveis do Supabase não encontradas. Configure NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_ANON_KEY na Vercel (Production/Preview) e faça redeploy."
+        "Variáveis do Supabase não encontradas. Configure NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_ANON_KEY."
       );
       return;
     }
@@ -75,7 +75,7 @@ export default function NewSitePage() {
   const [privacy, setPrivacy] = useState("");
   const [footer, setFooter] = useState("");
 
-  // Meta tag (cliente cola a tag completa) - ✅ opcional
+  // Meta tag opcional
   const [metaTag, setMetaTag] = useState("");
 
   // UX
@@ -85,7 +85,6 @@ export default function NewSitePage() {
 
   const noTokens = !balanceLoading && (balance ?? 0) <= 0;
 
-  // Instagram é o único opcional (meta tag também é opcional)
   const allRequiredFilled = useMemo(() => {
     return (
       slug.trim() &&
@@ -102,56 +101,50 @@ export default function NewSitePage() {
   }, [slug, companyName, cnpj, mission, phone, email, whatsapp, about, privacy, footer]);
 
   useEffect(() => {
-    // auto-slug a partir do nome, se slug vazio
     if (!slug.trim() && companyName.trim()) {
       setSlug(slugify(companyName));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [companyName]);
 
-  // ✅ Carrega saldo de tokens ao abrir a página
-  useEffect(() => {
-    if (!supabase) return;
+useEffect(() => {
+  if (!supabase) return;
+  const sb = supabase; // ✅ trava o tipo como SupabaseClient (não-null)
 
-    let alive = true;
+  let alive = true;
 
-    async function loadBalance() {
-      setBalanceLoading(true);
+  async function loadBalance() {
+    setBalanceLoading(true);
 
-      const { data: userData, error: userErr } = await supabase.auth.getUser();
-      const user = userData?.user;
+    const { data: userData, error: userErr } = await sb.auth.getUser();
+    const user = userData?.user;
 
-      if (!alive) return;
+    if (!alive) return;
 
-      if (!user || userErr) {
-        setBalance(0);
-        setBalanceLoading(false);
-        return;
-      }
-
-      const { data, error } = await supabase
-        .from("user_token_balances")
-        .select("balance")
-        .eq("user_id", user.id)
-        .maybeSingle<TokenRow>();
-
-      if (!alive) return;
-
-      if (error) {
-        setBalance(0);
-      } else {
-        setBalance(data?.balance ?? 0);
-      }
-
+    if (!user || userErr) {
+      setBalance(0);
       setBalanceLoading(false);
+      return;
     }
 
-    loadBalance();
+    const { data, error } = await sb
+      .from("user_token_balances")
+      .select("balance")
+      .eq("user_id", user.id)
+      .maybeSingle();
 
-    return () => {
-      alive = false;
-    };
-  }, [supabase]);
+    if (!alive) return;
+
+    setBalance(error ? 0 : ((data as { balance: number | null } | null)?.balance ?? 0));
+    setBalanceLoading(false);
+  }
+
+  loadBalance();
+
+  return () => {
+    alive = false;
+  };
+}, [supabase]);
 
   async function checkSlugExists(s: string) {
     if (!supabase) return;
@@ -181,7 +174,6 @@ export default function NewSitePage() {
 
     const cleanSlug = slugify(slug);
 
-    // ✅ trava por tokens
     if (balanceLoading) {
       alert("Aguarde: verificando tokens...");
       return;
@@ -202,7 +194,6 @@ export default function NewSitePage() {
       return;
     }
 
-    // valida meta tag (só se foi preenchida)
     const parsedMeta = parseMetaTag(metaTag);
     if (metaTag.trim().toLowerCase().includes("<meta") && (!parsedMeta.name || !parsedMeta.content)) {
       alert("Meta tag inválida. Cole a tag completa do Business Manager ou deixe em branco.");
@@ -211,23 +202,19 @@ export default function NewSitePage() {
 
     setLoading(true);
     try {
-      // checa sessão
       const { data: sess } = await supabase.auth.getSession();
       if (!sess.session) {
         router.push("/login");
         return;
       }
 
-      // checa slug antes de criar
       const { data: exists } = await supabase.from("sites").select("id").eq("slug", cleanSlug).limit(1);
 
       if (exists && exists.length > 0) {
         alert("Esse slug já existe. Escolha outro.");
-        setLoading(false);
         return;
       }
 
-      // RPC que cria site e debita token
       const { error } = await supabase.rpc("create_site_with_token", {
         p_slug: cleanSlug,
         p_company_name: companyName.trim(),
@@ -243,11 +230,9 @@ export default function NewSitePage() {
 
       if (error) {
         alert(error.message);
-        setLoading(false);
         return;
       }
 
-      // Atualiza campos extras (privacy + meta opcional)
       const upd = await supabase
         .from("sites")
         .update({
@@ -268,8 +253,7 @@ export default function NewSitePage() {
     }
   }
 
-  const createDisabled =
-    loading || balanceLoading || !supabase || noTokens || slugOk === false || checkingSlug;
+  const createDisabled = loading || balanceLoading || !supabase || noTokens || slugOk === false || checkingSlug;
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10 text-white">
@@ -287,7 +271,6 @@ export default function NewSitePage() {
       ) : null}
 
       <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
-        {/* ✅ tokens */}
         <div className="mb-5 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
           <div className="text-sm text-white/75">
             Tokens disponíveis:{" "}
@@ -380,7 +363,6 @@ export default function NewSitePage() {
             />
           </Field>
 
-          {/* ✅ meta tag opcional */}
           <Field
             label="Meta tag de verificação"
             required={false}

@@ -40,10 +40,9 @@ export async function POST(req: Request) {
     const totalCents = qty * unitPriceCents;
     const total = totalCents / 100;
 
-    // URL pública do seu app (domínio já no vercel)
-    const appUrl = (process.env.NEXT_PUBLIC_APP_URL || "").trim();
+    // ✅ NGROK (LOCAL): notification_url precisa ser HTTPS válido
     const notificationUrl =
-      appUrl.startsWith("https://") ? `${appUrl}/api/mp/webhook` : undefined;
+      "https://florrie-pregame-sagittally.ngrok-free.dev/api/mp/webhook";
 
     // cria order (pending)
     const { data: order, error: orderErr } = await supabase
@@ -75,19 +74,20 @@ export async function POST(req: Request) {
         description: `${qty} tokens - plpainel.com`,
         payment_method_id: "pix",
         payer: { email: user.email },
-        ...(notificationUrl ? { notification_url: notificationUrl } : {}),
-        external_reference: order.id, // link MP -> order
+        notification_url: notificationUrl,
+        external_reference: order.id,
       }),
     });
 
     const mpJson = await mpRes.json();
 
     if (!mpRes.ok) {
-      await supabase.from("token_orders").update({ status: "failed", mp_status: "error" }).eq("id", order.id);
-      return NextResponse.json(
-        { error: "Mercado Pago erro", details: mpJson },
-        { status: 500 }
-      );
+      await supabase
+        .from("token_orders")
+        .update({ status: "failed", mp_status: "error" })
+        .eq("id", order.id);
+
+      return NextResponse.json({ error: "Mercado Pago erro", details: mpJson }, { status: 500 });
     }
 
     const paymentId = String(mpJson.id ?? "");
