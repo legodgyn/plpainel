@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseBrowser";
 
 export default function TokenBadge() {
-  const [balance, setBalance] = useState<number>(0);
+  const [balance, setBalance] = useState<number>(import TokenBadge from "@/components/TokenBadge";
+<TokenBadge />);
 
   useEffect(() => {
     let sub: any;
