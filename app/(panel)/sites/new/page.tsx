@@ -644,11 +644,11 @@ export default function NewSitePage() {
 
           <div className="mt-3 grid gap-3 md:grid-cols-3">
             <div>
-              <label className="text-xs text-white/70">Slug *</label>
+              <label className="text-xs text-white/70">Domínio *</label>
               <input
                 value={form.slug}
                 onChange={(e) => setForm((p) => ({ ...p, slug: e.target.value }))}
-                placeholder="movy-digital"
+                placeholder="seu-site"
                 className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 outline-none focus:border-violet-400"
               />
               <div className="mt-1 text-[11px] text-white/50">
@@ -734,7 +734,7 @@ export default function NewSitePage() {
         <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
           <div className="text-sm font-semibold">Meta tag de verificação</div>
           <div className="mt-1 text-xs text-white/60">
-            Cole aqui o <b>código</b> ou a <b>meta tag completa</b> (ex: facebook-domain-verification).
+            Cole aqui o <b>código</b> ou a <b>meta tag completa</b> (VOCÊ SÓ VAI PREENCHER AQUI APOS CRIAR O SITE, CRIAR O DOMÍNIO NA BM E GERAR A META TAG).
           </div>
           <textarea
             value={form.meta_tag}
