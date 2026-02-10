@@ -574,7 +574,7 @@ export default function NewSitePage() {
         {/* Meta tag */}
         <div>
           <label className="text-sm text-white/80">
-            Meta tag de verificação (Facebook BM) — opcional
+            Meta tag de verificação (Facebook BM) — FEITO APÓS ADICIONAR O DOMÍNIO NA BUSINESS MANAGER
           </label>
           <textarea
             value={metaTagRaw}
