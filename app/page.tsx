@@ -1,3 +1,22 @@
+"use client";
+
+import { useEffect } from "react";
+import { useSearchParams } from "next/navigation";
+
+export default function Home() {
+  const sp = useSearchParams();
+
+  useEffect(() => {
+    const ref = (sp.get("ref") || sp.get("affiliate") || "").trim();
+    if (ref) localStorage.setItem("affiliate_ref", ref);
+  }, [sp]);
+
+  return (
+    // ...seu layout
+    <div>...</div>
+  );
+}
+
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
