@@ -1,12 +1,39 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
+/** ===================== Helpers ===================== */
+
+function onlyDigits(v: string) {
+  return String(v || "").replace(/\D/g, "");
+}
+
+function formatCnpj(v: string) {
+  const d = onlyDigits(v).slice(0, 14);
+
+  // 00.000.000/0000-00
+  const p1 = d.slice(0, 2);
+  const p2 = d.slice(2, 5);
+  const p3 = d.slice(5, 8);
+  const p4 = d.slice(8, 12);
+  const p5 = d.slice(12, 14);
+
+  let out = p1;
+  if (p2) out += `.${p2}`;
+  if (p3) out += `.${p3}`;
+  if (p4) out += `/${p4}`;
+  if (p5) out += `-${p5}`;
+  return out;
+}
+
 function slugify(input: string) {
-  return input
+  return String(input || "")
     .toLowerCase()
     .trim()
     .replace(/[\s_]+/g, "-")
@@ -33,14 +60,111 @@ function parseMetaTag(input: string) {
   };
 }
 
+function normalizePhoneToDigits(v: string | null | undefined) {
+  const d = onlyDigits(String(v || ""));
+  return d || "";
+}
+
 type TokenRow = {
   balance: number | null;
 };
 
+type BrasilApiCnpj = {
+  cnpj?: string;
+  razao_social?: string;
+  nome_fantasia?: string;
+  descricao_situacao_cadastral?: string;
+  data_inicio_atividade?: string;
+  capital_social?: string | number;
+  porte?: string;
+  natureza_juridica?: string;
+
+  logradouro?: string;
+  numero?: string;
+  complemento?: string;
+  bairro?: string;
+  municipio?: string;
+  uf?: string;
+  cep?: string;
+
+  ddd_telefone_1?: string;
+  ddd_telefone_2?: string;
+  email?: string;
+};
+
+function buildTemplates(input: {
+  companyName: string;
+  cnpj: string;
+  addressLine: string;
+  cityUfCep: string;
+  email: string;
+  phone: string;
+}) {
+  const { companyName, cnpj, addressLine, cityUfCep, email, phone } = input;
+
+  const mission = `A missão da ${companyName} é desenvolver e executar soluções estratégicas e eficientes, orientadas a resultados, que fortaleçam a presença de marcas, ampliem oportunidades de negócio e impulsionem o crescimento sustentável de nossos clientes.
+
+Trabalhamos com foco em qualidade, análise, criatividade, ética e comprometimento. Nosso propósito é gerar valor real por meio de entregas bem estruturadas, comunicação assertiva e gestão responsável, sempre alinhados às necessidades e objetivos de cada cliente.`;
+
+  const about = `QUEM SOMOS?
+
+A ${companyName}, registrada sob o CNPJ ${cnpj}, atua oferecendo soluções empresariais e operacionais estruturadas, com foco em eficiência, organização e suporte a operações que demandam gestão e execução responsável.
+
+Localizada em ${addressLine}, ${cityUfCep}, trabalhamos com atendimento próximo, compromisso com a conformidade e foco em resultados consistentes por meio de processos bem definidos e relações transparentes.
+
+Se quiser conhecer melhor nossas soluções e serviços, fale com a gente.`;
+
+  const privacy = `POLÍTICA DE PRIVACIDADE
+
+${companyName}
+CNPJ: ${cnpj}
+Endereço: ${addressLine}, ${cityUfCep}
+
+1. Finalidade
+Esta Política de Privacidade descreve como coletamos, utilizamos, armazenamos e protegemos dados pessoais de clientes, parceiros e usuários que interagem conosco por meio de nossos canais (site, e-mail, telefone e redes sociais) ou durante a contratação e execução de serviços.
+
+2. Dados Coletados
+Coletamos apenas dados necessários para:
+- Atendimento, propostas e prestação de serviços;
+- Comunicação operacional, administrativa e contratual;
+- Cumprimento de obrigações legais e regulatórias.
+
+3. Uso dos Dados
+Os dados são utilizados exclusivamente para as finalidades descritas acima. Não enviamos comunicações promocionais sem consentimento quando aplicável.
+
+4. Compartilhamento
+Não comercializamos dados pessoais. Compartilhamento ocorre apenas:
+- Com fornecedores/parceiros necessários à execução, sob confidencialidade;
+- Por exigência legal ou ordem de autoridade competente.
+
+5. Direitos do Titular (LGPD)
+O titular pode solicitar: acesso, correção, atualização, eliminação/anonimização quando aplicável, portabilidade e revogação de consentimentos.
+
+6. Segurança e Armazenamento
+Adotamos medidas técnicas e administrativas para proteger dados contra acessos não autorizados. Os dados são armazenados pelo período necessário às finalidades e obrigações legais.
+
+7. Alterações
+Esta política pode ser atualizada periodicamente.
+
+8. Contato
+📧 E-mail: ${email || "—"}
+📞 Telefone: ${phone || "—"}
+
+© ${new Date().getFullYear()} ${companyName}. Todos os direitos reservados.`;
+
+  const footer = `${companyName} | CNPJ: ${cnpj} | Endereço: ${addressLine}, ${cityUfCep} | Contato: 📧 ${email || "—"} • 📞 ${
+    phone || "—"
+  } | © ${new Date().getFullYear()} ${companyName}. Todos os direitos reservados.`;
+
+  return { mission, about, privacy, footer };
+}
+
+/** ===================== Page ===================== */
+
 export default function NewSitePage() {
   const router = useRouter();
 
-  // ✅ cria supabase SOMENTE no browser (evita quebrar build/prerender)
+  // ✅ cria supabase SOMENTE no browser
   const [supabase, setSupabase] = useState<SupabaseClient | null>(null);
   const [supabaseInitError, setSupabaseInitError] = useState<string | null>(null);
 
@@ -75,13 +199,19 @@ export default function NewSitePage() {
   const [privacy, setPrivacy] = useState("");
   const [footer, setFooter] = useState("");
 
-  // Meta tag opcional
+  // Meta tag (opcional)
   const [metaTag, setMetaTag] = useState("");
 
   // UX
   const [loading, setLoading] = useState(false);
   const [checkingSlug, setCheckingSlug] = useState(false);
   const [slugOk, setSlugOk] = useState<boolean | null>(null);
+
+  // CNPJ autofill
+  const cnpjDigits = useMemo(() => onlyDigits(cnpj), [cnpj]);
+  const cnpjValid = cnpjDigits.length === 14;
+  const [cnpjLoading, setCnpjLoading] = useState(false);
+  const [cnpjMsg, setCnpjMsg] = useState<string | null>(null);
 
   const noTokens = !balanceLoading && (balance ?? 0) <= 0;
 
@@ -101,50 +231,52 @@ export default function NewSitePage() {
   }, [slug, companyName, cnpj, mission, phone, email, whatsapp, about, privacy, footer]);
 
   useEffect(() => {
+    // auto-slug a partir do nome, se slug vazio
     if (!slug.trim() && companyName.trim()) {
       setSlug(slugify(companyName));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [companyName]);
 
-useEffect(() => {
-  if (!supabase) return;
-  const sb = supabase; // ✅ trava o tipo como SupabaseClient (não-null)
+  // ✅ Carrega saldo de tokens ao abrir a página
+  useEffect(() => {
+    if (!supabase) return;
 
-  let alive = true;
+    let alive = true;
 
-  async function loadBalance() {
-    setBalanceLoading(true);
+    async function loadBalance() {
+      setBalanceLoading(true);
 
-    const { data: userData, error: userErr } = await sb.auth.getUser();
-    const user = userData?.user;
+      const { data: userData, error: userErr } = await supabase.auth.getUser();
+      const user = userData?.user;
 
-    if (!alive) return;
+      if (!alive) return;
 
-    if (!user || userErr) {
-      setBalance(0);
+      if (!user || userErr) {
+        setBalance(0);
+        setBalanceLoading(false);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from("user_token_balances")
+        .select("balance")
+        .eq("user_id", user.id)
+        .maybeSingle<TokenRow>();
+
+      if (!alive) return;
+
+      if (error) setBalance(0);
+      else setBalance(data?.balance ?? 0);
+
       setBalanceLoading(false);
-      return;
     }
 
-    const { data, error } = await sb
-      .from("user_token_balances")
-      .select("balance")
-      .eq("user_id", user.id)
-      .maybeSingle();
-
-    if (!alive) return;
-
-    setBalance(error ? 0 : ((data as { balance: number | null } | null)?.balance ?? 0));
-    setBalanceLoading(false);
-  }
-
-  loadBalance();
-
-  return () => {
-    alive = false;
-  };
-}, [supabase]);
+    loadBalance();
+    return () => {
+      alive = false;
+    };
+  }, [supabase]);
 
   async function checkSlugExists(s: string) {
     if (!supabase) return;
@@ -166,6 +298,78 @@ useEffect(() => {
     setSlugOk(!(data && data.length > 0));
   }
 
+  async function handleGenerateFromCnpj() {
+    const digits = cnpjDigits;
+
+    if (digits.length !== 14) {
+      setCnpjMsg("CNPJ inválido. Digite um CNPJ com 14 números.");
+      return;
+    }
+
+    setCnpjMsg(null);
+    setCnpjLoading(true);
+
+    try {
+      // BrasilAPI (CNPJ)
+      const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${digits}`, {
+        cache: "no-store",
+      });
+
+      if (!res.ok) {
+        setCnpjMsg("Não consegui puxar esse CNPJ. Verifique e tente novamente.");
+        setCnpjLoading(false);
+        return;
+      }
+
+      const j = (await res.json()) as BrasilApiCnpj;
+
+      // Preenche dados básicos
+      const nome = (j.nome_fantasia || j.razao_social || "").trim();
+      if (nome) setCompanyName(nome);
+
+      // Email/Telefone (nem sempre vem)
+      const apiEmail = String(j.email || "").trim();
+      if (apiEmail && !email.trim()) setEmail(apiEmail);
+
+      const tel = normalizePhoneToDigits(j.ddd_telefone_1 || j.ddd_telefone_2);
+      if (tel && !phone.trim()) setPhone(tel);
+      if (tel && !whatsapp.trim()) setWhatsapp(tel);
+
+      // Endereço
+      const addressLine = [
+        j.logradouro,
+        j.numero ? `nº ${j.numero}` : null,
+        j.complemento,
+        j.bairro,
+      ]
+        .filter(Boolean)
+        .join(", ");
+
+      const cityUfCep = [j.municipio, j.uf, j.cep].filter(Boolean).join(" – ");
+
+      // Templates (só preenche se estiver vazio)
+      const templates = buildTemplates({
+        companyName: nome || companyName || "Sua Empresa",
+        cnpj: formatCnpj(digits),
+        addressLine: addressLine || "—",
+        cityUfCep: cityUfCep || "—",
+        email: apiEmail || email || "—",
+        phone: tel || phone || "—",
+      });
+
+      if (!mission.trim()) setMission(templates.mission);
+      if (!about.trim()) setAbout(templates.about);
+      if (!privacy.trim()) setPrivacy(templates.privacy);
+      if (!footer.trim()) setFooter(templates.footer);
+
+      setCnpjMsg("Dados gerados com sucesso ✅");
+    } catch {
+      setCnpjMsg("Erro ao gerar dados. Tente novamente.");
+    } finally {
+      setCnpjLoading(false);
+    }
+  }
+
   async function handleCreate() {
     if (!supabase) {
       alert(supabaseInitError || "Supabase não inicializou.");
@@ -174,6 +378,7 @@ useEffect(() => {
 
     const cleanSlug = slugify(slug);
 
+    // ✅ trava por tokens
     if (balanceLoading) {
       alert("Aguarde: verificando tokens...");
       return;
@@ -194,6 +399,7 @@ useEffect(() => {
       return;
     }
 
+    // valida meta tag (só se foi preenchida)
     const parsedMeta = parseMetaTag(metaTag);
     if (metaTag.trim().toLowerCase().includes("<meta") && (!parsedMeta.name || !parsedMeta.content)) {
       alert("Meta tag inválida. Cole a tag completa do Business Manager ou deixe em branco.");
@@ -202,19 +408,23 @@ useEffect(() => {
 
     setLoading(true);
     try {
+      // checa sessão
       const { data: sess } = await supabase.auth.getSession();
       if (!sess.session) {
         router.push("/login");
         return;
       }
 
+      // checa slug antes de criar
       const { data: exists } = await supabase.from("sites").select("id").eq("slug", cleanSlug).limit(1);
 
       if (exists && exists.length > 0) {
         alert("Esse slug já existe. Escolha outro.");
+        setLoading(false);
         return;
       }
 
+      // RPC que cria site e debita token
       const { error } = await supabase.rpc("create_site_with_token", {
         p_slug: cleanSlug,
         p_company_name: companyName.trim(),
@@ -230,9 +440,11 @@ useEffect(() => {
 
       if (error) {
         alert(error.message);
+        setLoading(false);
         return;
       }
 
+      // Atualiza campos extras (privacy + meta opcional)
       const upd = await supabase
         .from("sites")
         .update({
@@ -253,7 +465,8 @@ useEffect(() => {
     }
   }
 
-  const createDisabled = loading || balanceLoading || !supabase || noTokens || slugOk === false || checkingSlug;
+  const createDisabled =
+    loading || balanceLoading || !supabase || noTokens || slugOk === false || checkingSlug;
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10 text-white">
@@ -271,6 +484,7 @@ useEffect(() => {
       ) : null}
 
       <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
+        {/* tokens */}
         <div className="mb-5 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
           <div className="text-sm text-white/75">
             Tokens disponíveis:{" "}
@@ -290,7 +504,37 @@ useEffect(() => {
         </div>
 
         <div className="grid gap-5 md:grid-cols-2">
-          <Field label="Domínio" required hint="Ex: minha-empresa (sempre use o HIFEN para separar)">
+          <Field label="CNPJ" required hint="Digite o CNPJ e clique em “Gerar dados” para preencher automático.">
+            <div className="flex gap-2">
+              <input
+                value={cnpj}
+                onChange={(e) => setCnpj(formatCnpj(e.target.value))}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && cnpjValid && !cnpjLoading) {
+                    e.preventDefault();
+                    handleGenerateFromCnpj();
+                  }
+                }}
+                inputMode="numeric"
+                className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 outline-none focus:border-violet-400/40"
+                placeholder="00.000.000/0000-00"
+              />
+              <button
+                type="button"
+                onClick={handleGenerateFromCnpj}
+                disabled={!cnpjValid || cnpjLoading}
+                className="shrink-0 rounded-xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white hover:bg-violet-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {cnpjLoading ? "Gerando..." : cnpjValid ? "Gerar dados" : "Digite o CNPJ"}
+              </button>
+            </div>
+
+            {cnpjMsg ? (
+              <div className="mt-2 text-xs text-white/70">{cnpjMsg}</div>
+            ) : null}
+          </Field>
+
+          <Field label="Domínio (slug)" required hint="Ex: minha-empresa (use hífen)">
             <input
               value={slug}
               onChange={(e) => setSlug(e.target.value)}
@@ -318,21 +562,12 @@ useEffect(() => {
             />
           </Field>
 
-          <Field label="CNPJ" required>
-            <input
-              value={cnpj}
-              onChange={(e) => setCnpj(e.target.value)}
-              className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 outline-none focus:border-violet-400/40"
-              placeholder="00.000.000/0000-00"
-            />
-          </Field>
-
           <Field label="Telefone" required>
             <input
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 outline-none focus:border-violet-400/40"
-              placeholder="(11) 99999-9999"
+              placeholder="11999999999"
             />
           </Field>
 
@@ -366,7 +601,7 @@ useEffect(() => {
           <Field
             label="Meta tag de verificação"
             required={false}
-            hint='Opcional. Crie o site sem a meta tag. Depois que pegar no Business Manager, volte em "Editar" e cole.'
+            hint='Opcional. Crie o site sem a meta tag. Depois, volte em "Editar" e cole.'
           >
             <input
               value={metaTag}
@@ -387,7 +622,7 @@ useEffect(() => {
             />
           </Field>
 
-          <Field label="Quem somos (Sobre N)" required>
+          <Field label="Quem somos (Sobre nós)" required>
             <textarea
               value={about}
               onChange={(e) => setAbout(e.target.value)}
