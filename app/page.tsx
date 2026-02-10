@@ -115,7 +115,7 @@ export default function HomePage() {
 
               {/* Bloco simples do preço (mais visível) */}
               <div className="mt-6 rounded-2xl border border-white/10 bg-black/20 p-4">
-                <div className="text-xs font-semibold text-white/70">Preço simples</div>
+                <div className="text-xs font-semibold text-white/70">Preço Justo</div>
                 <div className="mt-2 text-sm text-white/80">
                   <span className="font-bold text-emerald-200">1 Token = R$ 4,00</span>{" "}
                   <span className="text-white/60">• 1 token cria 1 site</span>
@@ -265,6 +265,10 @@ export default function HomePage() {
 
           <div className="mt-8 grid gap-4 md:grid-cols-2">
             {[
+      {
+                q: "Preciso de servidor, Hospedagem e Domínio?",
+                a: "NÃO, fazemos tudo isso pra você e esta incluso no preço de criação do site.",
+              },
               {
                 q: "Quanto custa criar um site?",
                 a: "1 token cria 1 site. Hoje: 1 Token = R$ 4,00.",
