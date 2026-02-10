@@ -92,6 +92,9 @@ export default function DashboardPage() {
     };
   }, [supabase]);
 
+  // domínio raiz (prod)
+  const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN || "plpainel.com";
+
   return (
     <div className="space-y-6 text-white">
       {/* erro */}
@@ -182,36 +185,54 @@ export default function DashboardPage() {
                   </td>
                 </tr>
               ) : (
-                sites.map((s) => (
-                  <tr key={s.id} className="hover:bg-white/5">
-                    <td className="py-3 font-semibold text-white">{s.slug}</td>
+                sites.map((s) => {
+                  const publicUrl =
+                    process.env.NODE_ENV === "development"
+                      ? `/s/${s.slug}`
+                      : `https://${s.slug}.${ROOT_DOMAIN}`;
 
-                    <td className="py-3 text-white/70">
-                      {s.created_at ? new Date(s.created_at).toLocaleString("pt-BR") : "—"}
-                    </td>
+                  return (
+                    <tr key={s.id} className="hover:bg-white/5">
+                      <td className="py-3 font-semibold text-white">{s.slug}</td>
 
-                    <td className="py-3 text-white/70">{`${s.slug}.plpainel.com`}</td>
+                      <td className="py-3 text-white/70">
+                        {s.created_at ? new Date(s.created_at).toLocaleString("pt-BR") : "—"}
+                      </td>
 
-                    <td className="py-3 text-right">
-                      <div className="flex justify-end gap-2">
-                        <Link
-                          href={`/sites/${s.id}/edit`}
-                          className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/10"
-                        >
-                          Editar
-                        </Link>
+                      <td className="py-3 text-white/70">{`${s.slug}.${ROOT_DOMAIN}`}</td>
 
-                        <Link
-                          href={`/s/${s.slug}`}
-                          target="_blank"
-                          className="rounded-lg border border-emerald-400/20 bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold text-emerald-200 hover:bg-emerald-500/15"
-                        >
-                          Abrir
-                        </Link>
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                      <td className="py-3 text-right">
+                        <div className="flex justify-end gap-2">
+                          <Link
+                            href={`/sites/${s.id}/edit`}
+                            className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/10"
+                          >
+                            Editar
+                          </Link>
+
+                          {process.env.NODE_ENV === "development" ? (
+                            <Link
+                              href={publicUrl}
+                              target="_blank"
+                              className="rounded-lg border border-emerald-400/20 bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold text-emerald-200 hover:bg-emerald-500/15"
+                            >
+                              Abrir
+                            </Link>
+                          ) : (
+                            <a
+                              href={publicUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="rounded-lg border border-emerald-400/20 bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold text-emerald-200 hover:bg-emerald-500/15"
+                            >
+                              Abrir
+                            </a>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
