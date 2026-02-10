@@ -231,7 +231,7 @@ export default function AffiliatePage() {
   // Em vez de mandar pra Home "/?ref=...",
   // manda direto pro LOGIN "/login?ref=..."
   const refLink = affiliate?.code
-    ? `$/login?ref=${encodeURIComponent(affiliate.code)}`
+    ? `https://plpainel.com/login?ref=${encodeURIComponent(affiliate.code)}`
     : "";
 
   return (
@@ -491,4 +491,5 @@ export default function AffiliatePage() {
     </div>
   );
 }
+
 
