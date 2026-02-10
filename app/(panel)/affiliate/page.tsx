@@ -48,8 +48,10 @@ function statusBadge(status: string) {
 
   if (s === "paid") return "bg-emerald-500/15 text-emerald-200 border-emerald-500/20";
   if (s === "approved") return "bg-sky-500/15 text-sky-200 border-sky-500/20";
-  if (s === "pending" || s === "requested") return "bg-amber-500/15 text-amber-200 border-amber-500/20";
-  if (s === "canceled" || s === "rejected") return "bg-red-500/15 text-red-200 border-red-500/20";
+  if (s === "pending" || s === "requested")
+    return "bg-amber-500/15 text-amber-200 border-amber-500/20";
+  if (s === "canceled" || s === "rejected")
+    return "bg-red-500/15 text-red-200 border-red-500/20";
 
   return "bg-white/10 text-white/70 border-white/10";
 }
@@ -70,9 +72,9 @@ export default function AffiliatePage() {
   const [reqLoading, setReqLoading] = useState(false);
 
   const appBase = useMemo(() => {
-    // preferência: seu domínio Phillips
-    // se você tiver NEXT_PUBLIC_APP_URL, pode trocar aqui depois
-    return "https://plpainel.com";
+    // Se existir, usa env; se não, cai no domínio fixo
+    const envUrl = (process.env.NEXT_PUBLIC_APP_URL || "").trim();
+    return envUrl || "https://plpainel.com";
   }, []);
 
   const totals = useMemo(() => {
@@ -90,9 +92,10 @@ export default function AffiliatePage() {
       else if (s === "canceled") canceled += v;
     }
 
-    // Saques já pagos (pra você ter noção do que já saiu)
+    // Saques já pagos / em análise
     let withdrawPaid = 0;
     let withdrawRequested = 0;
+
     for (const w of withdraws) {
       const v = Number(w.amount_cents || 0);
       const s = String(w.status || "").toLowerCase();
@@ -224,7 +227,12 @@ export default function AffiliatePage() {
     }
   }
 
-  const refLink = affiliate?.code ? `${appBase}/?ref=${encodeURIComponent(affiliate.code)}` : "";
+  // ✅ AQUI está a correção:
+  // Em vez de mandar pra Home "/?ref=...",
+  // manda direto pro LOGIN "/login?ref=..."
+  const refLink = affiliate?.code
+    ? `${appBase}/login?ref=${encodeURIComponent(affiliate.code)}`
+    : "";
 
   return (
     <div className="space-y-6 text-white">
@@ -416,7 +424,11 @@ export default function AffiliatePage() {
                         <td className="py-3 text-white/70">{fmt(c.created_at)}</td>
                         <td className="py-3">{money(Number(c.amount_cents || 0))}</td>
                         <td className="py-3">
-                          <span className={`rounded-full border px-3 py-1 text-xs ${statusBadge(c.status)}`}>
+                          <span
+                            className={`rounded-full border px-3 py-1 text-xs ${statusBadge(
+                              c.status
+                            )}`}
+                          >
                             {c.status}
                           </span>
                         </td>
@@ -453,7 +465,11 @@ export default function AffiliatePage() {
                         <td className="py-3 text-white/70">{fmt(w.created_at)}</td>
                         <td className="py-3">{money(Number(w.amount_cents || 0))}</td>
                         <td className="py-3">
-                          <span className={`rounded-full border px-3 py-1 text-xs ${statusBadge(w.status)}`}>
+                          <span
+                            className={`rounded-full border px-3 py-1 text-xs ${statusBadge(
+                              w.status
+                            )}`}
+                          >
                             {w.status}
                           </span>
                         </td>
@@ -474,6 +490,4 @@ export default function AffiliatePage() {
       ) : null}
     </div>
   );
-
 }
-
