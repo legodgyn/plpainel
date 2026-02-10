@@ -4,51 +4,38 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseBrowser";
 
 export default function TokenBadge() {
-  const [balance, setBalance] = (import TokenBadge from "@/components/TokenBadge";
-<TokenBadge />);
+  const [balance, setBalance] = useState<number | null>(null);
 
-  useEffect(() => {
-    let sub: any;
+  async function load() {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return setBalance(null);
 
-    async function run() {
-      const { data: auth } = await supabase.auth.getUser();
-      const user = auth?.user;
-      if (!user) return;
+    const { data, error } = await supabase
+      .from("user_tokens")
+      .select("balance")
+      .eq("user_id", user.id)
+      .single();
 
-      // Busca saldo inicial
-      const { data } = await supabase
-        .from("user_token_balances")
-        .select("balance")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      setBalance(Number(data?.balance ?? 0));
-
-      // Realtime: atualiza quando mudar
-      sub = supabase
-        .channel("token-balance")
-        .on(
-          "postgres_changes",
-          {
-            event: "*",
-            schema: "public",
-            table: "user_token_balances",
-            filter: `user_id=eq.${user.id}`,
-          },
-          (payload) => {
-            const b = (payload.new as any)?.balance;
-            if (b !== undefined && b !== null) setBalance(Number(b));
-          }
-        )
-        .subscribe();
+    if (error) {
+      // se não existir linha ainda, mostra 0
+      setBalance(0);
+      return;
     }
 
-    run();
+    setBalance(data?.balance ?? 0);
+  }
 
-    return () => {
-      if (sub) supabase.removeChannel(sub);
-    };
+  useEffect(() => {
+    load();
+
+    // atualiza se o usuário fizer login/logout em outra aba
+    const { data: sub } = supabase.auth.onAuthStateChange(() => load());
+    return () => sub.subscription.unsubscribe();
   }, []);
 
-  return <span>Tokens: {balance}</span>;
+  return (
+    <div className="rounded-full bg-black/25 px-3 py-1 text-xs text-white/90 border border-white/10">
+      Tokens: <b>{balance ?? "—"}</b>
+    </div>
+  );
 }
