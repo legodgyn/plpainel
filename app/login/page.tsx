@@ -1,15 +1,54 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseBrowser";
+
+function getStoredRef() {
+  if (typeof window === "undefined") return "";
+  return (localStorage.getItem("affiliate_ref") || "").trim();
+}
+
+function setStoredRef(v: string) {
+  if (typeof window === "undefined") return;
+  const code = (v || "").trim();
+  if (code) localStorage.setItem("affiliate_ref", code);
+}
+
+async function tryCreateReferral(code: string) {
+  const ref = (code || "").trim();
+  if (!ref) return;
+
+  const { data: auth } = await supabase.auth.getUser();
+  const user = auth?.user;
+  if (!user) return;
+
+  // tenta inserir (com idempotência via constraint no banco – te passo abaixo)
+  const { error } = await supabase.from("referrals").insert({
+    referred_user_id: user.id,
+    code: ref,
+  });
+
+  // se já existe, ignora
+  if (error && !String(error.message || "").toLowerCase().includes("duplicate")) {
+    console.error("referrals insert error:", error);
+  }
+}
 
 export default function LoginPage() {
   const router = useRouter();
+  const sp = useSearchParams();
+
   const [email, setEmail] = useState("");
   const [pass, setPass] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // ✅ captura ref se vier na URL do login
+  useEffect(() => {
+    const refFromUrl = (sp.get("ref") || sp.get("affiliate") || "").trim();
+    if (refFromUrl) setStoredRef(refFromUrl);
+  }, [sp]);
 
   async function signIn() {
     setMsg(null);
@@ -20,9 +59,15 @@ export default function LoginPage() {
       password: pass,
     });
 
-    setLoading(false);
+    if (error) {
+      setLoading(false);
+      return setMsg(error.message);
+    }
 
-    if (error) return setMsg(error.message);
+    // ✅ fallback: se por algum motivo o signup não gravou, grava aqui
+    await tryCreateReferral(getStoredRef());
+
+    setLoading(false);
     router.push("/dashboard");
   }
 
@@ -30,13 +75,9 @@ export default function LoginPage() {
     setMsg(null);
     setLoading(true);
 
-    // pega o ref salvo quando o cara entrou pelo link do afiliado
-    const affiliateRef =
-      typeof window !== "undefined"
-        ? (localStorage.getItem("affiliate_ref") || "").trim()
-        : "";
+    const ref = getStoredRef();
 
-    const { data, error } = await supabase.auth.signUp({
+    const { error } = await supabase.auth.signUp({
       email,
       password: pass,
     });
@@ -46,28 +87,9 @@ export default function LoginPage() {
       return setMsg(error.message);
     }
 
-    // tenta gravar no profiles (se tiver)
-    // obs: se o projeto exigir confirmação de e-mail, user pode vir null em alguns fluxos
-    const user = data?.user;
-
-    if (user) {
-      const { error: profileErr } = await supabase.from("profiles").upsert(
-        {
-          id: user.id,
-          email: user.email,
-          affiliate_ref: affiliateRef || null,
-        },
-        { onConflict: "id" }
-      );
-
-      // se der erro aqui, não impede o cadastro; só avisa pra você
-      if (profileErr) {
-        console.error("Erro ao salvar affiliate_ref em profiles:", profileErr);
-      }
-
-      // opcional: se quiser “consumir” o ref e não deixar preso no navegador:
-      // localStorage.removeItem("affiliate_ref");
-    }
+    // ✅ tenta gravar agora (se o fluxo retornar user logado, grava)
+    // se não retornar (confirmação por e-mail), o login vai gravar depois
+    await tryCreateReferral(ref);
 
     setLoading(false);
     setMsg("Conta criada! Agora faça login.");
