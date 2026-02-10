@@ -274,7 +274,7 @@ export default function AffiliatePage() {
               </div>
 
               <div className="mt-3 text-xs text-white/60">Seu link:</div>
-              <div className="mt-1 break-all text-sm text-white/90">{refLink}</div>
+              <div className="mt-1 break-all text-sm text-white/90">/login/{refLink}</div>
 
               <div className="mt-3 flex flex-wrap gap-2">
                 <button
@@ -474,4 +474,5 @@ export default function AffiliatePage() {
       ) : null}
     </div>
   );
+
 }
