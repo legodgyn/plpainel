@@ -11,6 +11,27 @@ function onlyDigits(v: string) {
   return String(v || "").replace(/\D/g, "");
 }
 
+// ✅ Máscara CNPJ: 11.111.111/1111-11
+function formatCNPJ(input: string) {
+  const digits = onlyDigits(input).slice(0, 14); // limita em 14
+  if (!digits) return "";
+
+  // monta parcialmente enquanto digita
+  const p1 = digits.slice(0, 2);
+  const p2 = digits.slice(2, 5);
+  const p3 = digits.slice(5, 8);
+  const p4 = digits.slice(8, 12);
+  const p5 = digits.slice(12, 14);
+
+  let out = p1;
+  if (digits.length >= 3) out += `.${p2}`;
+  if (digits.length >= 6) out += `.${p3}`;
+  if (digits.length >= 9) out += `/${p4}`;
+  if (digits.length >= 13) out += `-${p5}`;
+
+  return out;
+}
+
 // ✅ Formata telefone BR: (99) 99999-9999 ou (99) 9999-9999
 function formatBRPhone(input: string) {
   const digitsRaw = onlyDigits(input);
@@ -228,20 +249,8 @@ function makeFooter(opts: {
   email?: string | null;
   telefone?: string | null;
 }) {
-  const {
-    razao,
-    cnpj,
-    abertura,
-    porte,
-    natureza,
-    situacao,
-    tipo,
-    capital,
-    endereco,
-    cep,
-    email,
-    telefone,
-  } = opts;
+  const { razao, cnpj, abertura, porte, natureza, situacao, tipo, capital, endereco, cep, email, telefone } =
+    opts;
 
   return `${razao} CNPJ: ${cnpj} | Data de Abertura: ${abertura ? fmtDateBR(abertura) : "-"} | Porte: ${
     porte || "-"
@@ -381,8 +390,8 @@ export default function NewSitePage() {
   async function generateFromCnpj() {
     setMsg(null);
 
-    const cnpj = onlyDigits(form.cnpj);
-    if (!cnpj || cnpj.length < 14) {
+    const cnpjDigits = onlyDigits(form.cnpj);
+    if (!cnpjDigits || cnpjDigits.length < 14) {
       setMsg("Digite um CNPJ válido.");
       return;
     }
@@ -390,7 +399,7 @@ export default function NewSitePage() {
     setGenLoading(true);
     try {
       // BrasilAPI CNPJ v1
-      const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpj}`, {
+      const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpjDigits}`, {
         cache: "no-store",
       });
 
@@ -433,7 +442,9 @@ export default function NewSitePage() {
           ? `${data.ddd_telefone_1}`
           : data.telefone
           ? `${data.telefone}`
-          : data.ddd ? `${data.ddd}${data.telefone_1 || ""}` : "";
+          : data.ddd
+          ? `${data.ddd}${data.telefone_1 || ""}`
+          : "";
 
       // ✅ Formata aqui também
       const phone = formatBRPhone(String(phoneRaw || "").trim());
@@ -451,15 +462,13 @@ export default function NewSitePage() {
       const capital = data.capital_social || data.capital || "";
 
       const cnaePrincipal =
-        data.cnae_fiscal_descricao ||
-        (data.cnae_fiscal ? `CNAE ${data.cnae_fiscal}` : "") ||
-        "";
+        data.cnae_fiscal_descricao || (data.cnae_fiscal ? `CNAE ${data.cnae_fiscal}` : "") || "";
 
       const mission = makeMission(razao || fantasia || "nossa empresa");
       const about = makeAbout({
         razao: razao || fantasia || "Empresa",
         fantasia: fantasia || null,
-        cnpj: data.cnpj || form.cnpj,
+        cnpj: formatCNPJ(String(data.cnpj || cnpjDigits)),
         abertura,
         cidade: municipio || null,
         uf: uf || null,
@@ -471,7 +480,7 @@ export default function NewSitePage() {
 
       const privacy = makePrivacy({
         razao: razao || fantasia || "Empresa",
-        cnpj: data.cnpj || form.cnpj,
+        cnpj: formatCNPJ(String(data.cnpj || cnpjDigits)),
         endereco: enderecoFull || null,
         email,
         telefone: phone || null,
@@ -479,7 +488,7 @@ export default function NewSitePage() {
 
       const footer = makeFooter({
         razao: razao || fantasia || "Empresa",
-        cnpj: data.cnpj || form.cnpj,
+        cnpj: formatCNPJ(String(data.cnpj || cnpjDigits)),
         abertura,
         porte: porte || null,
         natureza: natureza || null,
@@ -494,7 +503,7 @@ export default function NewSitePage() {
 
       setForm((prev) => ({
         ...prev,
-        cnpj: data.cnpj || prev.cnpj,
+        cnpj: formatCNPJ(String(data.cnpj || prev.cnpj)),
 
         // ✅ guarda os dois
         company_name: razao || prev.company_name,
@@ -549,8 +558,9 @@ export default function NewSitePage() {
 
     const slug = slugify(form.slug);
     if (!slug) return setMsg("Informe um slug válido.");
-    const cnpj = onlyDigits(form.cnpj);
-    if (!cnpj || cnpj.length < 14) return setMsg("Informe um CNPJ válido.");
+
+    const cnpjDigits = onlyDigits(form.cnpj);
+    if (!cnpjDigits || cnpjDigits.length < 14) return setMsg("Informe um CNPJ válido.");
     if (!form.company_name.trim()) return setMsg("Razão Social é obrigatória.");
 
     setLoading(true);
@@ -567,7 +577,7 @@ export default function NewSitePage() {
       const { data, error } = await supabase.rpc("create_site_with_token", {
         p_slug: slug,
         p_company_name: form.company_name.trim(),
-        p_cnpj: cnpj,
+        p_cnpj: cnpjDigits,
         p_phone: phoneFmt || null,
         p_email: form.email.trim() || null,
         p_instagram: form.instagram.trim() || null,
@@ -627,8 +637,9 @@ export default function NewSitePage() {
               <label className="text-xs text-white/70">CNPJ *</label>
               <input
                 value={form.cnpj}
-                onChange={(e) => setForm((p) => ({ ...p, cnpj: e.target.value }))}
+                onChange={(e) => setForm((p) => ({ ...p, cnpj: formatCNPJ(e.target.value) }))}
                 placeholder="00.000.000/0000-00"
+                inputMode="numeric"
                 className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 text-white outline-none focus:border-violet-400"
               />
             </div>
@@ -752,7 +763,8 @@ export default function NewSitePage() {
         <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
           <div className="text-sm font-semibold">Meta tag de verificação</div>
           <div className="mt-1 text-xs text-white/60">
-            Cole aqui a <b>meta tag completa</b> (VOCÊ SO VAI PREENCHER AQUI APOS CRIAR O DOMINIO NA BM, PEGUE A META TAG E COLE AQUI E SALVE NOVAMENTE).
+            Cole aqui a <b>meta tag completa</b> (VOCÊ SO VAI PREENCHER AQUI APOS CRIAR O DOMINIO NA BM,
+            PEGUE A META TAG E COLE AQUI E SALVE NOVAMENTE).
           </div>
           <textarea
             value={form.meta_tag}
