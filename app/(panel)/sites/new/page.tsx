@@ -6,7 +6,7 @@ export const revalidate = 0;
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { createClient } from "@supabase/supabase-js";
 
 /** ===================== Helpers ===================== */
 
@@ -17,7 +17,6 @@ function onlyDigits(v: string) {
 function formatCnpj(v: string) {
   const d = onlyDigits(v).slice(0, 14);
 
-  // 00.000.000/0000-00
   const p1 = d.slice(0, 2);
   const p2 = d.slice(2, 5);
   const p3 = d.slice(5, 8);
@@ -164,22 +163,12 @@ Esta política pode ser atualizada periodicamente.
 export default function NewSitePage() {
   const router = useRouter();
 
-  // ✅ cria supabase SOMENTE no browser
-  const [supabase, setSupabase] = useState<SupabaseClient | null>(null);
-  const [supabaseInitError, setSupabaseInitError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-    if (!url || !key) {
-      setSupabaseInitError(
-        "Variáveis do Supabase não encontradas. Configure NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_ANON_KEY."
-      );
-      return;
-    }
-
-    setSupabase(createClient(url, key));
+  // ✅ Igual seu Dashboard: nunca null
+  const supabase = useMemo(() => {
+    return createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
   }, []);
 
   // ✅ Tokens
@@ -240,8 +229,6 @@ export default function NewSitePage() {
 
   // ✅ Carrega saldo de tokens ao abrir a página
   useEffect(() => {
-    if (!supabase) return;
-
     let alive = true;
 
     async function loadBalance() {
@@ -279,8 +266,6 @@ export default function NewSitePage() {
   }, [supabase]);
 
   async function checkSlugExists(s: string) {
-    if (!supabase) return;
-
     const clean = slugify(s);
     if (!clean) return;
 
@@ -310,7 +295,6 @@ export default function NewSitePage() {
     setCnpjLoading(true);
 
     try {
-      // BrasilAPI (CNPJ)
       const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${digits}`, {
         cache: "no-store",
       });
@@ -323,11 +307,9 @@ export default function NewSitePage() {
 
       const j = (await res.json()) as BrasilApiCnpj;
 
-      // Preenche dados básicos
       const nome = (j.nome_fantasia || j.razao_social || "").trim();
       if (nome) setCompanyName(nome);
 
-      // Email/Telefone (nem sempre vem)
       const apiEmail = String(j.email || "").trim();
       if (apiEmail && !email.trim()) setEmail(apiEmail);
 
@@ -335,7 +317,6 @@ export default function NewSitePage() {
       if (tel && !phone.trim()) setPhone(tel);
       if (tel && !whatsapp.trim()) setWhatsapp(tel);
 
-      // Endereço
       const addressLine = [
         j.logradouro,
         j.numero ? `nº ${j.numero}` : null,
@@ -347,7 +328,6 @@ export default function NewSitePage() {
 
       const cityUfCep = [j.municipio, j.uf, j.cep].filter(Boolean).join(" – ");
 
-      // Templates (só preenche se estiver vazio)
       const templates = buildTemplates({
         companyName: nome || companyName || "Sua Empresa",
         cnpj: formatCnpj(digits),
@@ -371,14 +351,9 @@ export default function NewSitePage() {
   }
 
   async function handleCreate() {
-    if (!supabase) {
-      alert(supabaseInitError || "Supabase não inicializou.");
-      return;
-    }
-
     const cleanSlug = slugify(slug);
 
-    // ✅ trava por tokens
+    // tokens
     if (balanceLoading) {
       alert("Aguarde: verificando tokens...");
       return;
@@ -399,7 +374,6 @@ export default function NewSitePage() {
       return;
     }
 
-    // valida meta tag (só se foi preenchida)
     const parsedMeta = parseMetaTag(metaTag);
     if (metaTag.trim().toLowerCase().includes("<meta") && (!parsedMeta.name || !parsedMeta.content)) {
       alert("Meta tag inválida. Cole a tag completa do Business Manager ou deixe em branco.");
@@ -408,23 +382,18 @@ export default function NewSitePage() {
 
     setLoading(true);
     try {
-      // checa sessão
       const { data: sess } = await supabase.auth.getSession();
       if (!sess.session) {
         router.push("/login");
         return;
       }
 
-      // checa slug antes de criar
       const { data: exists } = await supabase.from("sites").select("id").eq("slug", cleanSlug).limit(1);
-
       if (exists && exists.length > 0) {
         alert("Esse slug já existe. Escolha outro.");
-        setLoading(false);
         return;
       }
 
-      // RPC que cria site e debita token
       const { error } = await supabase.rpc("create_site_with_token", {
         p_slug: cleanSlug,
         p_company_name: companyName.trim(),
@@ -440,11 +409,9 @@ export default function NewSitePage() {
 
       if (error) {
         alert(error.message);
-        setLoading(false);
         return;
       }
 
-      // Atualiza campos extras (privacy + meta opcional)
       const upd = await supabase
         .from("sites")
         .update({
@@ -466,7 +433,7 @@ export default function NewSitePage() {
   }
 
   const createDisabled =
-    loading || balanceLoading || !supabase || noTokens || slugOk === false || checkingSlug;
+    loading || balanceLoading || noTokens || slugOk === false || checkingSlug;
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10 text-white">
@@ -477,19 +444,13 @@ export default function NewSitePage() {
         </Link>
       </div>
 
-      {supabaseInitError ? (
-        <div className="mb-5 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-200">
-          {supabaseInitError}
-        </div>
-      ) : null}
-
       <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
         {/* tokens */}
         <div className="mb-5 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
           <div className="text-sm text-white/75">
             Tokens disponíveis:{" "}
             <span className="font-semibold text-white">
-              {!supabase ? "..." : balanceLoading ? "..." : balance ?? 0}
+              {balanceLoading ? "..." : balance ?? 0}
             </span>
           </div>
 
@@ -529,9 +490,7 @@ export default function NewSitePage() {
               </button>
             </div>
 
-            {cnpjMsg ? (
-              <div className="mt-2 text-xs text-white/70">{cnpjMsg}</div>
-            ) : null}
+            {cnpjMsg ? <div className="mt-2 text-xs text-white/70">{cnpjMsg}</div> : null}
           </Field>
 
           <Field label="Domínio (slug)" required hint="Ex: minha-empresa (use hífen)">
@@ -657,13 +616,11 @@ export default function NewSitePage() {
         >
           {loading
             ? "Criando..."
-            : !supabase
-              ? "Inicializando Supabase..."
-              : balanceLoading
-                ? "Verificando tokens..."
-                : noTokens
-                  ? "Sem tokens (compre para criar)"
-                  : "Criar site (consome 1 token)"}
+            : balanceLoading
+              ? "Verificando tokens..."
+              : noTokens
+                ? "Sem tokens (compre para criar)"
+                : "Criar site (consome 1 token)"}
         </button>
 
         <p className="mt-3 text-center text-xs text-white/55">
