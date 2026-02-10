@@ -163,7 +163,7 @@ export default function SitesPage() {
 
               <div className="mt-4 flex flex-wrap gap-2">
                 <Link
-                  href={`/s/${site.slug}`}
+                  href={`<a href={publicUrl} target="_blank" rel="noreferrer">Abrir</a>`}
                   className="rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-white/80 hover:bg-black/30"
                 >
                   Abrir
