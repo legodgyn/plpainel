@@ -22,6 +22,7 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
       { href: "/sites/new", label: "Criar Site", icon: "+" },
       { href: "/tokens", label: "Comprar Tokens", icon: "◈" },
       { href: "/billing", label: "Minhas Compras", icon: "◈" },
+      { href: "/affiliate", label: "Afiliados", icon: "◈" },
     ],
     []
   );
