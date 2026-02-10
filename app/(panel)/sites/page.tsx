@@ -22,6 +22,28 @@ function fmtDate(iso: string) {
   }
 }
 
+// Detecta DEV/local e monta a URL pública sem depender de env.
+function buildPublicUrl(slug: string) {
+  if (typeof window === "undefined") return `/s/${slug}`; // fallback SSR (não deve usar aqui)
+
+  const host = window.location.hostname;
+
+  // Dev / local
+  const isLocal =
+    host === "localhost" ||
+    host === "127.0.0.1" ||
+    host.endsWith(".local") ||
+    host.endsWith(".localhost");
+
+  // Se você acessar via IP (tipo 187.77.33.45), também mantém /s/slug
+  const isIp = /^\d{1,3}(\.\d{1,3}){3}$/.test(host);
+
+  if (isLocal || isIp) return `/s/${slug}`;
+
+  // Produção
+  return `https://${slug}.plpainel.com`;
+}
+
 export default function SitesPage() {
   const router = useRouter();
   const [q, setQ] = useState("");
@@ -127,64 +149,71 @@ export default function SitesPage() {
             Nenhum site encontrado. Clique em <b>“Criar Site”</b>.
           </div>
         ) : (
-          filtered.map((site) => (
-            <div
-              key={site.id}
-              className="rounded-2xl border border-white/10 bg-white/5 p-5 shadow-sm"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <Link
-                    href={`/s/${site.slug}`}
-                    className="text-violet-300 hover:text-violet-200 font-semibold break-all"
-                  >
-                    {site.slug}.plpainel.com
-                  </Link>
-                  <div className="mt-1 text-xs text-white/50">
-                    Criado em: {fmtDate(site.created_at)}
-                  </div>
-                  {site.company_name && (
-                    <div className="mt-2 text-sm text-white/80">
-                      {site.company_name}
+          filtered.map((site) => {
+            const publicUrl = buildPublicUrl(site.slug);
+
+            return (
+              <div
+                key={site.id}
+                className="rounded-2xl border border-white/10 bg-white/5 p-5 shadow-sm"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    {/* Só para exibir, não precisa navegar por aqui */}
+                    <div className="text-violet-300 font-semibold break-all">
+                      {site.slug}.plpainel.com
                     </div>
-                  )}
+
+                    <div className="mt-1 text-xs text-white/50">
+                      Criado em: {fmtDate(site.created_at)}
+                    </div>
+
+                    {site.company_name && (
+                      <div className="mt-2 text-sm text-white/80">
+                        {site.company_name}
+                      </div>
+                    )}
+                  </div>
+
+                  <span
+                    className={`rounded-full px-2 py-1 text-[11px] border ${
+                      site.is_public
+                        ? "bg-emerald-500/15 text-emerald-200 border-emerald-500/20"
+                        : "bg-white/10 text-white/70 border-white/10"
+                    }`}
+                  >
+                    {site.is_public ? "Ativo" : "Oculto"}
+                  </span>
                 </div>
 
-                <span
-                  className={`rounded-full px-2 py-1 text-[11px] border ${
-                    site.is_public
-                      ? "bg-emerald-500/15 text-emerald-200 border-emerald-500/20"
-                      : "bg-white/10 text-white/70 border-white/10"
-                  }`}
-                >
-                  {site.is_public ? "Ativo" : "Oculto"}
-                </span>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {/* ✅ Aqui é o que você queria: abre no domínio certo */}
+                  <a
+                    href={publicUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-white/80 hover:bg-black/30"
+                  >
+                    Abrir
+                  </a>
+
+                  <button
+                    onClick={() => router.push(`/sites/${site.slug}/edit`)}
+                    className="rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-white/80 hover:bg-black/30"
+                  >
+                    Editar
+                  </button>
+
+                  <button
+                    onClick={() => removeSite(site.id)}
+                    className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-200 hover:bg-red-500/15"
+                  >
+                    Excluir
+                  </button>
+                </div>
               </div>
-
-              <div className="mt-4 flex flex-wrap gap-2">
-                <Link
-                  href={`<a href={publicUrl} target="_blank" rel="noreferrer">Abrir</a>`}
-                  className="rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-white/80 hover:bg-black/30"
-                >
-                  Abrir
-                </Link>
-
-                <button
-                  onClick={() => router.push(`/sites/${site.slug}/edit`)}
-                  className="rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-white/80 hover:bg-black/30"
-                >
-                  Editar
-                </button>
-
-                <button
-                  onClick={() => removeSite(site.id)}
-                  className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-200 hover:bg-red-500/15"
-                >
-                  Excluir
-                </button>
-              </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
     </div>
