@@ -25,8 +25,6 @@ async function fetchPayment(paymentId: string) {
     });
 
     if (r.ok) return { payment: await r.json(), used: "prod" as const };
-
-    // se falhar e tiver TEST, tenta abaixo
   }
 
   // tenta TEST (se existir)
@@ -42,6 +40,13 @@ async function fetchPayment(paymentId: string) {
   return null;
 }
 
+function asCentsFromPayment(payment: any) {
+  // MercadoPago geralmente devolve transaction_amount em "reais" (ex: 40)
+  const amount = Number(payment?.transaction_amount ?? 0);
+  if (!Number.isFinite(amount)) return 0;
+  return Math.max(0, Math.round(amount * 100));
+}
+
 export async function POST(req: Request) {
   try {
     const body = await req.json().catch(() => ({} as any));
@@ -49,10 +54,7 @@ export async function POST(req: Request) {
     const paymentId = String(body?.data?.id ?? body?.id ?? body?.resource ?? "").trim();
     if (!paymentId) return NextResponse.json({ ok: true, ignored: true });
 
-    const supabase = createClient(
-      env("NEXT_PUBLIC_SUPABASE_URL"),
-      env("SUPABASE_SERVICE_ROLE_KEY")
-    );
+    const supabase = createClient(env("NEXT_PUBLIC_SUPABASE_URL"), env("SUPABASE_SERVICE_ROLE_KEY"));
 
     // 🔎 Busca pagamento no Mercado Pago (PROD e fallback TEST)
     const fetched = await fetchPayment(paymentId);
@@ -85,7 +87,7 @@ export async function POST(req: Request) {
     // 🔒 Busca order
     const { data: order, error: orderErr } = await supabase
       .from("token_orders")
-      .select("id,user_id,tokens,status")
+      .select("id,user_id,tokens,status,total_cents")
       .eq("id", orderId)
       .single();
 
@@ -93,10 +95,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: true, ignored: "order_not_found", orderId });
     }
 
-    // Idempotência
+    // Idempotência (não credita tokens nem gera comissão 2x)
     if (order.status === "paid") {
       return NextResponse.json({ ok: true, already_paid: true });
     }
+
+    // ============================
+    // 💰 Credita tokens (igual você já fazia)
+    // ============================
 
     // 🔢 Busca saldo atual (pode não existir linha)
     const { data: balanceRow } = await supabase
@@ -125,6 +131,52 @@ export async function POST(req: Request) {
       })
       .eq("id", orderId);
 
+    // ============================
+    // 🤝 Afiliados (comissão recorrente)
+    // ============================
+
+    // 1) Verifica se esse usuário foi indicado por alguém
+    const { data: ref } = await supabase
+      .from("referrals")
+      .select("affiliate_user_id")
+      .eq("referred_user_id", order.user_id)
+      .maybeSingle();
+
+    if (ref?.affiliate_user_id) {
+      // 2) Busca rate do afiliado
+      const { data: aff } = await supabase
+        .from("affiliates")
+        .select("commission_rate,is_active")
+        .eq("user_id", ref.affiliate_user_id)
+        .maybeSingle();
+
+      if (aff?.is_active) {
+        const rate = Number(aff.commission_rate ?? 0);
+        const baseCents =
+          Number(order.total_cents ?? 0) > 0 ? Number(order.total_cents) : asCentsFromPayment(payment);
+
+        const amountCents = Math.max(0, Math.round(baseCents * rate));
+
+        if (amountCents > 0) {
+          // 3) Insere comissão (idempotente por unique(order_id))
+          const ins = await supabase.from("affiliate_commissions").insert({
+            affiliate_user_id: ref.affiliate_user_id,
+            referred_user_id: order.user_id,
+            order_id: order.id,
+            amount_cents: amountCents,
+            rate,
+            status: "pending",
+          });
+
+          // Se já existe (unique), ignora
+          // (o supabase vai retornar error, mas não queremos quebrar o webhook)
+          if (ins.error) {
+            // opcional: você pode logar ins.error.message no servidor
+          }
+        }
+      }
+    }
+
     return NextResponse.json({
       ok: true,
       status: "approved",
@@ -140,40 +192,3 @@ export async function POST(req: Request) {
 export async function GET() {
   return NextResponse.json({ ok: true });
 }
-
-// 1) procurar se esse usuário foi indicado
-const { data: ref } = await supabase
-  .from("referrals")
-  .select("affiliate_user_id")
-  .eq("referred_user_id", order.user_id)
-  .maybeSingle();
-
-if (ref?.affiliate_user_id) {
-  // 2) buscar % do afiliado
-  const { data: aff } = await supabase
-    .from("affiliates")
-    .select("commission_rate, is_active")
-    .eq("user_id", ref.affiliate_user_id)
-    .maybeSingle();
-
-  if (aff?.is_active) {
-    const rate = Number(aff.commission_rate ?? 0);
-    const totalCents = Number(payment.transaction_amount || 0) * 100;
-
-    // arredondamento seguro em centavos
-    const amountCents = Math.max(0, Math.round(totalCents * rate));
-
-    // 3) inserir (idempotente por unique(order_id))
-    await supabase.from("affiliate_commissions").insert({
-      affiliate_user_id: ref.affiliate_user_id,
-      referred_user_id: order.user_id,
-      order_id: order.id,
-      amount_cents: amountCents,
-      rate,
-      status: "pending",
-    }).catch(() => {
-      // se já existe por unique, ignora
-    });
-  }
-}
-
