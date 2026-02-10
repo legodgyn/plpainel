@@ -22,17 +22,11 @@ function formatBRPhone(input: string) {
   let digits = digitsRaw;
   if (digits.length > 11) digits = digits.slice(-11);
 
-  // Se ainda > 11, já está cortado acima. Se < 10, formata parcialmente.
   const ddd = digits.slice(0, 2);
   const rest = digits.slice(2);
 
-  // parcial (até 2 dígitos)
   if (digits.length <= 2) return `(${digits}`;
-
-  // parcial (ddd completo, sem número completo)
-  if (digits.length <= 6) {
-    return `(${ddd}) ${rest}`;
-  }
+  if (digits.length <= 6) return `(${ddd}) ${rest}`;
 
   // 10 dígitos total: (99) 9999-9999
   if (digits.length === 10) {
@@ -49,7 +43,6 @@ function formatBRPhone(input: string) {
     return `(${ddd}) ${p1}-${p2}`;
   }
 
-  // fallback
   return `(${ddd}) ${rest}`;
 }
 
@@ -131,18 +124,7 @@ function makeAbout(opts: {
   cnae?: string | null;
   endereco?: string | null;
 }) {
-  const {
-    razao,
-    fantasia,
-    cnpj,
-    abertura,
-    cidade,
-    uf,
-    porte,
-    natureza,
-    cnae,
-    endereco,
-  } = opts;
+  const { razao, fantasia, cnpj, abertura, cidade, uf, porte, natureza, cnae, endereco } = opts;
 
   return `QUEM SOMOS?
 
@@ -580,38 +562,32 @@ export default function NewSitePage() {
       const phoneFmt = formatBRPhone(form.phone);
       const whatsappFmt = formatBRPhone(form.whatsapp);
 
-      // ✅ salva com user_id para separar contas
-      const payload: any = {
-        user_id: user.id,
-        slug,
-        cnpj: cnpj,
-
-        company_name: form.company_name.trim(),   // razão social
-        fantasy_name: form.fantasy_name.trim() || null,
-
-        phone: phoneFmt || null,
-        whatsapp: whatsappFmt || null,
-        email: form.email.trim() || null,
-        instagram: form.instagram.trim() || null,
-        facebook: form.facebook.trim() || null,
-
-        mission: form.mission.trim() || null,
-        about: form.about.trim() || null,
-        privacy: form.privacy.trim() || null,
-        footer: form.footer.trim() || null,
-
-        is_public: !!form.is_public,
-
-        meta_verify_name,
-        meta_verify_content,
-      };
-
-      const { error } = await supabase.from("sites").insert(payload);
+      // ✅ IMPORTANTÍSSIMO:
+      // aqui a gente chama a RPC que debita token + cria o site em transação
+      const { data, error } = await supabase.rpc("create_site_with_token", {
+        p_slug: slug,
+        p_company_name: form.company_name.trim(),
+        p_cnpj: cnpj,
+        p_phone: phoneFmt || null,
+        p_email: form.email.trim() || null,
+        p_instagram: form.instagram.trim() || null,
+        p_whatsapp: whatsappFmt || null,
+        p_mission: form.mission.trim() || null,
+        p_about: form.about.trim() || null,
+        p_privacy: form.privacy.trim() || null,
+        p_footer: form.footer.trim() || null,
+        p_meta_verify_name: meta_verify_name,
+        p_meta_verify_content: meta_verify_content,
+      });
 
       if (error) {
+        // mensagens comuns: insufficient_tokens / no_balance_row
         setMsg(error.message || "Erro ao criar site.");
         return;
       }
+
+      // atualiza saldo na UI (opcional)
+      setBalance((prev) => (typeof prev === "number" ? Math.max(0, prev - 1) : prev));
 
       router.push("/sites");
     } catch (e: any) {
@@ -633,9 +609,7 @@ export default function NewSitePage() {
 
         <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm">
           <div className="text-white/70">Tokens</div>
-          <div className="text-lg font-bold">
-            {balanceLoading ? "—" : balance ?? 0}
-          </div>
+          <div className="text-lg font-bold">{balanceLoading ? "—" : balance ?? 0}</div>
         </div>
       </div>
 
@@ -711,7 +685,7 @@ export default function NewSitePage() {
                   setForm((p) => ({
                     ...p,
                     phone: v,
-                    whatsapp: p.whatsapp ? p.whatsapp : v, // se vazio, copia
+                    whatsapp: p.whatsapp ? p.whatsapp : v,
                   }));
                 }}
                 placeholder="(11) 99999-9999"
@@ -727,7 +701,6 @@ export default function NewSitePage() {
                 placeholder="(11) 99999-9999"
                 className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 outline-none focus:border-violet-400"
               />
-              
             </div>
           </div>
 
