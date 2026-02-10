@@ -19,13 +19,36 @@ async function tryCreateReferral(code: string) {
   const ref = (code || "").trim();
   if (!ref) return;
 
+  // precisa estar logado
   const { data: auth } = await supabase.auth.getUser();
   const user = auth?.user;
   if (!user) return;
 
-  // tenta inserir (idempotência via constraint no banco)
+  // 1) Descobre qual é o afiliado dono desse code
+  const { data: aff, error: affErr } = await supabase
+    .from("affiliates")
+    .select("user_id, code")
+    .eq("code", ref)
+    .maybeSingle();
+
+  if (affErr) {
+    console.error("affiliates lookup error:", affErr);
+    return;
+  }
+
+  // se não existir esse código, não grava nada
+  if (!aff?.user_id) {
+    console.warn("affiliate code not found:", ref);
+    return;
+  }
+
+  // evita auto-ref (afiliado indicando ele mesmo)
+  if (aff.user_id === user.id) return;
+
+  // 2) Insere o vínculo
   const { error } = await supabase.from("referrals").insert({
     referred_user_id: user.id,
+    affiliate_user_id: aff.user_id,
     code: ref,
   });
 
