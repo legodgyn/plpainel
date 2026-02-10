@@ -14,10 +14,8 @@ function onlyDigits(v: string) {
 // ✅ Formata telefone BR: (99) 99999-9999 ou (99) 9999-9999
 function formatBRPhone(input: string) {
   const digitsRaw = onlyDigits(input);
-
   if (!digitsRaw) return "";
 
-  // Se vier com DDI/extra, pega os últimos 11 (celular) ou 10 (fixo) depois
   let digits = digitsRaw;
   if (digits.length > 11) digits = digits.slice(-11);
 
@@ -34,7 +32,7 @@ function formatBRPhone(input: string) {
   }
 
   if (digits.length >= 11) {
-    const r = digits.slice(2, 11); // 9 dígitos
+    const r = digits.slice(2, 11);
     const p1 = r.slice(0, 5);
     const p2 = r.slice(5, 9);
     return `(${ddd}) ${p1}-${p2}`;
@@ -72,6 +70,7 @@ function parseMetaTag(input: string) {
   const raw = String(input || "").trim();
   if (!raw) return { name: null as string | null, content: null as string | null };
 
+  // Se colar só o código, assume facebook-domain-verification
   if (!raw.toLowerCase().includes("<meta")) {
     return { name: "facebook-domain-verification", content: raw };
   }
@@ -82,10 +81,7 @@ function parseMetaTag(input: string) {
   const name = nameMatch?.[1] ?? null;
   const content = contentMatch?.[1] ?? null;
 
-  if (!name && content) {
-    return { name: "facebook-domain-verification", content };
-  }
-
+  if (!name && content) return { name: "facebook-domain-verification", content };
   return { name, content };
 }
 
@@ -246,22 +242,12 @@ async function pickAvailableSlug(baseSlug: string) {
   const base = slugify(baseSlug);
   if (!base) return "meu-site";
 
-  const { data: existsBase } = await supabase
-    .from("sites")
-    .select("slug")
-    .eq("slug", base)
-    .maybeSingle();
-
+  const { data: existsBase } = await supabase.from("sites").select("slug").eq("slug", base).maybeSingle();
   if (!existsBase) return base;
 
   for (let i = 2; i <= 50; i++) {
     const candidate = `${base}-${i}`;
-    const { data: exists } = await supabase
-      .from("sites")
-      .select("slug")
-      .eq("slug", candidate)
-      .maybeSingle();
-
+    const { data: exists } = await supabase.from("sites").select("slug").eq("slug", candidate).maybeSingle();
     if (!exists) return candidate;
   }
 
@@ -356,41 +342,39 @@ export default function NewSitePage() {
   const [balance, setBalance] = useState<number | null>(null);
   const [balanceLoading, setBalanceLoading] = useState(true);
 
-  // Load token balance (optional)
-  useEffect(() => {
-    let alive = true;
+  async function loadBalance() {
+    setBalanceLoading(true);
+    const { data: auth, error: authErr } = await supabase.auth.getUser();
+    const user = auth?.user;
 
-    async function loadBalance() {
-      setBalanceLoading(true);
-      const { data: auth, error: authErr } = await supabase.auth.getUser();
-      const user = auth?.user;
-
-      if (!alive) return;
-
-      if (!user || authErr) {
-        setBalance(null);
-        setBalanceLoading(false);
-        return;
-      }
-
-      const { data, error } = await supabase
-        .from("user_token_balances")
-        .select("balance")
-        .eq("user_id", user.id)
-        .maybeSingle<BalanceRow>();
-
-      if (!alive) return;
-
-      if (error) setBalance(0);
-      else setBalance(data?.balance ?? 0);
-
+    if (!user || authErr) {
+      setBalance(null);
       setBalanceLoading(false);
+      return;
     }
 
-    loadBalance();
+    const { data, error } = await supabase
+      .from("user_token_balances")
+      .select("balance")
+      .eq("user_id", user.id)
+      .maybeSingle<BalanceRow>();
+
+    if (error) setBalance(0);
+    else setBalance(data?.balance ?? 0);
+
+    setBalanceLoading(false);
+  }
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      if (!alive) return;
+      await loadBalance();
+    })();
     return () => {
       alive = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function generateFromCnpj() {
@@ -404,9 +388,7 @@ export default function NewSitePage() {
 
     setGenLoading(true);
     try {
-      const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpj}`, {
-        cache: "no-store",
-      });
+      const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpj}`, { cache: "no-store" });
 
       if (!res.ok) {
         const txt = await res.text();
@@ -506,25 +488,18 @@ export default function NewSitePage() {
       setForm((prev) => ({
         ...prev,
         cnpj: data.cnpj || prev.cnpj,
-
         company_name: razao || prev.company_name,
         fantasy_name: fantasia || prev.fantasy_name,
-
         slug: nextSlug || prev.slug,
-
         phone: phone || prev.phone,
         whatsapp: phone || prev.whatsapp,
-
         email: email || prev.email,
-
         instagram: prev.instagram || "https://instagram.com",
         facebook: prev.facebook || "https://facebook.com",
-
         mission,
         about,
         privacy,
         footer,
-
         opened_at: abertura,
         address_full: enderecoFull,
         cep,
@@ -544,6 +519,9 @@ export default function NewSitePage() {
     }
   }
 
+  // ============================================================
+  // ✅ CRIAR SITE + DEBITAR TOKEN (RPC create_site_with_token)
+  // ============================================================
   async function handleCreate() {
     setMsg(null);
 
@@ -564,54 +542,67 @@ export default function NewSitePage() {
     setLoading(true);
 
     try {
-      const { name: meta_verify_name, content: meta_verify_content } = parseMetaTag(form.meta_tag);
+      // opcional: bloqueia se não tiver token (pra evitar frustração)
+      // (se você preferir, pode remover esse check e deixar o RPC validar)
+      const currentBalance = Number(balance ?? 0);
+      if (!balanceLoading && currentBalance <= 0) {
+        setMsg("Você não tem tokens suficientes. Compre tokens para criar um site.");
+        return;
+      }
 
+      const { name: meta_verify_name, content: meta_verify_content } = parseMetaTag(form.meta_tag);
       const phoneFmt = formatBRPhone(form.phone);
       const whatsappFmt = formatBRPhone(form.whatsapp);
 
       // ✅ pega slug livre automaticamente
       const finalSlug = await pickAvailableSlug(baseSlug);
 
-      const payload: any = {
-        user_id: user.id,
-        slug: finalSlug,
-        cnpj,
+      // ✅ chama RPC que cria o site + debita token (server-side)
+      // OBS: os nomes dos parâmetros precisam bater com sua função no Supabase.
+      const { error: rpcErr } = await supabase.rpc("create_site_with_token", {
+        p_user_id: user.id,
+        p_slug: finalSlug,
+        p_cnpj: cnpj,
 
-        company_name: form.company_name.trim(),
-        fantasy_name: form.fantasy_name.trim() || null,
+        p_company_name: form.company_name.trim(),
+        p_fantasy_name: form.fantasy_name.trim() || null,
 
-        phone: phoneFmt || null,
-        whatsapp: whatsappFmt || null,
-        email: form.email.trim() || null,
-        instagram: form.instagram.trim() || null,
-        facebook: form.facebook.trim() || null,
+        p_phone: phoneFmt || null,
+        p_whatsapp: whatsappFmt || null,
+        p_email: form.email.trim() || null,
+        p_instagram: form.instagram.trim() || null,
+        p_facebook: form.facebook.trim() || null,
 
-        mission: form.mission.trim() || null,
-        about: form.about.trim() || null,
-        privacy: form.privacy.trim() || null,
-        footer: form.footer.trim() || null,
+        p_mission: form.mission.trim() || null,
+        p_about: form.about.trim() || null,
+        p_privacy: form.privacy.trim() || null,
+        p_footer: form.footer.trim() || null,
 
-        is_public: !!form.is_public,
+        p_is_public: !!form.is_public,
 
-        meta_verify_name,
-        meta_verify_content,
-      };
+        p_meta_verify_name: meta_verify_name,
+        p_meta_verify_content: meta_verify_content,
+      });
 
-      const { error } = await supabase.from("sites").insert(payload);
-
-      if (error) {
-        if (isDuplicateSlugError(error)) {
-          setMsg("Esse domínio já existe. Tente outro (ou adicione um número no final).");
+      if (rpcErr) {
+        // slug duplicado (mesmo com checagem) -> mensagem amigável
+        if (isDuplicateSlugError(rpcErr)) {
+          setMsg("Esse domínio já existe. Crie outro (ou deixe que o sistema coloque um número automaticamente).");
         } else {
-          setMsg(error.message || "Erro ao criar site.");
+          // erro comum quando parâmetro do RPC não bate
+          setMsg(rpcErr.message || "Erro ao criar site.");
         }
         return;
       }
 
-      // ✅ se o slug foi auto-ajustado, reflete no campo pro usuário ver
-      if (finalSlug !== baseSlug) {
-        setForm((p) => ({ ...p, slug: finalSlug }));
-      }
+      // ✅ se o slug foi auto-ajustado, reflete no campo pro usuário ver (opcional)
+      if (finalSlug !== baseSlug) setForm((p) => ({ ...p, slug: finalSlug }));
+
+      // ✅ atualiza saldo local (pra não “parecer” que não debitou)
+      setBalance((b) => {
+        const n = Number(b ?? 0);
+        return Number.isFinite(n) ? Math.max(0, n - 1) : 0;
+      });
 
       router.push("/sites");
     } catch (e: any) {
@@ -634,6 +625,13 @@ export default function NewSitePage() {
         <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm">
           <div className="text-white/70">Tokens</div>
           <div className="text-lg font-bold">{balanceLoading ? "—" : balance ?? 0}</div>
+          <button
+            onClick={loadBalance}
+            className="mt-2 w-full rounded-lg border border-white/10 bg-black/20 px-3 py-1 text-xs font-semibold text-white/80 hover:bg-black/30"
+            type="button"
+          >
+            Atualizar
+          </button>
         </div>
       </div>
 
@@ -661,6 +659,7 @@ export default function NewSitePage() {
               onClick={generateFromCnpj}
               disabled={genLoading}
               className="rounded-xl bg-violet-600 px-4 py-2 text-sm font-semibold hover:bg-violet-500 disabled:opacity-60"
+              type="button"
             >
               {genLoading ? "Gerando..." : "Gerar dados"}
             </button>
@@ -698,6 +697,9 @@ export default function NewSitePage() {
               <div className="mt-1 text-[11px] text-white/50">
                 URL: https://<b>{slugify(form.slug) || "slug"}</b>.plpainel.com
               </div>
+              <div className="mt-1 text-[11px] text-white/50">
+                Se já existir, o sistema salva como <b>{slugify(form.slug) || "slug"}-2</b>, <b>-3</b>…
+              </div>
             </div>
 
             <div>
@@ -706,11 +708,7 @@ export default function NewSitePage() {
                 value={form.phone}
                 onChange={(e) => {
                   const v = formatBRPhone(e.target.value);
-                  setForm((p) => ({
-                    ...p,
-                    phone: v,
-                    whatsapp: p.whatsapp ? p.whatsapp : v,
-                  }));
+                  setForm((p) => ({ ...p, phone: v, whatsapp: p.whatsapp ? p.whatsapp : v }));
                 }}
                 placeholder="(11) 99999-9999"
                 className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 outline-none focus:border-violet-400"
@@ -776,8 +774,7 @@ export default function NewSitePage() {
         <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
           <div className="text-sm font-semibold">Meta tag de verificação</div>
           <div className="mt-1 text-xs text-white/60">
-            Cole aqui a <b>meta tag completa</b> (VOCÊ SO VAI PREENCHER AQUI APOS CRIAR O DOMINIO NA
-            BM, PEGUE A META TAG E COLE AQUI E SALVE NOVAMENTE).
+            Cole aqui a <b>meta tag completa</b> (VOCÊ SÓ VAI PREENCHER AQUI APÓS CRIAR O DOMÍNIO NA BM).
           </div>
           <textarea
             value={form.meta_tag}
@@ -838,6 +835,7 @@ export default function NewSitePage() {
           <button
             onClick={() => router.push("/sites")}
             className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold hover:bg-white/10"
+            type="button"
           >
             Cancelar
           </button>
@@ -846,6 +844,7 @@ export default function NewSitePage() {
             onClick={handleCreate}
             disabled={loading}
             className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold hover:bg-emerald-500 disabled:opacity-60"
+            type="button"
           >
             {loading ? "Criando..." : "Criar site"}
           </button>
