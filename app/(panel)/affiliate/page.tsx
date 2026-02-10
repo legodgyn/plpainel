@@ -256,7 +256,7 @@ export default function AffiliatePage() {
 
   // Link do afiliado -> login com ref
   const refLink = affiliate?.code
-    ? `${appBase.replace(/\/$/, "")}/login?ref=${encodeURIComponent(affiliate.code)}`
+    ? `https://plpainel.com/login?ref=${encodeURIComponent(affiliate.code)}`
     : "";
 
   return (
@@ -289,7 +289,7 @@ export default function AffiliatePage() {
         <div className="rounded-2xl border border-amber-400/20 bg-amber-500/10 p-5">
           <div className="text-sm font-semibold text-amber-200">Você ainda não é afiliado</div>
           <div className="mt-1 text-sm text-white/70">
-            Fale com o administrador para ativar seu afiliado e gerar seu código.
+            Entre em contato pelo numero (62)99999-4162 para ativar seu afiliado e gerar seu código.
           </div>
         </div>
       ) : null}
@@ -499,7 +499,7 @@ export default function AffiliatePage() {
 
             {withdraws.length > 0 ? (
               <div className="mt-3 text-[11px] text-white/50">
-                * O pagamento do saque é feito via PIX e o status é atualizado pelo administrador.
+                * O pagamento do saque é feito via PIX.
               </div>
             ) : null}
           </div>
@@ -508,3 +508,4 @@ export default function AffiliatePage() {
     </div>
   );
 }
+
