@@ -4,8 +4,9 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseBrowser";
 
-type Msg = { type: "ok" | "err"; text: string };
-
+// =====================
+// Helpers
+// =====================
 function onlyDigits(v: string) {
   return String(v || "").replace(/\D/g, "");
 }
@@ -13,6 +14,8 @@ function onlyDigits(v: string) {
 function slugify(input: string) {
   return String(input || "")
     .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // remove acentos
     .trim()
     .replace(/[\s_]+/g, "-")
     .replace(/[^\w-]+/g, "")
@@ -20,173 +23,24 @@ function slugify(input: string) {
     .replace(/^-+|-+$/g, "");
 }
 
-// DEV/local abre /s/slug, produção abre subdomínio
-function buildPublicUrl(slug: string) {
-  if (typeof window === "undefined") return `/s/${slug}`;
+function buildEmailFromCompany(name: string) {
+  const cleaned = String(name || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\b(ltda|me|epp|s\/a|sa|eireli)\b/gi, "") // remove sufixos comuns
+    .replace(/[^a-z0-9 ]/g, "")
+    .trim()
+    .replace(/\s+/g, "");
 
-  const host = window.location.hostname;
-  const isLocal =
-    host === "localhost" ||
-    host === "127.0.0.1" ||
-    host.endsWith(".local") ||
-    host.endsWith(".localhost");
-
-  const isIp = /^\d{1,3}(\.\d{1,3}){3}$/.test(host);
-
-  if (isLocal || isIp) return `/s/${slug}`;
-  return `https://${slug}.plpainel.com`;
+  return `contato@${cleaned || "empresa"}.com`;
 }
 
-/**
- * BrasilAPI CNPJ
- */
-type BrasilApiCnpj = {
-  cnpj: string;
-  razao_social: string;
-  nome_fantasia: string | null;
-  data_inicio_atividade: string | null;
-  descricao_situacao_cadastral: string | null;
-  descricao_tipo_de_logradouro: string | null;
-  logradouro: string | null;
-  numero: string | null;
-  complemento: string | null;
-  bairro: string | null;
-  municipio: string | null;
-  uf: string | null;
-  cep: string | null;
-  ddd_telefone_1: string | null;
-  ddd_telefone_2: string | null;
-  email: string | null;
-  cnae_fiscal_descricao: string | null;
-  capital_social: number | null;
-};
-
-function fmtMoneyBRL(n: number | null | undefined) {
-  if (typeof n !== "number") return "";
-  try {
-    return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-  } catch {
-    return String(n);
-  }
-}
-
-function makeMission(companyLegalName: string) {
-  return `A missão da ${companyLegalName} é desenvolver e executar estratégias eficientes, orientadas a resultados, que fortaleçam a presença de marcas, ampliem oportunidades de negócio e impulsionem o crescimento sustentável de nossos clientes.
-
-Atuamos com foco em marketing, publicidade e consultoria estratégica, oferecendo soluções personalizadas, baseadas em análise, criatividade, ética e comprometimento. Nosso propósito é gerar valor real por meio de campanhas bem estruturadas, comunicação assertiva e gestão responsável, sempre alinhados às necessidades e objetivos de cada cliente.`;
-}
-
-function makeAbout(p: {
-  companyLegalName: string;
-  cnpj: string;
-  openedAt: string | null;
-  cityUf: string;
-  addressLine: string;
-  activityDesc: string | null;
-}) {
-  return `QUEM SOMOS?
-
-A ${p.companyLegalName}, registrada sob o CNPJ ${p.cnpj}, ${
-    p.openedAt ? `foi fundada em ${p.openedAt}` : "foi fundada"
-  }, na cidade de ${p.cityUf}. Atuamos como um parceiro estratégico integrado, oferecendo soluções estruturadas com foco em eficiência, organização e suporte às operações dos nossos clientes.
-
-Nossa atividade principal, conforme a Receita Federal, é ${
-    p.activityDesc || "a nossa atividade principal"
-  }, que representa a base operacional de nossas atividades. Essa atuação é sustentada por processos bem definidos, gestão responsável e relações comerciais transparentes.
-
-Localização:
-${p.addressLine}
-
-Nosso compromisso é atuar como uma extensão confiável da estrutura de nossos clientes, oferecendo suporte que contribua para o crescimento sustentável dos negócios.`;
-}
-
-function makePrivacy(p: {
-  companyLegalName: string;
-  cnpj: string;
-  addressLine: string;
-  email: string;
-  phone: string;
-}) {
-  return `POLÍTICA DE PRIVACIDADE
-
-${p.companyLegalName}
-CNPJ: ${p.cnpj}
-Endereço: ${p.addressLine}
-
-1. Finalidade
-Esta Política de Privacidade descreve como a ${p.companyLegalName} coleta, utiliza, armazena e protege dados pessoais de clientes, parceiros, fornecedores e usuários que interagem conosco por meio de nossos canais de comunicação (e-mail, telefone, redes sociais) ou durante a contratação e execução de nossos serviços.
-
-2. Dados Coletados
-Coletamos apenas os dados necessários para as finalidades descritas nesta política, incluindo:
-- Informações fornecidas voluntariamente (nome, e-mail, telefone, dados profissionais e empresariais).
-- Registros de comunicação, contratos, propostas e histórico de atendimento.
-- Dados de navegação (quando aplicável), conforme políticas das plataformas utilizadas.
-
-3. Uso dos Dados
-Os dados pessoais coletados são utilizados exclusivamente para:
-- Prestação e gestão dos serviços contratados;
-- Comunicação operacional, administrativa e contratual;
-- Cumprimento de obrigações legais e regulatórias;
-- Melhoria contínua dos serviços e processos internos.
-
-4. Compartilhamento de Dados
-A ${p.companyLegalName} não comercializa dados pessoais. O compartilhamento ocorre apenas:
-- Com parceiros/fornecedores essenciais à execução dos serviços, sob confidencialidade;
-- Quando exigido por lei, ordem judicial ou autoridade competente.
-
-5. Direitos do Titular (LGPD)
-Nos termos da Lei nº 13.709/2018 (LGPD), o titular pode solicitar:
-- Confirmação e acesso aos dados;
-- Correção/atualização;
-- Anonimização, bloqueio ou eliminação de dados excessivos;
-- Portabilidade (quando aplicável);
-- Revogação de consentimentos.
-
-6. Armazenamento e Segurança
-Adotamos medidas técnicas e administrativas adequadas para proteger dados pessoais contra acessos não autorizados, perdas ou divulgações indevidas. Os dados são armazenados pelo período necessário para cumprir as finalidades e obrigações legais.
-
-7. Alterações
-Esta política poderá ser atualizada periodicamente. Recomendamos a consulta regular.
-
-8. Contato
-📧 E-mail: ${p.email}
-📞 Telefone: ${p.phone}
-
-© ${new Date().getFullYear()} ${p.companyLegalName}. Todos os direitos reservados.`;
-}
-
-function makeFooter(p: {
-  companyLegalName: string;
-  cnpj: string;
-  openedAt: string | null;
-  status: string | null;
-  capital: number | null;
-  addressLine: string;
-  email: string;
-  phone: string;
-}) {
-  const year = new Date().getFullYear();
-  return `${p.companyLegalName} | CNPJ: ${p.cnpj} | ${
-    p.openedAt ? `Data de Abertura: ${p.openedAt} | ` : ""
-  }${p.status ? `Situação Cadastral: ${p.status} | ` : ""}${
-    p.capital != null ? `Capital Social: ${fmtMoneyBRL(p.capital)} | ` : ""
-  }Endereço: ${p.addressLine} | Contato: 📧 ${p.email} 📞 ${p.phone} | © ${year} ${
-    p.companyLegalName
-  }. Todos os direitos reservados.`;
-}
-
-// ✅ email padrão: contato@<slug>.com (como você pediu)
-function defaultCompanyEmailFromSlug(slug: string) {
-  const s = slugify(slug);
-  if (!s) return "";
-  return `contato@${s}.com`;
-}
-
-// ✅ parse de meta tag: aceita "<meta ...>" ou só o código
 function parseMetaTag(input: string) {
   const raw = String(input || "").trim();
   if (!raw) return { name: null as string | null, content: null as string | null };
 
+  // Se colar só o código, assume facebook-domain-verification
   if (!raw.toLowerCase().includes("<meta")) {
     return { name: "facebook-domain-verification", content: raw };
   }
@@ -194,460 +48,763 @@ function parseMetaTag(input: string) {
   const nameMatch = raw.match(/name\s*=\s*["']([^"']+)["']/i);
   const contentMatch = raw.match(/content\s*=\s*["']([^"']+)["']/i);
 
-  return {
-    name: nameMatch?.[1] ?? "facebook-domain-verification",
-    content: contentMatch?.[1] ?? null,
-  };
+  const name = nameMatch?.[1] ?? null;
+  const content = contentMatch?.[1] ?? null;
+
+  // fallback: se só tiver content, assume facebook-domain-verification
+  if (!name && content) {
+    return { name: "facebook-domain-verification", content };
+  }
+
+  return { name, content };
 }
+
+function fmtDateBR(iso?: string | null) {
+  if (!iso) return "";
+  try {
+    return new Date(iso).toLocaleDateString("pt-BR");
+  } catch {
+    return iso;
+  }
+}
+
+// =====================
+// Templates (ajuste livre)
+// =====================
+function makeMission(company: string) {
+  return `A missão da ${company} é desenvolver e executar estratégias eficientes, orientadas a resultados, que fortaleçam a presença de marcas, ampliem oportunidades de negócio e impulsionem o crescimento sustentável de nossos clientes.
+
+Atuamos com foco em marketing direto, publicidade e consultoria estratégica, oferecendo soluções personalizadas, baseadas em análise, criatividade, ética e comprometimento. Nosso propósito é gerar valor real por meio de campanhas bem estruturadas, comunicação assertiva e gestão responsável, sempre alinhados às necessidades e objetivos de cada cliente.`;
+}
+
+function makeAbout(opts: {
+  razao: string;
+  fantasia?: string | null;
+  cnpj: string;
+  abertura?: string | null;
+  cidade?: string | null;
+  uf?: string | null;
+  porte?: string | null;
+  natureza?: string | null;
+  cnae?: string | null;
+  endereco?: string | null;
+}) {
+  const {
+    razao,
+    fantasia,
+    cnpj,
+    abertura,
+    cidade,
+    uf,
+    porte,
+    natureza,
+    cnae,
+    endereco,
+  } = opts;
+
+  return `QUEM SOMOS?
+
+A ${razao}, registrada sob o CNPJ ${cnpj}${abertura ? `, foi fundada em ${fmtDateBR(abertura)}` : ""}${
+    cidade || uf ? `, na cidade de ${cidade ?? "-"}${uf ? `, estado de ${uf}` : ""}` : ""
+  }. ${porte ? `Somos uma ${porte.toLowerCase()}` : "Somos uma empresa"}${
+    natureza ? `, com natureza jurídica ${natureza}` : ""
+  }, atuando com foco em eficiência, organização e suporte empresarial.
+
+${
+  cnae
+    ? `Nossa atividade principal, conforme a Receita Federal, inclui ${cnae}, que representa a base operacional de nossas atividades.`
+    : `Nossa atuação é orientada por processos bem definidos e compromisso com resultados.`
+}
+
+${
+  endereco
+    ? `Localizada em ${endereco}, atuamos com atendimento próximo, responsável e alinhado às necessidades de cada cliente.`
+    : `Atuamos com atendimento próximo, responsável e alinhado às necessidades de cada cliente.`
+}
+
+${fantasia ? `Nome Fantasia: ${fantasia}` : ""}
+
+Na ${fantasia || razao}, acreditamos que resultados consistentes são alcançados por meio de organização, eficiência e relações transparentes. Nosso compromisso é atuar como uma extensão confiável da estrutura de nossos clientes.`;
+}
+
+function makePrivacy(opts: {
+  razao: string;
+  cnpj: string;
+  endereco?: string | null;
+  email: string;
+  telefone?: string | null;
+}) {
+  const { razao, cnpj, endereco, email, telefone } = opts;
+
+  return `POLÍTICA DE PRIVACIDADE
+
+${razao}
+CNPJ: ${cnpj}${endereco ? `\nEndereço: ${endereco}` : ""}
+
+1. Finalidade
+
+Esta Política de Privacidade descreve como a ${razao} coleta, utiliza, armazena e protege dados pessoais de clientes, parceiros, fornecedores e usuários que interagem conosco por meio de nossos canais de comunicação ou durante a contratação e execução de nossos serviços.
+
+2. Dados Coletados
+
+Coletamos apenas os dados necessários para as finalidades descritas nesta política, incluindo:
+- Nome, e-mail, telefone, dados profissionais e informações empresariais (CPF ou CNPJ), quando necessário;
+- Registros de comunicação, contratos, propostas e histórico de atendimento;
+- Dados de navegação (quando aplicável), conforme políticas das plataformas utilizadas.
+
+3. Uso dos Dados
+
+Os dados pessoais coletados são utilizados para:
+- Prestação e gestão dos serviços contratados;
+- Comunicação operacional, administrativa e contratual;
+- Cumprimento de obrigações legais e regulatórias;
+- Melhoria contínua dos serviços e processos internos.
+
+4. Compartilhamento de Dados
+
+Não comercializamos dados pessoais. O compartilhamento ocorre apenas:
+- Com parceiros essenciais à execução dos serviços, mediante confidencialidade;
+- Quando exigido por lei, ordem judicial ou autoridade competente.
+
+5. Direitos do Titular (LGPD)
+
+Nos termos da LGPD (Lei nº 13.709/2018), o titular pode solicitar:
+- Confirmação de tratamento, acesso, correção/atualização;
+- Anonimização, bloqueio ou eliminação de dados excessivos;
+- Portabilidade (quando aplicável) e revogação de consentimentos.
+
+6. Armazenamento e Segurança
+
+Adotamos medidas técnicas e administrativas adequadas para proteger os dados pessoais contra acessos não autorizados, perdas ou divulgações indevidas.
+
+7. Alterações
+
+Esta política pode ser atualizada periodicamente.
+
+8. Contato
+
+📧 E-mail: ${email}${telefone ? `\n📞 Telefone: ${telefone}` : ""}
+
+${razao}
+CNPJ ${cnpj}
+©️ ${new Date().getFullYear()} ${razao}. Todos os direitos reservados.`;
+}
+
+function makeFooter(opts: {
+  razao: string;
+  cnpj: string;
+  abertura?: string | null;
+  porte?: string | null;
+  natureza?: string | null;
+  situacao?: string | null;
+  tipo?: string | null;
+  capital?: string | null;
+  endereco?: string | null;
+  cep?: string | null;
+  email?: string | null;
+  telefone?: string | null;
+}) {
+  const {
+    razao,
+    cnpj,
+    abertura,
+    porte,
+    natureza,
+    situacao,
+    tipo,
+    capital,
+    endereco,
+    cep,
+    email,
+    telefone,
+  } = opts;
+
+  return `${razao} CNPJ: ${cnpj} | Data de Abertura: ${abertura ? fmtDateBR(abertura) : "-"} | Porte: ${
+    porte || "-"
+  } | Natureza Jurídica: ${natureza || "-"} | Situação Cadastral: ${situacao || "-"} | Tipo: ${
+    tipo || "-"
+  } | Capital Social: ${capital || "-"} | Endereço: ${endereco || "-"} | CEP: ${cep || "-"} | Contato: 📧 ${
+    email || "-"
+  } 📞 ${telefone || "-"} | ©️ ${new Date().getFullYear()} ${razao}. Todos os direitos reservados.`;
+}
+
+// =====================
+// Page
+// =====================
+type BalanceRow = { balance: number | null };
+
+type FormState = {
+  slug: string;
+  cnpj: string;
+
+  company_name: string; // razão social
+  fantasy_name: string; // nome fantasia
+
+  phone: string;
+  whatsapp: string;
+  email: string;
+
+  instagram: string;
+  facebook: string;
+
+  meta_tag: string;
+
+  about: string;
+  mission: string;
+  privacy: string;
+  footer: string;
+
+  is_public: boolean;
+
+  // Extras capturados da BrasilAPI (opcional)
+  opened_at: string | null;
+  address_full: string;
+  cep: string;
+  city: string;
+  uf: string;
+  porte: string;
+  natureza: string;
+  situacao: string;
+  tipo: string;
+  capital: string;
+  cnae_principal: string;
+};
+
+const initialForm: FormState = {
+  slug: "",
+  cnpj: "",
+
+  company_name: "",
+  fantasy_name: "",
+
+  phone: "",
+  whatsapp: "",
+  email: "",
+
+  instagram: "https://instagram.com",
+  facebook: "https://facebook.com",
+
+  meta_tag: "",
+
+  about: "",
+  mission: "",
+  privacy: "",
+  footer: "",
+
+  is_public: true,
+
+  opened_at: null,
+  address_full: "",
+  cep: "",
+  city: "",
+  uf: "",
+  porte: "",
+  natureza: "",
+  situacao: "",
+  tipo: "",
+  capital: "",
+  cnae_principal: "",
+};
 
 export default function NewSitePage() {
   const router = useRouter();
 
-  const [msg, setMsg] = useState<Msg | null>(null);
-  const [loadingUser, setLoadingUser] = useState(true);
-  const [creating, setCreating] = useState(false);
-  const [generating, setGenerating] = useState(false);
+  const [form, setForm] = useState<FormState>(initialForm);
+  const [loading, setLoading] = useState(false);
+  const [genLoading, setGenLoading] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
 
-  // Campos do form
-  const [cnpj, setCnpj] = useState("");
-  const [slug, setSlug] = useState("");
+  const [balance, setBalance] = useState<number | null>(null);
+  const [balanceLoading, setBalanceLoading] = useState(true);
 
-  const [companyName, setCompanyName] = useState("");
-  const [phone, setPhone] = useState("");
-
-  // ✅ novos campos
-  const [whatsapp, setWhatsapp] = useState("");
-  const [instagram, setInstagram] = useState("instagram.com");
-  const [facebook, setFacebook] = useState("facebook.com");
-  const [email, setEmail] = useState(""); // contato@slug.com
-  const [metaTagRaw, setMetaTagRaw] = useState(""); // pessoa cola aqui
-
-  const [mission, setMission] = useState("");
-  const [about, setAbout] = useState("");
-  const [privacy, setPrivacy] = useState("");
-  const [footer, setFooter] = useState("");
-
-  const [isPublic, setIsPublic] = useState(true);
-
-  // auth check
+  // Load token balance (optional)
   useEffect(() => {
     let alive = true;
-    (async () => {
-      setLoadingUser(true);
-      const { data } = await supabase.auth.getUser();
+
+    async function loadBalance() {
+      setBalanceLoading(true);
+      const { data: auth, error: authErr } = await supabase.auth.getUser();
+      const user = auth?.user;
+
       if (!alive) return;
 
-      if (!data.user) {
-        router.push("/login");
+      if (!user || authErr) {
+        setBalance(null);
+        setBalanceLoading(false);
         return;
       }
 
-      setLoadingUser(false);
-    })();
+      const { data, error } = await supabase
+        .from("user_token_balances")
+        .select("balance")
+        .eq("user_id", user.id)
+        .maybeSingle<BalanceRow>();
 
+      if (!alive) return;
+
+      if (error) setBalance(0);
+      else setBalance(data?.balance ?? 0);
+
+      setBalanceLoading(false);
+    }
+
+    loadBalance();
     return () => {
       alive = false;
     };
-  }, [router]);
+  }, []);
 
-  // ✅ sempre que mudar slug, atualiza email padrão se estiver vazio ou se já era contato@<algo>.com
-  useEffect(() => {
-    const s = slugify(slug);
-    if (!s) return;
-
-    const next = defaultCompanyEmailFromSlug(s);
-
-    // se o user nunca mexeu no email ou tá no padrão antigo, atualiza
-    if (!email || email.startsWith("contato@")) {
-      setEmail(next);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [slug]);
-
-  async function handleGenerate() {
+  async function generateFromCnpj() {
     setMsg(null);
 
-    const clean = onlyDigits(cnpj);
-    if (clean.length !== 14) {
-      setMsg({ type: "err", text: "CNPJ inválido. Digite 14 números." });
+    const cnpj = onlyDigits(form.cnpj);
+    if (!cnpj || cnpj.length < 14) {
+      setMsg("Digite um CNPJ válido.");
       return;
     }
 
-    setGenerating(true);
+    setGenLoading(true);
     try {
-      const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${clean}`);
+      // BrasilAPI CNPJ v1
+      const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpj}`, {
+        cache: "no-store",
+      });
+
       if (!res.ok) {
-        setMsg({
-          type: "err",
-          text: "Não consegui buscar esse CNPJ na BrasilAPI. Verifique e tente novamente.",
-        });
-        return;
+        const txt = await res.text();
+        throw new Error(`Erro BrasilAPI (${res.status}): ${txt}`);
       }
 
-      const data = (await res.json()) as BrasilApiCnpj;
+      const data: any = await res.json();
 
-      const legal = data.razao_social || "";
-      const fantasy = data.nome_fantasia || "";
-      const displayName = fantasy || legal;
+      // Campos comuns na BrasilAPI
+      const razao: string = data.razao_social || data.razao || "";
+      const fantasia: string = data.nome_fantasia || data.fantasia || "";
+      const abertura: string | null = data.data_inicio_atividade || data.data_abertura || null;
 
-      const addrParts = [
-        [data.descricao_tipo_de_logradouro, data.logradouro].filter(Boolean).join(" "),
-        data.numero,
-        data.complemento,
-        data.bairro,
-        [data.municipio, data.uf].filter(Boolean).join(" - "),
-        data.cep ? `CEP: ${data.cep}` : null,
-      ].filter(Boolean);
+      const logradouro = data.logradouro || "";
+      const numero = data.numero || "";
+      const complemento = data.complemento || "";
+      const bairro = data.bairro || "";
+      const municipio = data.municipio || data.cidade || "";
+      const uf = data.uf || "";
+      const cep = data.cep || "";
 
-      const addressLine = addrParts.join(", ");
-      const cityUf = [data.municipio, data.uf].filter(Boolean).join(" – ");
+      const enderecoFull = [
+        logradouro,
+        numero ? `, ${numero}` : "",
+        complemento ? `, ${complemento}` : "",
+        bairro ? ` - ${bairro}` : "",
+        municipio ? `, ${municipio}` : "",
+        uf ? ` - ${uf}` : "",
+        cep ? `, CEP ${cep}` : "",
+      ]
+        .join("")
+        .replace(/\s+,/g, ",")
+        .replace(/,\s+,/g, ",")
+        .trim();
 
-      const pickedPhone = data.ddd_telefone_1 || data.ddd_telefone_2 || phone || "";
-      const suggestedSlug = slug ? slugify(slug) : slugify(displayName);
+      const phoneRaw =
+        data.ddd_telefone_1
+          ? `${data.ddd_telefone_1}`
+          : data.telefone
+          ? `${data.telefone}`
+          : data.ddd ? `${data.ddd}${data.telefone_1 || ""}` : "";
 
-      setSlug(suggestedSlug);
-      setCompanyName(displayName);
-      setPhone(pickedPhone);
+      const phone = String(phoneRaw || "").trim();
 
-      // ✅ whatsapp copia do telefone (só dígitos ou como veio)
-      setWhatsapp(pickedPhone);
+      // slug: prefere fantasia, senão razão
+      const nextSlugBase = fantasia || razao || form.slug || "meu-site";
+      const nextSlug = slugify(nextSlugBase);
 
-      // ✅ email sempre contato@slug.com
-      setEmail(defaultCompanyEmailFromSlug(suggestedSlug));
+      const email = buildEmailFromCompany(razao || fantasia || nextSlugBase);
 
-      // ✅ defaults sociais
-      setInstagram("instagram.com");
-      setFacebook("facebook.com");
+      const porte = data.porte || "";
+      const natureza = data.natureza_juridica || data.natureza || "";
+      const situacao = data.descricao_situacao_cadastral || data.situacao_cadastral || "";
+      const tipo = data.descricao_identificador_matriz_filial || data.tipo || "";
+      const capital = data.capital_social || data.capital || "";
 
-      const companyLegalName = legal || displayName || "Empresa";
+      const cnaePrincipal =
+        data.cnae_fiscal_descricao ||
+        (data.cnae_fiscal ? `CNAE ${data.cnae_fiscal}` : "") ||
+        "";
 
-      setMission((prev) => (prev?.trim() ? prev : makeMission(companyLegalName)));
+      const mission = makeMission(razao || fantasia || "nossa empresa");
+      const about = makeAbout({
+        razao: razao || fantasia || "Empresa",
+        fantasia: fantasia || null,
+        cnpj: data.cnpj || form.cnpj,
+        abertura,
+        cidade: municipio || null,
+        uf: uf || null,
+        porte: porte || null,
+        natureza: natureza || null,
+        cnae: cnaePrincipal || null,
+        endereco: enderecoFull || null,
+      });
 
-      setAbout(
-        makeAbout({
-          companyLegalName,
-          cnpj: data.cnpj || clean,
-          openedAt: data.data_inicio_atividade,
-          cityUf: cityUf || "—",
-          addressLine: addressLine || "—",
-          activityDesc: data.cnae_fiscal_descricao,
-        })
-      );
+      const privacy = makePrivacy({
+        razao: razao || fantasia || "Empresa",
+        cnpj: data.cnpj || form.cnpj,
+        endereco: enderecoFull || null,
+        email,
+        telefone: phone || null,
+      });
 
-      setPrivacy(
-        makePrivacy({
-          companyLegalName,
-          cnpj: data.cnpj || clean,
-          addressLine: addressLine || "—",
-          email: defaultCompanyEmailFromSlug(suggestedSlug) || "—",
-          phone: pickedPhone || "—",
-        })
-      );
+      const footer = makeFooter({
+        razao: razao || fantasia || "Empresa",
+        cnpj: data.cnpj || form.cnpj,
+        abertura,
+        porte: porte || null,
+        natureza: natureza || null,
+        situacao: situacao || null,
+        tipo: tipo || null,
+        capital: capital || null,
+        endereco: enderecoFull || null,
+        cep: cep || null,
+        email,
+        telefone: phone || null,
+      });
 
-      setFooter(
-        makeFooter({
-          companyLegalName,
-          cnpj: data.cnpj || clean,
-          openedAt: data.data_inicio_atividade,
-          status: data.descricao_situacao_cadastral,
-          capital: data.capital_social,
-          addressLine: addressLine || "—",
-          email: defaultCompanyEmailFromSlug(suggestedSlug) || "—",
-          phone: pickedPhone || "—",
-        })
-      );
+      setForm((prev) => ({
+        ...prev,
+        cnpj: data.cnpj || prev.cnpj,
 
-      setMsg({ type: "ok", text: "Dados gerados e preenchidos ✅" });
+        // ✅ guarda os dois
+        company_name: razao || prev.company_name,
+        fantasy_name: fantasia || prev.fantasy_name,
+
+        // slug automático (editável)
+        slug: nextSlug || prev.slug,
+
+        phone: phone || prev.phone,
+        whatsapp: phone || prev.whatsapp, // ✅ copia telefone
+
+        email: email || prev.email, // ✅ contato@nomedaempresa.com
+
+        instagram: prev.instagram || "https://instagram.com",
+        facebook: prev.facebook || "https://facebook.com",
+
+        // textos automáticos
+        mission,
+        about,
+        privacy,
+        footer,
+
+        // extras
+        opened_at: abertura,
+        address_full: enderecoFull,
+        cep,
+        city: municipio,
+        uf,
+        porte,
+        natureza,
+        situacao,
+        tipo,
+        capital,
+        cnae_principal: cnaePrincipal,
+      }));
     } catch (e: any) {
-      setMsg({ type: "err", text: e?.message || "Erro ao gerar dados." });
+      setMsg(e?.message || "Erro ao gerar dados do CNPJ.");
     } finally {
-      setGenerating(false);
+      setGenLoading(false);
     }
   }
 
   async function handleCreate() {
     setMsg(null);
 
-    const cleanCnpj = onlyDigits(cnpj);
-    if (cleanCnpj.length !== 14) {
-      setMsg({ type: "err", text: "CNPJ inválido. Digite 14 números." });
+    const { data: auth, error: authErr } = await supabase.auth.getUser();
+    const user = auth?.user;
+    if (!user || authErr) {
+      setMsg("Você precisa estar logado para criar um site.");
+      router.push("/login");
       return;
     }
 
-    const cleanSlug = slugify(slug);
-    if (!cleanSlug) {
-      setMsg({ type: "err", text: "Slug inválido." });
-      return;
-    }
+    const slug = slugify(form.slug);
+    if (!slug) return setMsg("Informe um slug válido.");
+    const cnpj = onlyDigits(form.cnpj);
+    if (!cnpj || cnpj.length < 14) return setMsg("Informe um CNPJ válido.");
+    if (!form.company_name.trim()) return setMsg("Razão Social é obrigatória.");
 
-    if (!companyName.trim()) {
-      setMsg({ type: "err", text: "Preencha o nome da empresa." });
-      return;
-    }
+    setLoading(true);
 
-    // ✅ meta tag (opcional)
-    const metaParsed = parseMetaTag(metaTagRaw);
-    if (metaTagRaw.trim() && !metaParsed.content) {
-      setMsg({
-        type: "err",
-        text: "Meta tag inválida. Cole o código de verificação ou a meta tag completa com content.",
-      });
-      return;
-    }
-
-    setCreating(true);
     try {
-      const { data: auth } = await supabase.auth.getUser();
-      const user = auth.user;
-      if (!user) {
-        router.push("/login");
-        return;
-      }
+      const { name: meta_verify_name, content: meta_verify_content } = parseMetaTag(form.meta_tag);
 
-      const { error } = await supabase.from("sites").insert({
+      // ✅ salva com user_id para separar contas
+      const payload: any = {
         user_id: user.id,
-        slug: cleanSlug,
-        company_name: companyName.trim(),
-        cnpj: cleanCnpj,
+        slug,
+        cnpj: cnpj,
 
-        phone: phone || null,
-        email: email || null,
+        company_name: form.company_name.trim(),   // razão social
+        fantasy_name: form.fantasy_name.trim() || null,
 
-        // ✅ novos campos
-        whatsapp: whatsapp || phone || null,
-        instagram: instagram || "instagram.com",
-        facebook: facebook || "facebook.com",
-        meta_verify_name: metaParsed.name,
-        meta_verify_content: metaParsed.content,
+        phone: form.phone.trim() || null,
+        whatsapp: form.whatsapp.trim() || null,
+        email: form.email.trim() || null,
+        instagram: form.instagram.trim() || null,
+        facebook: form.facebook.trim() || null,
 
-        mission: mission || null,
-        about: about || null,
-        privacy: privacy || null,
-        footer: footer || null,
-        is_public: !!isPublic,
-      });
+        mission: form.mission.trim() || null,
+        about: form.about.trim() || null,
+        privacy: form.privacy.trim() || null,
+        footer: form.footer.trim() || null,
+
+        is_public: !!form.is_public,
+
+        meta_verify_name,
+        meta_verify_content,
+      };
+
+      const { error } = await supabase.from("sites").insert(payload);
 
       if (error) {
-        setMsg({ type: "err", text: error.message });
+        setMsg(error.message || "Erro ao criar site.");
         return;
       }
 
-      setMsg({ type: "ok", text: "Site criado com sucesso ✅" });
       router.push("/sites");
     } catch (e: any) {
-      setMsg({ type: "err", text: e?.message || "Erro ao criar site." });
+      setMsg(e?.message || "Erro ao criar site.");
     } finally {
-      setCreating(false);
+      setLoading(false);
     }
   }
 
-  const publicUrl = useMemo(() => buildPublicUrl(slugify(slug)), [slug]);
-
   return (
-    <div className="max-w-4xl text-white">
-      <div className="flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-semibold">Criar Site</h1>
+    <div className="max-w-5xl text-white">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold">Criar Site</h1>
+          <p className="mt-1 text-sm text-white/60">
+            Preencha manualmente ou use <b>Gerar dados</b> para autopreencher via CNPJ.
+          </p>
+        </div>
+
+        <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm">
+          <div className="text-white/70">Tokens</div>
+          <div className="text-lg font-bold">
+            {balanceLoading ? "—" : balance ?? 0}
+          </div>
+        </div>
       </div>
 
       {msg && (
-        <div
-          className={`mt-4 rounded-xl border px-4 py-3 text-sm ${
-            msg.type === "ok"
-              ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-100"
-              : "border-red-500/20 bg-red-500/10 text-red-200"
-          }`}
-        >
-          {msg.text}
+        <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+          {msg}
         </div>
       )}
 
-      <div className="mt-6 space-y-6 rounded-2xl border border-white/10 bg-white/5 p-5">
+      <div className="mt-6 space-y-4">
         {/* CNPJ + Gerar */}
-        <div className="grid gap-3 md:grid-cols-3 md:items-end">
-          <div className="md:col-span-2">
-            <label className="text-sm text-white/80">CNPJ *</label>
-            <input
-              value={cnpj}
-              onChange={(e) => setCnpj(e.target.value)}
-              placeholder="00.000.000/0000-00"
-              className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 outline-none focus:border-violet-400"
-            />
+        <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+          <div className="grid gap-3 md:grid-cols-3 md:items-end">
+            <div className="md:col-span-2">
+              <label className="text-xs text-white/70">CNPJ *</label>
+              <input
+                value={form.cnpj}
+                onChange={(e) => setForm((p) => ({ ...p, cnpj: e.target.value }))}
+                placeholder="00.000.000/0000-00"
+                className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 text-white outline-none focus:border-violet-400"
+              />
+            </div>
+
+            <button
+              onClick={generateFromCnpj}
+              disabled={genLoading}
+              className="rounded-xl bg-violet-600 px-4 py-2 text-sm font-semibold hover:bg-violet-500 disabled:opacity-60"
+            >
+              {genLoading ? "Gerando..." : "Gerar dados"}
+            </button>
           </div>
 
-          <button
-            type="button"
-            onClick={handleGenerate}
-            disabled={generating || loadingUser}
-            className="rounded-xl bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-500 disabled:opacity-60"
-          >
-            {generating ? "Gerando..." : "Gerar dados"}
-          </button>
-        </div>
+          <div className="mt-3 grid gap-3 md:grid-cols-2">
+            <div>
+              <label className="text-xs text-white/70">Razão Social *</label>
+              <input
+                value={form.company_name}
+                onChange={(e) => setForm((p) => ({ ...p, company_name: e.target.value }))}
+                className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 outline-none focus:border-violet-400"
+              />
+            </div>
 
-        {/* Slug + Público */}
-        <div className="grid gap-3 md:grid-cols-2">
-          <div>
-            <label className="text-sm text-white/80">Slug *</label>
-            <input
-              value={slug}
-              onChange={(e) => setSlug(e.target.value)}
-              placeholder="ex: movy-digital"
-              className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 outline-none focus:border-violet-400"
-            />
-            <div className="mt-2 text-xs text-white/50">
-              URL pública: <span className="text-white/80">{publicUrl}</span>
+            <div>
+              <label className="text-xs text-white/70">Nome Fantasia</label>
+              <input
+                value={form.fantasy_name}
+                onChange={(e) => setForm((p) => ({ ...p, fantasy_name: e.target.value }))}
+                className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 outline-none focus:border-violet-400"
+              />
             </div>
           </div>
 
-          <div className="flex items-end gap-3">
-            <label className="flex items-center gap-2 text-sm text-white/80">
+          <div className="mt-3 grid gap-3 md:grid-cols-3">
+            <div>
+              <label className="text-xs text-white/70">Slug *</label>
               <input
-                type="checkbox"
-                checked={isPublic}
-                onChange={(e) => setIsPublic(e.target.checked)}
+                value={form.slug}
+                onChange={(e) => setForm((p) => ({ ...p, slug: e.target.value }))}
+                placeholder="movy-digital"
+                className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 outline-none focus:border-violet-400"
               />
+              <div className="mt-1 text-[11px] text-white/50">
+                URL: https://<b>{slugify(form.slug) || "slug"}</b>.plpainel.com
+              </div>
+            </div>
+
+            <div>
+              <label className="text-xs text-white/70">Telefone</label>
+              <input
+                value={form.phone}
+                onChange={(e) =>
+                  setForm((p) => ({
+                    ...p,
+                    phone: e.target.value,
+                    whatsapp: p.whatsapp ? p.whatsapp : e.target.value, // se vazio, copia
+                  }))
+                }
+                placeholder="(11) 99999-9999"
+                className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 outline-none focus:border-violet-400"
+              />
+            </div>
+
+            <div>
+              <label className="text-xs text-white/70">WhatsApp</label>
+              <input
+                value={form.whatsapp}
+                onChange={(e) => setForm((p) => ({ ...p, whatsapp: e.target.value }))}
+                placeholder="(11) 99999-9999"
+                className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 outline-none focus:border-violet-400"
+              />
+              <div className="mt-1 text-[11px] text-white/50">
+                (pode ser igual ao telefone)
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-3 grid gap-3 md:grid-cols-3">
+            <div className="md:col-span-1">
+              <label className="text-xs text-white/70">E-mail</label>
+              <input
+                value={form.email}
+                onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
+                placeholder="contato@empresa.com"
+                className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 outline-none focus:border-violet-400"
+              />
+            </div>
+
+            <div>
+              <label className="text-xs text-white/70">Instagram</label>
+              <input
+                value={form.instagram}
+                onChange={(e) => setForm((p) => ({ ...p, instagram: e.target.value }))}
+                className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 outline-none focus:border-violet-400"
+              />
+            </div>
+
+            <div>
+              <label className="text-xs text-white/70">Facebook</label>
+              <input
+                value={form.facebook}
+                onChange={(e) => setForm((p) => ({ ...p, facebook: e.target.value }))}
+                className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 outline-none focus:border-violet-400"
+              />
+            </div>
+          </div>
+
+          <div className="mt-4 flex items-center gap-3">
+            <input
+              id="is_public"
+              type="checkbox"
+              checked={form.is_public}
+              onChange={(e) => setForm((p) => ({ ...p, is_public: e.target.checked }))}
+              className="h-4 w-4"
+            />
+            <label htmlFor="is_public" className="text-sm text-white/80">
               Deixar site público
             </label>
           </div>
         </div>
 
-        {/* Básicos */}
-        <div className="grid gap-3 md:grid-cols-2">
-          <div>
-            <label className="text-sm text-white/80">Nome da Empresa *</label>
-            <input
-              value={companyName}
-              onChange={(e) => setCompanyName(e.target.value)}
-              className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 outline-none focus:border-violet-400"
-            />
+        {/* Meta tag verificação */}
+        <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+          <div className="text-sm font-semibold">Meta tag de verificação</div>
+          <div className="mt-1 text-xs text-white/60">
+            Cole aqui o <b>código</b> ou a <b>meta tag completa</b> (ex: facebook-domain-verification).
           </div>
-
-          <div>
-            <label className="text-sm text-white/80">E-mail (padrão)</label>
-            <input
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="contato@nomedaempresa.com"
-              className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 outline-none focus:border-violet-400"
-            />
-          </div>
-
-          <div>
-            <label className="text-sm text-white/80">Telefone</label>
-            <input
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 outline-none focus:border-violet-400"
-            />
-          </div>
-
-          <div>
-            <label className="text-sm text-white/80">WhatsApp</label>
-            <input
-              value={whatsapp}
-              onChange={(e) => setWhatsapp(e.target.value)}
-              className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 outline-none focus:border-violet-400"
-            />
-          </div>
-
-          <div>
-            <label className="text-sm text-white/80">Instagram</label>
-            <input
-              value={instagram}
-              onChange={(e) => setInstagram(e.target.value)}
-              placeholder="instagram.com"
-              className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 outline-none focus:border-violet-400"
-            />
-          </div>
-
-          <div>
-            <label className="text-sm text-white/80">Facebook</label>
-            <input
-              value={facebook}
-              onChange={(e) => setFacebook(e.target.value)}
-              placeholder="facebook.com"
-              className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 outline-none focus:border-violet-400"
-            />
-          </div>
-        </div>
-
-        {/* Meta tag */}
-        <div>
-          <label className="text-sm text-white/80">
-            Meta tag de verificação (Facebook BM) — FEITO APÓS ADICIONAR O DOMÍNIO NA BUSINESS MANAGER
-          </label>
           <textarea
-            value={metaTagRaw}
-            onChange={(e) => setMetaTagRaw(e.target.value)}
-            placeholder='Cole a META TAG completa: <meta name="facebook-domain-verification" content="abc123" />'
+            value={form.meta_tag}
+            onChange={(e) => setForm((p) => ({ ...p, meta_tag: e.target.value }))}
             rows={3}
-            className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 outline-none focus:border-violet-400"
+            className="mt-3 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 text-white outline-none focus:border-violet-400"
+            placeholder='Ex: <meta name="facebook-domain-verification" content="xxxxx" />  ou apenas xxxxx'
           />
-          <div className="mt-2 text-xs text-white/50">
-            Depois que você verificar o domíno no Business Manager.{" "}
-            <span className="text-white/70">Volte aqui e cole e salve</span>.
-          </div>
         </div>
 
         {/* Textos */}
-        <div className="space-y-3">
-          <div>
-            <label className="text-sm text-white/80">Nossa missão</label>
-            <textarea
-              value={mission}
-              onChange={(e) => setMission(e.target.value)}
-              rows={6}
-              className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 outline-none focus:border-violet-400"
-            />
-          </div>
+        <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+          <div className="grid gap-4 md:grid-cols-2">
+            <div>
+              <div className="text-sm font-semibold">Nossa missão</div>
+              <textarea
+                value={form.mission}
+                onChange={(e) => setForm((p) => ({ ...p, mission: e.target.value }))}
+                rows={8}
+                className="mt-3 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 outline-none focus:border-violet-400"
+              />
+            </div>
 
-          <div>
-            <label className="text-sm text-white/80">Sobre nós</label>
-            <textarea
-              value={about}
-              onChange={(e) => setAbout(e.target.value)}
-              rows={10}
-              className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 outline-none focus:border-violet-400"
-            />
-          </div>
+            <div>
+              <div className="text-sm font-semibold">Sobre nós</div>
+              <textarea
+                value={form.about}
+                onChange={(e) => setForm((p) => ({ ...p, about: e.target.value }))}
+                rows={8}
+                className="mt-3 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 outline-none focus:border-violet-400"
+              />
+            </div>
 
-          <div>
-            <label className="text-sm text-white/80">Política de privacidade</label>
-            <textarea
-              value={privacy}
-              onChange={(e) => setPrivacy(e.target.value)}
-              rows={10}
-              className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 outline-none focus:border-violet-400"
-            />
-          </div>
+            <div>
+              <div className="text-sm font-semibold">Política de privacidade</div>
+              <textarea
+                value={form.privacy}
+                onChange={(e) => setForm((p) => ({ ...p, privacy: e.target.value }))}
+                rows={8}
+                className="mt-3 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 outline-none focus:border-violet-400"
+              />
+            </div>
 
-          <div>
-            <label className="text-sm text-white/80">Rodapé</label>
-            <textarea
-              value={footer}
-              onChange={(e) => setFooter(e.target.value)}
-              rows={4}
-              className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 outline-none focus:border-violet-400"
-            />
+            <div>
+              <div className="text-sm font-semibold">Rodapé</div>
+              <textarea
+                value={form.footer}
+                onChange={(e) => setForm((p) => ({ ...p, footer: e.target.value }))}
+                rows={8}
+                className="mt-3 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 outline-none focus:border-violet-400"
+              />
+            </div>
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-3">
+        {/* Actions */}
+        <div className="flex gap-3">
           <button
-            type="button"
-            onClick={handleCreate}
-            disabled={creating || loadingUser}
-            className="rounded-xl bg-emerald-600 px-5 py-2 text-sm font-semibold text-white hover:bg-emerald-500 disabled:opacity-60"
+            onClick={() => router.push("/sites")}
+            className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold hover:bg-white/10"
           >
-            {creating ? "Criando..." : "Criar Site"}
+            Cancelar
           </button>
 
           <button
-            type="button"
-            onClick={() => router.push("/sites")}
-            className="rounded-xl border border-white/10 bg-white/5 px-5 py-2 text-sm font-semibold text-white hover:bg-white/10"
+            onClick={handleCreate}
+            disabled={loading}
+            className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold hover:bg-emerald-500 disabled:opacity-60"
           >
-            Voltar
+            {loading ? "Criando..." : "Criar site"}
           </button>
         </div>
       </div>
