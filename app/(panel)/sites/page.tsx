@@ -12,7 +12,7 @@ type Site = {
 };
 
 export default async function SitesPage() {
-  const cookieStore = cookies();
+  const cookieStore = await cookies(); // ✅ AQUI é o fix
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -47,15 +47,14 @@ export default async function SitesPage() {
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
 
-  const ROOT_DOMAIN =
-    process.env.NEXT_PUBLIC_ROOT_DOMAIN || "plpainel.com";
+  const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN || "plpainel.com";
 
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-6">Meus Sites</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {sites?.map((site) => {
+        {sites?.map((site: Site) => {
           const publicUrl =
             process.env.NODE_ENV === "development"
               ? `/s/${site.slug}`
