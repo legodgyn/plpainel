@@ -542,7 +542,7 @@ export default function NewSitePage() {
           </div>
 
           <div>
-            <label className="text-sm text-white/80">WhatsApp (copia do telefone)</label>
+            <label className="text-sm text-white/80">WhatsApp</label>
             <input
               value={whatsapp}
               onChange={(e) => setWhatsapp(e.target.value)}
