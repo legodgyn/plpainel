@@ -39,7 +39,6 @@ function buildPublicUrl(slug: string) {
 
 /**
  * BrasilAPI CNPJ
- * Docs: https://brasilapi.com.br/
  */
 type BrasilApiCnpj = {
   cnpj: string;
@@ -47,7 +46,6 @@ type BrasilApiCnpj = {
   nome_fantasia: string | null;
   data_inicio_atividade: string | null;
   descricao_situacao_cadastral: string | null;
-  identificador_matriz_filial: string | null;
   descricao_tipo_de_logradouro: string | null;
   logradouro: string | null;
   numero: string | null;
@@ -177,6 +175,31 @@ function makeFooter(p: {
   }. Todos os direitos reservados.`;
 }
 
+// ✅ email padrão: contato@<slug>.com (como você pediu)
+function defaultCompanyEmailFromSlug(slug: string) {
+  const s = slugify(slug);
+  if (!s) return "";
+  return `contato@${s}.com`;
+}
+
+// ✅ parse de meta tag: aceita "<meta ...>" ou só o código
+function parseMetaTag(input: string) {
+  const raw = String(input || "").trim();
+  if (!raw) return { name: null as string | null, content: null as string | null };
+
+  if (!raw.toLowerCase().includes("<meta")) {
+    return { name: "facebook-domain-verification", content: raw };
+  }
+
+  const nameMatch = raw.match(/name\s*=\s*["']([^"']+)["']/i);
+  const contentMatch = raw.match(/content\s*=\s*["']([^"']+)["']/i);
+
+  return {
+    name: nameMatch?.[1] ?? "facebook-domain-verification",
+    content: contentMatch?.[1] ?? null,
+  };
+}
+
 export default function NewSitePage() {
   const router = useRouter();
 
@@ -191,7 +214,13 @@ export default function NewSitePage() {
 
   const [companyName, setCompanyName] = useState("");
   const [phone, setPhone] = useState("");
-  const [email, setEmail] = useState("");
+
+  // ✅ novos campos
+  const [whatsapp, setWhatsapp] = useState("");
+  const [instagram, setInstagram] = useState("instagram.com");
+  const [facebook, setFacebook] = useState("facebook.com");
+  const [email, setEmail] = useState(""); // contato@slug.com
+  const [metaTagRaw, setMetaTagRaw] = useState(""); // pessoa cola aqui
 
   const [mission, setMission] = useState("");
   const [about, setAbout] = useState("");
@@ -200,7 +229,7 @@ export default function NewSitePage() {
 
   const [isPublic, setIsPublic] = useState(true);
 
-  // Garantir auth no client
+  // auth check
   useEffect(() => {
     let alive = true;
     (async () => {
@@ -220,6 +249,20 @@ export default function NewSitePage() {
       alive = false;
     };
   }, [router]);
+
+  // ✅ sempre que mudar slug, atualiza email padrão se estiver vazio ou se já era contato@<algo>.com
+  useEffect(() => {
+    const s = slugify(slug);
+    if (!s) return;
+
+    const next = defaultCompanyEmailFromSlug(s);
+
+    // se o user nunca mexeu no email ou tá no padrão antigo, atualiza
+    if (!email || email.startsWith("contato@")) {
+      setEmail(next);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slug]);
 
   async function handleGenerate() {
     setMsg(null);
@@ -259,22 +302,26 @@ export default function NewSitePage() {
       const addressLine = addrParts.join(", ");
       const cityUf = [data.municipio, data.uf].filter(Boolean).join(" – ");
 
-      const pickedPhone =
-        data.ddd_telefone_1 || data.ddd_telefone_2 || phone || "";
-      const pickedEmail = data.email || email || "";
-
-      // slug: se vazio, sugere a partir do nome fantasia/razão
+      const pickedPhone = data.ddd_telefone_1 || data.ddd_telefone_2 || phone || "";
       const suggestedSlug = slug ? slugify(slug) : slugify(displayName);
 
       setSlug(suggestedSlug);
       setCompanyName(displayName);
       setPhone(pickedPhone);
-      setEmail(pickedEmail);
 
-      // textos automáticos
+      // ✅ whatsapp copia do telefone (só dígitos ou como veio)
+      setWhatsapp(pickedPhone);
+
+      // ✅ email sempre contato@slug.com
+      setEmail(defaultCompanyEmailFromSlug(suggestedSlug));
+
+      // ✅ defaults sociais
+      setInstagram("instagram.com");
+      setFacebook("facebook.com");
+
       const companyLegalName = legal || displayName || "Empresa";
 
-      setMission((prev) => prev?.trim() ? prev : makeMission(companyLegalName));
+      setMission((prev) => (prev?.trim() ? prev : makeMission(companyLegalName)));
 
       setAbout(
         makeAbout({
@@ -292,7 +339,7 @@ export default function NewSitePage() {
           companyLegalName,
           cnpj: data.cnpj || clean,
           addressLine: addressLine || "—",
-          email: pickedEmail || "—",
+          email: defaultCompanyEmailFromSlug(suggestedSlug) || "—",
           phone: pickedPhone || "—",
         })
       );
@@ -305,7 +352,7 @@ export default function NewSitePage() {
           status: data.descricao_situacao_cadastral,
           capital: data.capital_social,
           addressLine: addressLine || "—",
-          email: pickedEmail || "—",
+          email: defaultCompanyEmailFromSlug(suggestedSlug) || "—",
           phone: pickedPhone || "—",
         })
       );
@@ -338,6 +385,16 @@ export default function NewSitePage() {
       return;
     }
 
+    // ✅ meta tag (opcional)
+    const metaParsed = parseMetaTag(metaTagRaw);
+    if (metaTagRaw.trim() && !metaParsed.content) {
+      setMsg({
+        type: "err",
+        text: "Meta tag inválida. Cole o código de verificação ou a meta tag completa com content.",
+      });
+      return;
+    }
+
     setCreating(true);
     try {
       const { data: auth } = await supabase.auth.getUser();
@@ -347,14 +404,22 @@ export default function NewSitePage() {
         return;
       }
 
-      // ✅ cria o site vinculado ao user_id (isso é OBRIGATÓRIO para separar contas)
       const { error } = await supabase.from("sites").insert({
         user_id: user.id,
         slug: cleanSlug,
         company_name: companyName.trim(),
         cnpj: cleanCnpj,
+
         phone: phone || null,
         email: email || null,
+
+        // ✅ novos campos
+        whatsapp: whatsapp || phone || null,
+        instagram: instagram || "instagram.com",
+        facebook: facebook || "facebook.com",
+        meta_verify_name: metaParsed.name,
+        meta_verify_content: metaParsed.content,
+
         mission: mission || null,
         about: about || null,
         privacy: privacy || null,
@@ -363,7 +428,6 @@ export default function NewSitePage() {
       });
 
       if (error) {
-        // erro de slug duplicado etc
         setMsg({ type: "err", text: error.message });
         return;
       }
@@ -420,7 +484,7 @@ export default function NewSitePage() {
           </button>
         </div>
 
-        {/* Slug */}
+        {/* Slug + Público */}
         <div className="grid gap-3 md:grid-cols-2">
           <div>
             <label className="text-sm text-white/80">Slug *</label>
@@ -459,10 +523,11 @@ export default function NewSitePage() {
           </div>
 
           <div>
-            <label className="text-sm text-white/80">E-mail</label>
+            <label className="text-sm text-white/80">E-mail (padrão)</label>
             <input
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              placeholder="contato@nomedaempresa.com"
               className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 outline-none focus:border-violet-400"
             />
           </div>
@@ -474,6 +539,53 @@ export default function NewSitePage() {
               onChange={(e) => setPhone(e.target.value)}
               className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 outline-none focus:border-violet-400"
             />
+          </div>
+
+          <div>
+            <label className="text-sm text-white/80">WhatsApp (copia do telefone)</label>
+            <input
+              value={whatsapp}
+              onChange={(e) => setWhatsapp(e.target.value)}
+              className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 outline-none focus:border-violet-400"
+            />
+          </div>
+
+          <div>
+            <label className="text-sm text-white/80">Instagram</label>
+            <input
+              value={instagram}
+              onChange={(e) => setInstagram(e.target.value)}
+              placeholder="instagram.com"
+              className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 outline-none focus:border-violet-400"
+            />
+          </div>
+
+          <div>
+            <label className="text-sm text-white/80">Facebook</label>
+            <input
+              value={facebook}
+              onChange={(e) => setFacebook(e.target.value)}
+              placeholder="facebook.com"
+              className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 outline-none focus:border-violet-400"
+            />
+          </div>
+        </div>
+
+        {/* Meta tag */}
+        <div>
+          <label className="text-sm text-white/80">
+            Meta tag de verificação (Facebook BM) — opcional
+          </label>
+          <textarea
+            value={metaTagRaw}
+            onChange={(e) => setMetaTagRaw(e.target.value)}
+            placeholder='Cole o código (ex: abc123) OU a meta tag completa: <meta name="facebook-domain-verification" content="abc123" />'
+            rows={3}
+            className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 outline-none focus:border-violet-400"
+          />
+          <div className="mt-2 text-xs text-white/50">
+            Se colar só o código, eu salvo como{" "}
+            <span className="text-white/70">facebook-domain-verification</span>.
           </div>
         </div>
 
