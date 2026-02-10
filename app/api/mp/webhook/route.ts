@@ -140,3 +140,40 @@ export async function POST(req: Request) {
 export async function GET() {
   return NextResponse.json({ ok: true });
 }
+
+// 1) procurar se esse usuário foi indicado
+const { data: ref } = await supabase
+  .from("referrals")
+  .select("affiliate_user_id")
+  .eq("referred_user_id", order.user_id)
+  .maybeSingle();
+
+if (ref?.affiliate_user_id) {
+  // 2) buscar % do afiliado
+  const { data: aff } = await supabase
+    .from("affiliates")
+    .select("commission_rate, is_active")
+    .eq("user_id", ref.affiliate_user_id)
+    .maybeSingle();
+
+  if (aff?.is_active) {
+    const rate = Number(aff.commission_rate ?? 0);
+    const totalCents = Number(payment.transaction_amount || 0) * 100;
+
+    // arredondamento seguro em centavos
+    const amountCents = Math.max(0, Math.round(totalCents * rate));
+
+    // 3) inserir (idempotente por unique(order_id))
+    await supabase.from("affiliate_commissions").insert({
+      affiliate_user_id: ref.affiliate_user_id,
+      referred_user_id: order.user_id,
+      order_id: order.id,
+      amount_cents: amountCents,
+      rate,
+      status: "pending",
+    }).catch(() => {
+      // se já existe por unique, ignora
+    });
+  }
+}
+
