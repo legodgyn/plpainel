@@ -25,6 +25,9 @@ export default function HomePage() {
             <a href="#beneficios" className="text-sm text-white/70 hover:text-white">
               Benefícios
             </a>
+            <a href="#preco" className="text-sm text-white/70 hover:text-white">
+              Preço
+            </a>
             <a href="#faq" className="text-sm text-white/70 hover:text-white">
               FAQ
             </a>
@@ -65,7 +68,6 @@ export default function HomePage() {
                   Crie páginas “BM-safe” em minutos
                 </div>
 
-                {/* PREÇO (pill) */}
                 <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-500/10 px-3 py-1 text-xs text-emerald-200">
                   <span className="font-bold">1 Token</span> = R$ 4,00{" "}
                   <span className="text-emerald-200/70">(por site)</span>
@@ -90,39 +92,19 @@ export default function HomePage() {
                   Criar meu site agora
                 </Link>
 
-                <Link
-                  href="/billing"
+                <a
+                  href="#preco"
                   className="inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-white/80 hover:bg-white/10"
                 >
-                  Comprar tokens
-                </Link>
+                  Ver preço do token
+                </a>
               </div>
 
               <div className="mt-6 grid grid-cols-2 gap-3 text-xs text-white/60 md:max-w-md">
-                <div className="rounded-xl border border-white/10 bg-white/5 p-3">
-                  ✅ Subdomínio automático
-                </div>
-                <div className="rounded-xl border border-white/10 bg-white/5 p-3">
-                  ✅ Templates prontos
-                </div>
-                <div className="rounded-xl border border-white/10 bg-white/5 p-3">
-                  ✅ PIX integrado
-                </div>
-                <div className="rounded-xl border border-white/10 bg-white/5 p-3">
-                  ✅ Painel + tokens
-                </div>
-              </div>
-
-              {/* Bloco simples do preço (mais visível) */}
-              <div className="mt-6 rounded-2xl border border-white/10 bg-black/20 p-4">
-                <div className="text-xs font-semibold text-white/70">Preço simples</div>
-                <div className="mt-2 text-sm text-white/80">
-                  <span className="font-bold text-emerald-200">1 Token = R$ 4,00</span>{" "}
-                  <span className="text-white/60">• 1 token cria 1 site</span>
-                </div>
-                <div className="mt-1 text-[12px] text-white/55">
-                  Compre tokens via PIX e crie sites quando quiser.
-                </div>
+                <div className="rounded-xl border border-white/10 bg-white/5 p-3">✅ Subdomínio automático</div>
+                <div className="rounded-xl border border-white/10 bg-white/5 p-3">✅ Templates prontos</div>
+                <div className="rounded-xl border border-white/10 bg-white/5 p-3">✅ PIX integrado</div>
+                <div className="rounded-xl border border-white/10 bg-white/5 p-3">✅ Painel + tokens</div>
               </div>
             </div>
 
@@ -169,49 +151,59 @@ export default function HomePage() {
       <section id="beneficios" className="mx-auto max-w-6xl px-4 py-14">
         <div>
           <div className="text-xs font-semibold text-violet-300">Benefícios</div>
-          <h2 className="mt-2 text-2xl font-bold md:text-3xl">
-            O que você ganha usando o PL - Painel
-          </h2>
-          <p className="mt-2 text-white/60">
-            Você foca no tráfego e na venda. O resto é automático.
-          </p>
+          <h2 className="mt-2 text-2xl font-bold md:text-3xl">O que você ganha usando o PL - Painel</h2>
+          <p className="mt-2 text-white/60">Você foca no tráfego e na venda. O resto é automático.</p>
         </div>
 
         <div className="mt-8 grid gap-4 md:grid-cols-3">
           {[
-            {
-              title: "Subdomínio instantâneo",
-              desc: "O cliente cria o site e já fica no ar em slug.plpainel.com.",
-            },
-            {
-              title: "Texto automático por CNPJ",
-              desc: "Missão, Sobre, Privacidade e Rodapé gerados no template.",
-            },
-            {
-              title: "Tokens + PIX",
-              desc: "Compra via PIX, confirmação automática e criação por token.",
-            },
-            {
-              title: "BM-safe (estrutura limpa)",
-              desc: "Template simples, objetivo e com verificação por meta tag.",
-            },
-            {
-              title: "Rápido e leve",
-              desc: "Páginas carregam rápido (ótimo pra anúncio e conversão).",
-            },
-            {
-              title: "Escala sem complicação",
-              desc: "Crie 10, 50, 100 sites. Tudo organizado no painel.",
-            },
+            { title: "Subdomínio instantâneo", desc: "O cliente cria o site e já fica no ar em slug.plpainel.com." },
+            { title: "Texto automático por CNPJ", desc: "Missão, Sobre, Privacidade e Rodapé gerados no template." },
+            { title: "Tokens + PIX", desc: "Compra via PIX, confirmação automática e criação por token." },
+            { title: "BM-safe (estrutura limpa)", desc: "Template simples, objetivo e com verificação por meta tag." },
+            { title: "Rápido e leve", desc: "Páginas carregam rápido (ótimo pra anúncio e conversão)." },
+            { title: "Escala sem complicação", desc: "Crie 10, 50, 100 sites. Tudo organizado no painel." },
           ].map((b) => (
-            <div
-              key={b.title}
-              className="rounded-2xl border border-white/10 bg-white/5 p-5"
-            >
+            <div key={b.title} className="rounded-2xl border border-white/10 bg-white/5 p-5">
               <div className="text-base font-semibold">{b.title}</div>
               <p className="mt-2 text-sm text-white/65">{b.desc}</p>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* Preço */}
+      <section id="preco" className="mx-auto max-w-6xl px-4 py-14">
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
+          <div className="text-xs font-semibold text-emerald-300">Preço</div>
+          <h2 className="mt-2 text-2xl font-bold md:text-3xl">Simples e direto</h2>
+
+          <div className="mt-6 grid gap-4 md:grid-cols-3">
+            <div className="rounded-2xl border border-white/10 bg-black/20 p-6 md:col-span-2">
+              <div className="text-sm font-semibold text-white/70">Regra</div>
+              <div className="mt-2 text-3xl font-black text-emerald-200">1 Token = R$ 4,00</div>
+              <div className="mt-2 text-sm text-white/65">Cada token cria 1 site.</div>
+              <div className="mt-1 text-sm text-white/65">Sem plano, sem mensalidade. Você compra e usa quando quiser.</div>
+            </div>
+
+            <div className="rounded-2xl border border-white/10 bg-black/20 p-6">
+              <div className="text-sm font-semibold text-white/70">Começar agora</div>
+              <div className="mt-3 flex flex-col gap-3">
+                <Link
+                  href="/sites/new"
+                  className="inline-flex items-center justify-center rounded-xl bg-violet-600 px-5 py-3 text-sm font-bold text-white hover:bg-violet-500"
+                >
+                  Criar meu site
+                </Link>
+                <Link
+                  href="/login"
+                  className="inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-white/80 hover:bg-white/10"
+                >
+                  Entrar no painel
+                </Link>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -227,10 +219,7 @@ export default function HomePage() {
               { n: "02", title: "Ajuste o que quiser", desc: "Edite textos e contatos. Deixe do seu jeito." },
               { n: "03", title: "Publicou. Vendeu.", desc: "Seu site fica em slug.plpainel.com pronto pro tráfego." },
             ].map((s) => (
-              <div
-                key={s.n}
-                className="rounded-2xl border border-white/10 bg-black/20 p-5"
-              >
+              <div key={s.n} className="rounded-2xl border border-white/10 bg-black/20 p-5">
                 <div className="text-xs font-bold text-white/60">{s.n}</div>
                 <div className="mt-2 text-base font-semibold">{s.title}</div>
                 <p className="mt-2 text-sm text-white/65">{s.desc}</p>
@@ -245,12 +234,12 @@ export default function HomePage() {
             >
               Começar agora
             </Link>
-            <Link
-              href="/billing"
+            <a
+              href="#preco"
               className="inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-white/80 hover:bg-white/10"
             >
-              Comprar tokens (PIX)
-            </Link>
+              Ver preço
+            </a>
           </div>
         </div>
       </section>
@@ -265,22 +254,10 @@ export default function HomePage() {
 
           <div className="mt-8 grid gap-4 md:grid-cols-2">
             {[
-              {
-                q: "Quanto custa criar um site?",
-                a: "1 token cria 1 site. Hoje: 1 Token = R$ 4,00.",
-              },
-              {
-                q: "O site fica online na hora?",
-                a: "Sim. O subdomínio já aponta pro servidor e o conteúdo carrega pelo slug.",
-              },
-              {
-                q: "Preciso configurar DNS pra cada cliente?",
-                a: "Não. Com wildcard (*.plpainel.com) você não cria subdomínio um por um.",
-              },
-              {
-                q: "Posso editar depois?",
-                a: "Sim. Você ajusta textos, contatos e verificação de domínio quando quiser.",
-              },
+              { q: "Quanto custa criar um site?", a: "1 token cria 1 site. Hoje: 1 Token = R$ 4,00." },
+              { q: "O site fica online na hora?", a: "Sim. O subdomínio já aponta pro servidor e o conteúdo carrega pelo slug." },
+              { q: "Preciso configurar DNS pra cada cliente?", a: "Não. Com wildcard (*.plpainel.com) você não cria subdomínio um por um." },
+              { q: "Posso editar depois?", a: "Sim. Você ajusta textos, contatos e verificação de domínio quando quiser." },
             ].map((f) => (
               <div key={f.q} className="rounded-2xl border border-white/10 bg-black/20 p-5">
                 <div className="text-sm font-semibold">{f.q}</div>
@@ -316,6 +293,7 @@ export default function HomePage() {
             <div className="flex gap-4 text-sm text-white/60">
               <a href="#beneficios" className="hover:text-white">Benefícios</a>
               <a href="#como-funciona" className="hover:text-white">Como funciona</a>
+              <a href="#preco" className="hover:text-white">Preço</a>
               <a href="#faq" className="hover:text-white">FAQ</a>
             </div>
           </div>
