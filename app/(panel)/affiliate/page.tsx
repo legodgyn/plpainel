@@ -15,7 +15,7 @@ type Affiliate = {
 type Commission = {
   id: string;
   amount_cents: number;
-  status: "Pendente" | "Aprovada" | "Paga" | "Cancelada" | string;
+  status: "pending" | "approved" | "paid" | "canceled" | string;
   created_at: string;
   referred_user_id: string | null;
   order_id: string | null;
@@ -26,7 +26,7 @@ type Withdraw = {
   amount_cents: number;
   pix_key: string;
   pix_key_type: "cpf" | "cnpj" | "email" | "phone" | "random" | string;
-  status: "Solicitado" | "Aprovada" | "Paga" | "Recusada" | string;
+  status: "requested" | "approved" | "paid" | "rejected" | string;
   created_at: string;
   updated_at: string;
 };
