@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseBrowser";
 
@@ -11,6 +10,7 @@ type SiteRow = {
   company_name: string | null;
   created_at: string;
   is_public: boolean;
+  user_id: string;
 };
 
 function fmtDate(iso: string) {
@@ -24,23 +24,20 @@ function fmtDate(iso: string) {
 
 // Detecta DEV/local e monta a URL pública sem depender de env.
 function buildPublicUrl(slug: string) {
-  if (typeof window === "undefined") return `/s/${slug}`; // fallback SSR (não deve usar aqui)
+  if (typeof window === "undefined") return `/s/${slug}`;
 
   const host = window.location.hostname;
 
-  // Dev / local
   const isLocal =
     host === "localhost" ||
     host === "127.0.0.1" ||
     host.endsWith(".local") ||
     host.endsWith(".localhost");
 
-  // Se você acessar via IP (tipo 187.77.33.45), também mantém /s/slug
   const isIp = /^\d{1,3}(\.\d{1,3}){3}$/.test(host);
 
   if (isLocal || isIp) return `/s/${slug}`;
 
-  // Produção
   return `https://${slug}.plpainel.com`;
 }
 
@@ -55,16 +52,20 @@ export default function SitesPage() {
     setMsg(null);
     setLoading(true);
 
-    const { data: auth } = await supabase.auth.getUser();
-    if (!auth.user) {
+    const { data: auth, error: authErr } = await supabase.auth.getUser();
+    const user = auth?.user;
+
+    if (authErr || !user) {
       setLoading(false);
       router.push("/login");
       return;
     }
 
+    // ✅ FILTRO POR DONO (user_id)
     const { data, error } = await supabase
       .from("sites")
-      .select("id, slug, company_name, created_at, is_public")
+      .select("id, slug, company_name, created_at, is_public, user_id")
+      .eq("user_id", user.id)
       .order("created_at", { ascending: false });
 
     setLoading(false);
@@ -83,7 +84,20 @@ export default function SitesPage() {
 
     setMsg(null);
 
-    const { error } = await supabase.from("sites").delete().eq("id", id);
+    // (extra segurança: se você quiser, dá pra deletar por id+user_id também)
+    const { data: auth } = await supabase.auth.getUser();
+    const user = auth?.user;
+    if (!user) {
+      router.push("/login");
+      return;
+    }
+
+    const { error } = await supabase
+      .from("sites")
+      .delete()
+      .eq("id", id)
+      .eq("user_id", user.id);
+
     if (error) {
       setMsg(error.message || "Erro ao excluir.");
       return;
@@ -159,7 +173,6 @@ export default function SitesPage() {
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    {/* Só para exibir, não precisa navegar por aqui */}
                     <div className="text-violet-300 font-semibold break-all">
                       {site.slug}.plpainel.com
                     </div>
@@ -187,7 +200,6 @@ export default function SitesPage() {
                 </div>
 
                 <div className="mt-4 flex flex-wrap gap-2">
-                  {/* ✅ Aqui é o que você queria: abre no domínio certo */}
                   <a
                     href={publicUrl}
                     target="_blank"
@@ -198,7 +210,7 @@ export default function SitesPage() {
                   </a>
 
                   <button
-                    onClick={() => router.push(`/sites/${site.id}/edit`)}
+                    onClick={() => router.push(`/sites/${site.slug}/edit`)}
                     className="rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-white/80 hover:bg-black/30"
                   >
                     Editar
