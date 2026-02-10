@@ -19,43 +19,19 @@ async function tryCreateReferral(code: string) {
   const ref = (code || "").trim();
   if (!ref) return;
 
-  // precisa estar logado
+  // precisa estar logado (auth.uid precisa existir lá no banco)
   const { data: auth } = await supabase.auth.getUser();
   const user = auth?.user;
   if (!user) return;
 
-  // 1) Descobre qual é o afiliado dono desse code
-  const { data: aff, error: affErr } = await supabase
-    .from("affiliates")
-    .select("user_id, code")
-    .eq("code", ref)
-    .maybeSingle();
+  const { data, error } = await supabase.rpc("create_referral", { p_code: ref });
 
-  if (affErr) {
-    console.error("affiliates lookup error:", affErr);
+  if (error) {
+    console.error("create_referral rpc error:", error);
     return;
   }
 
-  // se não existir esse código, não grava nada
-  if (!aff?.user_id) {
-    console.warn("affiliate code not found:", ref);
-    return;
-  }
-
-  // evita auto-ref (afiliado indicando ele mesmo)
-  if (aff.user_id === user.id) return;
-
-  // 2) Insere o vínculo
-  const { error } = await supabase.from("referrals").insert({
-    referred_user_id: user.id,
-    affiliate_user_id: aff.user_id,
-    code: ref,
-  });
-
-  // se já existe, ignora
-  if (error && !String(error.message || "").toLowerCase().includes("duplicate")) {
-    console.error("referrals insert error:", error);
-  }
+  console.log("create_referral result:", data);
 }
 
 export default function LoginPage() {
