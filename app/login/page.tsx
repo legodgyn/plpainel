@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseBrowser";
 
 function getStoredRef() {
@@ -23,7 +23,7 @@ async function tryCreateReferral(code: string) {
   const user = auth?.user;
   if (!user) return;
 
-  // tenta inserir (com idempotência via constraint no banco – te passo abaixo)
+  // tenta inserir (idempotência via constraint no banco)
   const { error } = await supabase.from("referrals").insert({
     referred_user_id: user.id,
     code: ref,
@@ -37,18 +37,21 @@ async function tryCreateReferral(code: string) {
 
 export default function LoginPage() {
   const router = useRouter();
-  const sp = useSearchParams();
 
   const [email, setEmail] = useState("");
   const [pass, setPass] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // ✅ captura ref se vier na URL do login
+  // ✅ captura ref se vier na URL do login (sem useSearchParams, evita erro de build)
   useEffect(() => {
-    const refFromUrl = (sp.get("ref") || sp.get("affiliate") || "").trim();
+    if (typeof window === "undefined") return;
+
+    const qs = new URLSearchParams(window.location.search);
+    const refFromUrl = (qs.get("ref") || qs.get("affiliate") || "").trim();
+
     if (refFromUrl) setStoredRef(refFromUrl);
-  }, [sp]);
+  }, []);
 
   async function signIn() {
     setMsg(null);
