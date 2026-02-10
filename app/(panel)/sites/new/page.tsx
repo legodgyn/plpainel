@@ -579,13 +579,13 @@ export default function NewSitePage() {
           <textarea
             value={metaTagRaw}
             onChange={(e) => setMetaTagRaw(e.target.value)}
-            placeholder='Cole o código (ex: abc123) OU a meta tag completa: <meta name="facebook-domain-verification" content="abc123" />'
+            placeholder='Cole a META TAG completa: <meta name="facebook-domain-verification" content="abc123" />'
             rows={3}
             className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 outline-none focus:border-violet-400"
           />
           <div className="mt-2 text-xs text-white/50">
-            Se colar só o código, eu salvo como{" "}
-            <span className="text-white/70">facebook-domain-verification</span>.
+            Depois que você verificar o domíno no Business Manager.{" "}
+            <span className="text-white/70">Volte aqui e cole e salve</span>.
           </div>
         </div>
 
