@@ -210,7 +210,7 @@ export default function SitesPage() {
                   </a>
 
                   <button
-                    onClick={() => router.push(`/sites/${site.slug}/edit`)}
+                    onClick={() => router.push(`/sites/${site.id}/edit`)}
                     className="rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-white/80 hover:bg-black/30"
                   >
                     Editar
