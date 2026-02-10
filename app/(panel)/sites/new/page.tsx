@@ -11,6 +11,48 @@ function onlyDigits(v: string) {
   return String(v || "").replace(/\D/g, "");
 }
 
+// ✅ Formata telefone BR: (99) 99999-9999 ou (99) 9999-9999
+function formatBRPhone(input: string) {
+  const digitsRaw = onlyDigits(input);
+
+  if (!digitsRaw) return "";
+
+  // Se vier com DDI/extra, pega os últimos 11 (celular) ou 10 (fixo) depois
+  // Preferência: 11 dígitos
+  let digits = digitsRaw;
+  if (digits.length > 11) digits = digits.slice(-11);
+
+  // Se ainda > 11, já está cortado acima. Se < 10, formata parcialmente.
+  const ddd = digits.slice(0, 2);
+  const rest = digits.slice(2);
+
+  // parcial (até 2 dígitos)
+  if (digits.length <= 2) return `(${digits}`;
+
+  // parcial (ddd completo, sem número completo)
+  if (digits.length <= 6) {
+    return `(${ddd}) ${rest}`;
+  }
+
+  // 10 dígitos total: (99) 9999-9999
+  if (digits.length === 10) {
+    const p1 = rest.slice(0, 4);
+    const p2 = rest.slice(4, 8);
+    return `(${ddd}) ${p1}-${p2}`;
+  }
+
+  // 11 dígitos total: (99) 99999-9999
+  if (digits.length >= 11) {
+    const r = digits.slice(2, 11); // 9 dígitos
+    const p1 = r.slice(0, 5);
+    const p2 = r.slice(5, 9);
+    return `(${ddd}) ${p1}-${p2}`;
+  }
+
+  // fallback
+  return `(${ddd}) ${rest}`;
+}
+
 function slugify(input: string) {
   return String(input || "")
     .toLowerCase()
@@ -411,7 +453,8 @@ export default function NewSitePage() {
           ? `${data.telefone}`
           : data.ddd ? `${data.ddd}${data.telefone_1 || ""}` : "";
 
-      const phone = String(phoneRaw || "").trim();
+      // ✅ Formata aqui também
+      const phone = formatBRPhone(String(phoneRaw || "").trim());
 
       // slug: prefere fantasia, senão razão
       const nextSlugBase = fantasia || razao || form.slug || "meu-site";
@@ -478,21 +521,20 @@ export default function NewSitePage() {
         // slug automático (editável)
         slug: nextSlug || prev.slug,
 
+        // ✅ Telefones formatados
         phone: phone || prev.phone,
-        whatsapp: phone || prev.whatsapp, // ✅ copia telefone
+        whatsapp: phone || prev.whatsapp,
 
-        email: email || prev.email, // ✅ contato@nomedaempresa.com
+        email: email || prev.email,
 
         instagram: prev.instagram || "https://instagram.com",
         facebook: prev.facebook || "https://facebook.com",
 
-        // textos automáticos
         mission,
         about,
         privacy,
         footer,
 
-        // extras
         opened_at: abertura,
         address_full: enderecoFull,
         cep,
@@ -534,6 +576,10 @@ export default function NewSitePage() {
     try {
       const { name: meta_verify_name, content: meta_verify_content } = parseMetaTag(form.meta_tag);
 
+      // ✅ garante padrão antes de salvar
+      const phoneFmt = formatBRPhone(form.phone);
+      const whatsappFmt = formatBRPhone(form.whatsapp);
+
       // ✅ salva com user_id para separar contas
       const payload: any = {
         user_id: user.id,
@@ -543,8 +589,8 @@ export default function NewSitePage() {
         company_name: form.company_name.trim(),   // razão social
         fantasy_name: form.fantasy_name.trim() || null,
 
-        phone: form.phone.trim() || null,
-        whatsapp: form.whatsapp.trim() || null,
+        phone: phoneFmt || null,
+        whatsapp: whatsappFmt || null,
         email: form.email.trim() || null,
         instagram: form.instagram.trim() || null,
         facebook: form.facebook.trim() || null,
@@ -644,11 +690,11 @@ export default function NewSitePage() {
 
           <div className="mt-3 grid gap-3 md:grid-cols-3">
             <div>
-              <label className="text-xs text-white/70">Domínio *</label>
+              <label className="text-xs text-white/70">Slug *</label>
               <input
                 value={form.slug}
                 onChange={(e) => setForm((p) => ({ ...p, slug: e.target.value }))}
-                placeholder="seu-site"
+                placeholder="movy-digital"
                 className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 outline-none focus:border-violet-400"
               />
               <div className="mt-1 text-[11px] text-white/50">
@@ -660,13 +706,14 @@ export default function NewSitePage() {
               <label className="text-xs text-white/70">Telefone</label>
               <input
                 value={form.phone}
-                onChange={(e) =>
+                onChange={(e) => {
+                  const v = formatBRPhone(e.target.value);
                   setForm((p) => ({
                     ...p,
-                    phone: e.target.value,
-                    whatsapp: p.whatsapp ? p.whatsapp : e.target.value, // se vazio, copia
-                  }))
-                }
+                    phone: v,
+                    whatsapp: p.whatsapp ? p.whatsapp : v, // se vazio, copia
+                  }));
+                }}
                 placeholder="(11) 99999-9999"
                 className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 outline-none focus:border-violet-400"
               />
@@ -676,7 +723,7 @@ export default function NewSitePage() {
               <label className="text-xs text-white/70">WhatsApp</label>
               <input
                 value={form.whatsapp}
-                onChange={(e) => setForm((p) => ({ ...p, whatsapp: e.target.value }))}
+                onChange={(e) => setForm((p) => ({ ...p, whatsapp: formatBRPhone(e.target.value) }))}
                 placeholder="(11) 99999-9999"
                 className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 outline-none focus:border-violet-400"
               />
@@ -734,7 +781,7 @@ export default function NewSitePage() {
         <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
           <div className="text-sm font-semibold">Meta tag de verificação</div>
           <div className="mt-1 text-xs text-white/60">
-            Cole aqui o <b>código</b> ou a <b>meta tag completa</b> (VOCÊ SÓ VAI PREENCHER AQUI APOS CRIAR O SITE, CRIAR O DOMÍNIO NA BM E GERAR A META TAG).
+            Cole aqui o <b>código</b> ou a <b>meta tag completa</b> (ex: facebook-domain-verification).
           </div>
           <textarea
             value={form.meta_tag}
