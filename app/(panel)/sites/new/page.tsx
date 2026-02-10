@@ -779,7 +779,7 @@ export default function NewSitePage() {
         <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
           <div className="text-sm font-semibold">Meta tag de verificação</div>
           <div className="mt-1 text-xs text-white/60">
-            Cole aqui o <b>código</b> ou a <b>meta tag completa</b> (VOCÊ SO VAI PREENCHER AQUI APOS CRIAR O DOMINIO NA BM, PEGUE A META TAG E COLE AQUI E SALVE NOVAMENTE).
+            Cole aqui a <b>meta tag completa</b> (VOCÊ SO VAI PREENCHER AQUI APOS CRIAR O DOMINIO NA BM, PEGUE A META TAG E COLE AQUI E SALVE NOVAMENTE).
           </div>
           <textarea
             value={form.meta_tag}
