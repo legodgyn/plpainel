@@ -12,17 +12,6 @@ export default function Home() {
   }, [sp]);
 
   return (
-    // ...seu layout
-    <div>...</div>
-  );
-}
-
-import Link from "next/link";
-
-export const dynamic = "force-dynamic";
-
-export default function HomePage() {
-  return (
     <main className="min-h-screen bg-[#070712] text-white">
       {/* Top bar */}
       <header className="sticky top-0 z-50 border-b border-white/10 bg-[#070712]/80 backdrop-blur">
