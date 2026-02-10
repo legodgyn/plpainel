@@ -25,9 +25,6 @@ export default function HomePage() {
             <a href="#beneficios" className="text-sm text-white/70 hover:text-white">
               Benefícios
             </a>
-            <a href="#planos" className="text-sm text-white/70 hover:text-white">
-              Planos
-            </a>
             <a href="#faq" className="text-sm text-white/70 hover:text-white">
               FAQ
             </a>
@@ -62,13 +59,21 @@ export default function HomePage() {
         <div className="mx-auto max-w-6xl px-4 py-16 md:py-20">
           <div className="grid gap-10 md:grid-cols-2 md:items-center">
             <div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/70">
-                <span className="h-2 w-2 rounded-full bg-emerald-400" />
-                Crie páginas “BM-safe” em minutos
+              <div className="inline-flex flex-wrap items-center gap-2">
+                <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/70">
+                  <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                  Crie páginas “BM-safe” em minutos
+                </div>
+
+                {/* PREÇO (pill) */}
+                <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-500/10 px-3 py-1 text-xs text-emerald-200">
+                  <span className="font-bold">1 Token</span> = R$ 4,00{" "}
+                  <span className="text-emerald-200/70">(por site)</span>
+                </div>
               </div>
 
               <h1 className="mt-5 text-4xl font-black leading-tight tracking-tight md:text-5xl">
-                Seu site pronto, bonito e validado pra{" "}
+                Seu site pronto, bonito e feito pra{" "}
                 <span className="text-violet-300">vender todo dia</span>.
               </h1>
 
@@ -86,10 +91,10 @@ export default function HomePage() {
                 </Link>
 
                 <Link
-                  href="/pricing"
+                  href="/billing"
                   className="inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-white/80 hover:bg-white/10"
                 >
-                  Ver planos
+                  Comprar tokens
                 </Link>
               </div>
 
@@ -105,6 +110,18 @@ export default function HomePage() {
                 </div>
                 <div className="rounded-xl border border-white/10 bg-white/5 p-3">
                   ✅ Painel + tokens
+                </div>
+              </div>
+
+              {/* Bloco simples do preço (mais visível) */}
+              <div className="mt-6 rounded-2xl border border-white/10 bg-black/20 p-4">
+                <div className="text-xs font-semibold text-white/70">Preço simples</div>
+                <div className="mt-2 text-sm text-white/80">
+                  <span className="font-bold text-emerald-200">1 Token = R$ 4,00</span>{" "}
+                  <span className="text-white/60">• 1 token cria 1 site</span>
+                </div>
+                <div className="mt-1 text-[12px] text-white/55">
+                  Compre tokens via PIX e crie sites quando quiser.
                 </div>
               </div>
             </div>
@@ -150,16 +167,14 @@ export default function HomePage() {
 
       {/* Benefícios */}
       <section id="beneficios" className="mx-auto max-w-6xl px-4 py-14">
-        <div className="flex items-end justify-between gap-6">
-          <div>
-            <div className="text-xs font-semibold text-violet-300">Benefícios</div>
-            <h2 className="mt-2 text-2xl font-bold md:text-3xl">
-              O que você ganha usando o PL - Painel
-            </h2>
-            <p className="mt-2 text-white/60">
-              Você foca no tráfego e na venda. O resto é automático.
-            </p>
-          </div>
+        <div>
+          <div className="text-xs font-semibold text-violet-300">Benefícios</div>
+          <h2 className="mt-2 text-2xl font-bold md:text-3xl">
+            O que você ganha usando o PL - Painel
+          </h2>
+          <p className="mt-2 text-white/60">
+            Você foca no tráfego e na venda. O resto é automático.
+          </p>
         </div>
 
         <div className="mt-8 grid gap-4 md:grid-cols-3">
@@ -173,8 +188,8 @@ export default function HomePage() {
               desc: "Missão, Sobre, Privacidade e Rodapé gerados no template.",
             },
             {
-              title: "Painel com tokens",
-              desc: "Controle total: compra via PIX + saldo de criação de sites.",
+              title: "Tokens + PIX",
+              desc: "Compra via PIX, confirmação automática e criação por token.",
             },
             {
               title: "BM-safe (estrutura limpa)",
@@ -186,7 +201,7 @@ export default function HomePage() {
             },
             {
               title: "Escala sem complicação",
-              desc: "Cria 10, 50, 100 sites. Tudo organizado no painel.",
+              desc: "Crie 10, 50, 100 sites. Tudo organizado no painel.",
             },
           ].map((b) => (
             <div
@@ -208,21 +223,9 @@ export default function HomePage() {
 
           <div className="mt-7 grid gap-4 md:grid-cols-3">
             {[
-              {
-                n: "01",
-                title: "Digite o CNPJ",
-                desc: "Clique em “Gerar dados” e o sistema preenche tudo.",
-              },
-              {
-                n: "02",
-                title: "Ajuste o que quiser",
-                desc: "Edite missão, sobre nós, privacidade, rodapé e contatos.",
-              },
-              {
-                n: "03",
-                title: "Publicou. Vendeu.",
-                desc: "Seu site fica em slug.plpainel.com pronto pro tráfego.",
-              },
+              { n: "01", title: "Digite o CNPJ", desc: "Clique em “Gerar dados” e o sistema preenche tudo." },
+              { n: "02", title: "Ajuste o que quiser", desc: "Edite textos e contatos. Deixe do seu jeito." },
+              { n: "03", title: "Publicou. Vendeu.", desc: "Seu site fica em slug.plpainel.com pronto pro tráfego." },
             ].map((s) => (
               <div
                 key={s.n}
@@ -243,90 +246,11 @@ export default function HomePage() {
               Começar agora
             </Link>
             <Link
-              href="/login"
+              href="/billing"
               className="inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-white/80 hover:bg-white/10"
             >
-              Já tenho conta
+              Comprar tokens (PIX)
             </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Planos */}
-      <section id="planos" className="mx-auto max-w-6xl px-4 py-14">
-        <div className="flex items-end justify-between gap-6">
-          <div>
-            <div className="text-xs font-semibold text-violet-300">Planos</div>
-            <h2 className="mt-2 text-2xl font-bold md:text-3xl">
-              Simples, direto e escalável
-            </h2>
-            <p className="mt-2 text-white/60">
-              Comece pequeno e vá aumentando conforme vender.
-            </p>
-          </div>
-        </div>
-
-        <div className="mt-8 grid gap-4 md:grid-cols-3">
-          {/* Starter */}
-          <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
-            <div className="text-sm font-semibold">Starter</div>
-            <div className="mt-2 text-3xl font-black">R$ 39</div>
-            <div className="text-xs text-white/60">por pacote de tokens</div>
-            <ul className="mt-5 space-y-2 text-sm text-white/70">
-              <li>✅ Sites em subdomínio</li>
-              <li>✅ Geração por CNPJ</li>
-              <li>✅ Templates prontos</li>
-              <li>✅ Painel completo</li>
-            </ul>
-            <Link
-              href="/billing"
-              className="mt-6 inline-flex w-full items-center justify-center rounded-xl bg-white/10 px-4 py-2 text-sm font-semibold hover:bg-white/15"
-            >
-              Comprar tokens
-            </Link>
-          </div>
-
-          {/* Pro */}
-          <div className="rounded-3xl border border-violet-400/25 bg-violet-500/10 p-6 shadow-[0_20px_60px_rgba(0,0,0,.4)]">
-            <div className="inline-flex items-center gap-2 rounded-full border border-violet-400/20 bg-black/20 px-3 py-1 text-xs text-violet-200">
-              Mais vendido
-            </div>
-            <div className="mt-3 text-sm font-semibold">Pro</div>
-            <div className="mt-2 text-3xl font-black">R$ 99</div>
-            <div className="text-xs text-white/60">ideal pra quem escala</div>
-            <ul className="mt-5 space-y-2 text-sm text-white/70">
-              <li>✅ Tudo do Starter</li>
-              <li>✅ Mais tokens por compra</li>
-              <li>✅ Melhor custo-benefício</li>
-              <li>✅ Prioridade de suporte</li>
-            </ul>
-            <Link
-              href="/billing"
-              className="mt-6 inline-flex w-full items-center justify-center rounded-xl bg-violet-600 px-4 py-2 text-sm font-bold text-white hover:bg-violet-500"
-            >
-              Quero esse
-            </Link>
-          </div>
-
-          {/* Enterprise */}
-          <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
-            <div className="text-sm font-semibold">Enterprise</div>
-            <div className="mt-2 text-3xl font-black">Sob consulta</div>
-            <div className="text-xs text-white/60">pra operação grande</div>
-            <ul className="mt-5 space-y-2 text-sm text-white/70">
-              <li>✅ Alto volume</li>
-              <li>✅ Ajustes sob medida</li>
-              <li>✅ Integrações</li>
-              <li>✅ Onboarding</li>
-            </ul>
-            <a
-              href="https://wa.me/"
-              target="_blank"
-              rel="noreferrer"
-              className="mt-6 inline-flex w-full items-center justify-center rounded-xl bg-white/10 px-4 py-2 text-sm font-semibold hover:bg-white/15"
-            >
-              Falar no WhatsApp
-            </a>
           </div>
         </div>
       </section>
@@ -342,20 +266,20 @@ export default function HomePage() {
           <div className="mt-8 grid gap-4 md:grid-cols-2">
             {[
               {
-                q: "O site fica online na hora mesmo?",
-                a: "Sim. O subdomínio já aponta pro seu servidor e o PL entrega o conteúdo pelo slug.",
+                q: "Quanto custa criar um site?",
+                a: "1 token cria 1 site. Hoje: 1 Token = R$ 4,00.",
+              },
+              {
+                q: "O site fica online na hora?",
+                a: "Sim. O subdomínio já aponta pro servidor e o conteúdo carrega pelo slug.",
               },
               {
                 q: "Preciso configurar DNS pra cada cliente?",
-                a: "Não. Com o wildcard (*.plpainel.com) você não cria subdomínio um por um.",
+                a: "Não. Com wildcard (*.plpainel.com) você não cria subdomínio um por um.",
               },
               {
                 q: "Posso editar depois?",
-                a: "Sim. Você ajusta os textos e dados no painel quando quiser.",
-              },
-              {
-                q: "Funciona com PIX e confirma automaticamente?",
-                a: "Sim. Você já integrou o webhook e confirma o pagamento automático.",
+                a: "Sim. Você ajusta textos, contatos e verificação de domínio quando quiser.",
               },
             ].map((f) => (
               <div key={f.q} className="rounded-2xl border border-white/10 bg-black/20 p-5">
@@ -392,7 +316,6 @@ export default function HomePage() {
             <div className="flex gap-4 text-sm text-white/60">
               <a href="#beneficios" className="hover:text-white">Benefícios</a>
               <a href="#como-funciona" className="hover:text-white">Como funciona</a>
-              <a href="#planos" className="hover:text-white">Planos</a>
               <a href="#faq" className="hover:text-white">FAQ</a>
             </div>
           </div>
