@@ -1,7 +1,6 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
+import { createServerClient } from "@supabase/ssr";
 
 export const dynamic = "force-dynamic";
 
@@ -13,17 +12,33 @@ type Site = {
 };
 
 export default async function SitesPage() {
-  const supabase = createServerComponentClient({
-    cookies,
-  });
+  const cookieStore = cookies();
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value;
+        },
+      },
+    }
+  );
 
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   if (!user) {
-    // se preferir, pode renderizar o texto ao invés de redirect
-    redirect("/login");
+    return (
+      <div className="p-6">
+        <h1 className="text-lg">Não autenticado.</h1>
+        <Link href="/login" className="text-indigo-400 underline">
+          Ir para login
+        </Link>
+      </div>
+    );
   }
 
   const { data: sites } = await supabase
@@ -32,19 +47,19 @@ export default async function SitesPage() {
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
 
-  const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN || "plpainel.com";
-  const isDev = process.env.NODE_ENV === "development";
+  const ROOT_DOMAIN =
+    process.env.NEXT_PUBLIC_ROOT_DOMAIN || "plpainel.com";
 
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-6">Meus Sites</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {sites?.map((site: Site) => {
-          // ✅ PROD: subdomínio
-          const publicUrl = isDev
-            ? `/s/${site.slug}`
-            : `https://${site.slug}.${ROOT_DOMAIN}`;
+        {sites?.map((site) => {
+          const publicUrl =
+            process.env.NODE_ENV === "development"
+              ? `/s/${site.slug}`
+              : `https://${site.slug}.${ROOT_DOMAIN}`;
 
           return (
             <div
@@ -56,28 +71,19 @@ export default async function SitesPage() {
               </div>
 
               <div className="text-sm text-white/60 mt-1">
-                Criado em:{" "}
+                Criado em{" "}
                 {new Date(site.created_at).toLocaleDateString("pt-BR")}
               </div>
 
               <div className="flex gap-2 mt-4">
-                {isDev ? (
-                  <Link
-                    href={publicUrl}
-                    className="px-3 py-1 rounded bg-indigo-600 text-sm"
-                  >
-                    Abrir
-                  </Link>
-                ) : (
-                  <a
-                    href={publicUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="px-3 py-1 rounded bg-indigo-600 text-sm"
-                  >
-                    Abrir
-                  </a>
-                )}
+                <a
+                  href={publicUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="px-3 py-1 rounded bg-indigo-600 text-sm"
+                >
+                  Abrir
+                </a>
 
                 <Link
                   href={`/sites/${site.id}/edit`}
