@@ -15,7 +15,18 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
   const [email, setEmail] = useState<string>("");
   const [tokens, setTokens] = useState<number>(0);
 
-  const nav = useMemo(
+  // ✅ Define aqui o email do admin master (preferência: ENV)
+  const ADMIN_MASTER_EMAIL = useMemo(() => {
+    const env = (process.env.NEXT_PUBLIC_ADMIN_MASTER_EMAIL || "").trim().toLowerCase();
+    return env || "teste@teste.com"; // <- TROCA PELO SEU se não for usar ENV
+  }, []);
+
+  const isAdminMaster = useMemo(() => {
+    return String(email || "").trim().toLowerCase() === ADMIN_MASTER_EMAIL;
+  }, [email, ADMIN_MASTER_EMAIL]);
+
+  // ✅ Nav normal (sem admin)
+  const baseNav = useMemo(
     () => [
       { href: "/dashboard", label: "Dashboard", icon: "▦" },
       { href: "/sites", label: "Meus Sites", icon: "▤" },
@@ -23,10 +34,18 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
       { href: "/tokens", label: "Comprar Tokens", icon: "◈" },
       { href: "/billing", label: "Minhas Compras", icon: "◈" },
       { href: "/affiliate", label: "Afiliados", icon: "◈" },
-      { href: "/admin", label: "Compras na Plataforma", icon: "◈" },
     ],
     []
   );
+
+  // ✅ Nav final (adiciona o admin só se for master)
+  const nav = useMemo(() => {
+    const items = [...baseNav];
+    if (isAdminMaster) {
+      items.push({ href: "/admin", label: "Compras na Plataforma", icon: "◈" });
+    }
+    return items;
+  }, [baseNav, isAdminMaster]);
 
   useEffect(() => {
     let alive = true;
