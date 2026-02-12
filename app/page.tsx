@@ -100,7 +100,7 @@ export default function HomePage() {
 
               <h1 className="mt-5 text-4xl font-black leading-tight tracking-tight md:text-5xl">
                 Seu site pronto, bonito e feito pra{" "}
-                <span className="text-violet-300">aprovar sua BM em tempo recorde!</span>.
+                <span className="text-violet-300">aprovar sua BM em tempo recorde!</span>
               </h1>
 
               <p className="mt-4 text-base text-white/70 md:text-lg">
