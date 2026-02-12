@@ -100,7 +100,7 @@ export default function HomePage() {
 
               <h1 className="mt-5 text-4xl font-black leading-tight tracking-tight md:text-5xl">
                 Seu site pronto, bonito e feito pra{" "}
-                <span className="text-violet-300">aprovar BM em tempo recorde!</span>.
+                <span className="text-violet-300">aprovar sua BM em tempo recorde!</span>.
               </h1>
 
               <p className="mt-4 text-base text-white/70 md:text-lg">
@@ -198,7 +198,7 @@ export default function HomePage() {
       <section id="preco" className="mx-auto max-w-6xl px-4 py-14">
         <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
           <div className="text-xs font-semibold text-emerald-300">Preço</div>
-          <h2 className="mt-2 text-2xl font-bold md:text-3xl">Simples e direto e barato!</h2>
+          <h2 className="mt-2 text-2xl font-bold md:text-3xl">Simples, direto e barato!</h2>
 
           <div className="mt-6 grid gap-4 md:grid-cols-3">
             <div className="rounded-2xl border border-white/10 bg-black/20 p-6 md:col-span-2">
