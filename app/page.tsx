@@ -3,6 +3,12 @@ import Link from "next/link";
 export const dynamic = "force-dynamic";
 
 export default function HomePage() {
+  const SUPPORT_WHATSAPP = "62999994162";
+  const SUPPORT_TEXT = encodeURIComponent(
+    "Olá! Vim pelo PL - Painel e gostaria de entrar em contato para saber mais."
+  );
+  const SUPPORT_LINK = `https://wa.me/${SUPPORT_WHATSAPP}?text=${SUPPORT_TEXT}`;
+
   return (
     <main className="min-h-screen bg-[#070712] text-white">
       {/* Top bar */}
@@ -34,6 +40,24 @@ export default function HomePage() {
           </nav>
 
           <div className="flex items-center gap-2">
+            {/* ✅ Novo botão: Entrar em contato (WhatsApp) */}
+            <a
+              href={SUPPORT_LINK}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={[
+                "hidden md:inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold",
+                "border border-emerald-400/25 bg-emerald-500/15 text-emerald-100",
+                "hover:bg-emerald-500/20 hover:border-emerald-300/30",
+                "shadow-[0_0_0_1px_rgba(16,185,129,.12),0_12px_30px_rgba(0,0,0,.25)]",
+                "transition-all",
+              ].join(" ")}
+              title="Falar no WhatsApp"
+            >
+              <span className="inline-block h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(16,185,129,.55)]" />
+              Entrar em contato
+            </a>
+
             <Link
               href="/login"
               className="hidden rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-white/80 hover:bg-white/10 md:inline-flex"
@@ -76,11 +100,11 @@ export default function HomePage() {
 
               <h1 className="mt-5 text-4xl font-black leading-tight tracking-tight md:text-5xl">
                 Seu site pronto, bonito e feito pra{" "}
-                <span className="text-violet-300">vender todo dia</span>.
+                <span className="text-violet-300">aprovar BM em tempo recorde!</span>.
               </h1>
 
               <p className="mt-4 text-base text-white/70 md:text-lg">
-                Digite o CNPJ, gere o site automaticamente e publique em subdomínio na hora.
+                Digite o CNPJ, gere o site automaticamente e publique na hora.
                 Sem dor de cabeça. Sem enrolação.
               </p>
 
@@ -103,8 +127,6 @@ export default function HomePage() {
               <div className="mt-6 grid grid-cols-2 gap-3 text-xs text-white/60 md:max-w-md">
                 <div className="rounded-xl border border-white/10 bg-white/5 p-3">✅ Subdomínio automático</div>
                 <div className="rounded-xl border border-white/10 bg-white/5 p-3">✅ Templates prontos</div>
-                <div className="rounded-xl border border-white/10 bg-white/5 p-3">✅ PIX integrado</div>
-                <div className="rounded-xl border border-white/10 bg-white/5 p-3">✅ Painel + tokens</div>
               </div>
             </div>
 
@@ -113,7 +135,7 @@ export default function HomePage() {
               <div className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-[0_20px_60px_rgba(0,0,0,.45)]">
                 <div className="flex items-center justify-between">
                   <div className="text-sm font-semibold">Prévia do seu site</div>
-                  <div className="text-xs text-white/50">slug.plpainel.com</div>
+                  <div className="text-xs text-white/50">seu-site.plpainel.com</div>
                 </div>
 
                 <div className="mt-5 space-y-3">
@@ -152,7 +174,7 @@ export default function HomePage() {
         <div>
           <div className="text-xs font-semibold text-violet-300">Benefícios</div>
           <h2 className="mt-2 text-2xl font-bold md:text-3xl">O que você ganha usando o PL - Painel</h2>
-          <p className="mt-2 text-white/60">Você foca no tráfego e na venda. O resto é automático.</p>
+          <p className="mt-2 text-white/60">Você foca na aprovação da BM. O resto é automático.</p>
         </div>
 
         <div className="mt-8 grid gap-4 md:grid-cols-3">
@@ -176,7 +198,7 @@ export default function HomePage() {
       <section id="preco" className="mx-auto max-w-6xl px-4 py-14">
         <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
           <div className="text-xs font-semibold text-emerald-300">Preço</div>
-          <h2 className="mt-2 text-2xl font-bold md:text-3xl">Simples e direto</h2>
+          <h2 className="mt-2 text-2xl font-bold md:text-3xl">Simples e direto e barato!</h2>
 
           <div className="mt-6 grid gap-4 md:grid-cols-3">
             <div className="rounded-2xl border border-white/10 bg-black/20 p-6 md:col-span-2">
@@ -217,7 +239,7 @@ export default function HomePage() {
             {[
               { n: "01", title: "Digite o CNPJ", desc: "Clique em “Gerar dados” e o sistema preenche tudo." },
               { n: "02", title: "Ajuste o que quiser", desc: "Edite textos e contatos. Deixe do seu jeito." },
-              { n: "03", title: "Publicou. Vendeu.", desc: "Seu site fica em slug.plpainel.com pronto pro tráfego." },
+              { n: "03", title: "Publicou. Vendeu.", desc: "Seu site fica em seu-site.plpainel.com pronto pra verificação." },
             ].map((s) => (
               <div key={s.n} className="rounded-2xl border border-white/10 bg-black/20 p-5">
                 <div className="text-xs font-bold text-white/60">{s.n}</div>
@@ -255,8 +277,8 @@ export default function HomePage() {
           <div className="mt-8 grid gap-4 md:grid-cols-2">
             {[
               { q: "Quanto custa criar um site?", a: "1 token cria 1 site. Hoje: 1 Token = R$ 4,00." },
-              { q: "O site fica online na hora?", a: "Sim. O subdomínio já aponta pro servidor e o conteúdo carrega pelo slug." },
-              { q: "Preciso configurar DNS pra cada cliente?", a: "Não. Com wildcard (*.plpainel.com) você não cria subdomínio um por um." },
+              { q: "O site fica online na hora?", a: "Sim. O subdomínio já aponta pro servidor e o conteúdo carrega pelo seu dominio criado." },
+              { q: "Preciso de domínio, hospedagem e etc?", a: "Não. aqui você só paga o token e tudo e disponibilizado para você gratuitamente." },
               { q: "Posso editar depois?", a: "Sim. Você ajusta textos, contatos e verificação de domínio quando quiser." },
             ].map((f) => (
               <div key={f.q} className="rounded-2xl border border-white/10 bg-black/20 p-5">
@@ -288,7 +310,7 @@ export default function HomePage() {
         <div className="mx-auto max-w-6xl px-4 py-10">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div className="text-sm text-white/60">
-              © {new Date().getFullYear()} PL - Painel. Todos os direitos reservados.
+              ©️ {new Date().getFullYear()} PL - Painel. Todos os direitos reservados.
             </div>
             <div className="flex gap-4 text-sm text-white/60">
               <a href="#beneficios" className="hover:text-white">Benefícios</a>
