@@ -192,7 +192,7 @@ export default function LoginPage() {
                 </button>
 
                 <div className="text-xs text-white/50">
-                  Dica: use um e-mail válido 😉
+                  Use um e-mail válido 😉
                 </div>
               </div>
             </form>
