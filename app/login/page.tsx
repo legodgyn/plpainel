@@ -260,7 +260,7 @@ export default function LoginPage() {
 
               <form onSubmit={handleRegister} className="mt-5 space-y-4">
                 <div>
-                  <label className="text-xs text-white/70">Nome (opcional)</label>
+                  <label className="text-xs text-white/70">Nome* (Obrigatório)</label>
                   <input
                     value={regName}
                     onChange={(e) => setRegName(e.target.value)}
@@ -271,7 +271,7 @@ export default function LoginPage() {
                 </div>
 
                 <div>
-                  <label className="text-xs text-white/70">Email</label>
+                  <label className="text-xs text-white/70">Email*</label>
                   <input
                     value={regEmail}
                     onChange={(e) => setRegEmail(e.target.value)}
@@ -282,7 +282,7 @@ export default function LoginPage() {
                 </div>
 
                 <div>
-                  <label className="text-xs text-white/70">Senha</label>
+                  <label className="text-xs text-white/70">Senha*</label>
                   <input
                     value={regPassword}
                     onChange={(e) => setRegPassword(e.target.value)}
@@ -294,7 +294,7 @@ export default function LoginPage() {
                 </div>
 
                 <div>
-                  <label className="text-xs text-white/70">Confirmar senha</label>
+                  <label className="text-xs text-white/70">Confirmar senha*</label>
                   <input
                     value={regPassword2}
                     onChange={(e) => setRegPassword2(e.target.value)}
