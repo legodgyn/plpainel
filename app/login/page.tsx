@@ -29,7 +29,7 @@ export default function LoginPage() {
 
   const canSubmitLogin = useMemo(() => {
     return email.trim().length > 3 && password.trim().length >= 6 && !loadingLogin;
-  }, [email, password, loadingLogin]);
+  }, [, password, loadingLogin]);
 
   // Fecha modal com ESC
   useEffect(() => {
@@ -271,7 +271,7 @@ export default function LoginPage() {
                 </div>
 
                 <div>
-                  <label className="text-xs text-white/70">Email*</label>
+                  <label className="text-xs text-white/70">Email* (Obrigatório)</label>
                   <input
                     value={regEmail}
                     onChange={(e) => setRegEmail(e.target.value)}
