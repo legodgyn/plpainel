@@ -282,7 +282,7 @@ export default function LoginPage() {
                 </div>
 
                 <div>
-                  <label className="text-xs text-white/70">Senha*</label>
+                  <label className="text-xs text-white/70">Senha* (Obrigatório)</label>
                   <input
                     value={regPassword}
                     onChange={(e) => setRegPassword(e.target.value)}
@@ -294,7 +294,7 @@ export default function LoginPage() {
                 </div>
 
                 <div>
-                  <label className="text-xs text-white/70">Confirmar senha*</label>
+                  <label className="text-xs text-white/70">Confirmar senha* (Obrigatório)</label>
                   <input
                     value={regPassword2}
                     onChange={(e) => setRegPassword2(e.target.value)}
