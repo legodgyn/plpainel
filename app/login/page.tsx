@@ -128,7 +128,7 @@ export default function LoginPage() {
       setMsgType("success");
       setMsg(
         data?.user
-          ? "Conta criada! Agora faça login (se precisar, confirme o e-mail)."
+          ? "Conta criada! Agora faça login (Confirme o e-mail abaixo)."
           : "Conta criada! Agora faça login."
       );
     } catch (err: any) {
@@ -210,7 +210,7 @@ export default function LoginPage() {
                   onClick={handleOpenRegister}
                   className="text-sm font-semibold text-emerald-200 hover:text-emerald-100"
                 >
-                  Criar conta
+                  CRIAR CONTA
                 </button>
 
                 <div className="text-xs text-white/50">Dica: use um e-mail válido 😉</div>
@@ -237,7 +237,7 @@ export default function LoginPage() {
             <div className="w-full max-w-md rounded-3xl border border-white/10 bg-[#0b1220] p-6 shadow-[0_30px_120px_rgba(0,0,0,.65)]">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <div className="text-lg font-bold">Criar conta</div>
+                  <div className="text-lg font-bold">CRIAR CONTA</div>
                   <div className="mt-1 text-sm text-white/60">
                     Preencha os dados e depois você volta pro login.
                   </div>
@@ -310,7 +310,7 @@ export default function LoginPage() {
                   disabled={loadingRegister}
                   className="w-full rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-emerald-500 disabled:opacity-60"
                 >
-                  {loadingRegister ? "Criando..." : "Criar conta"}
+                  {loadingRegister ? "Criando..." : "CRIAR CONTA"}
                 </button>
 
                 <button
