@@ -128,8 +128,8 @@ export default function LoginPage() {
       setMsgType("success");
       setMsg(
         data?.user
-          ? "Conta criada! Agora faça login (Confirme o e-mail abaixo)."
-          : "Conta criada! Agora faça login."
+          ? "Conta criada! Agora faça o login (Confirme o e-mail abaixo)."
+          : "Conta criada! Agora faça o login."
       );
     } catch (err: any) {
       setRegMsg(err?.message || "Erro ao criar conta.");
@@ -213,7 +213,7 @@ export default function LoginPage() {
                   CRIAR CONTA
                 </button>
 
-                <div className="text-xs text-white/50">Dica: use um e-mail válido 😉</div>
+                <div className="text-xs text-white/50">Use um e-mail válido 😉</div>
               </div>
             </form>
           </div>
