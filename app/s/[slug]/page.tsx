@@ -126,40 +126,75 @@ export default async function PublicSitePage(props: PageProps) {
   // =========================================================
 if (template_type === "simple") {
   return (
-    <main className="min-h-screen bg-white text-slate-900">
-      <div className="mx-auto max-w-4xl px-6 py-16">
-        {/* LOGO */}
-        <div className="flex justify-center">
-          {logo_url ? (
-            <img
-              src={logo_url}
-              alt={company_name}
-              className="max-h-40 max-w-full object-contain"
-            />
-          ) : (
-            <div className="text-xl font-semibold text-slate-400">Logo</div>
-          )}
+    <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(139,92,246,0.10),_transparent_30%),linear-gradient(to_bottom,_#f8fafc,_#eef2ff)] text-slate-900">
+      <div className="mx-auto max-w-5xl px-6 py-12 sm:px-8 sm:py-16">
+        <div className="overflow-hidden rounded-[32px] border border-slate-200/80 bg-white shadow-[0_20px_80px_rgba(15,23,42,0.10)]">
+          {/* HERO / TOPO */}
+          <div className="relative border-b border-slate-200 bg-gradient-to-br from-white via-slate-50 to-violet-50 px-6 py-12 sm:px-10 sm:py-16">
+            <div className="absolute right-6 top-6 flex gap-2">
+              <span className="h-3 w-3 rounded-full bg-rose-400" />
+              <span className="h-3 w-3 rounded-full bg-amber-400" />
+              <span className="h-3 w-3 rounded-full bg-emerald-400" />
+            </div>
+
+            <div className="flex justify-center">
+              {logo_url ? (
+                <img
+                  src={logo_url}
+                  alt={company_name}
+                  className="max-h-40 max-w-full object-contain sm:max-h-44"
+                />
+              ) : (
+                <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-8 py-10 text-xl font-semibold text-slate-400 shadow-sm">
+                  Logo
+                </div>
+              )}
+            </div>
+
+            {company_name && (
+              <div className="mt-8 text-center">
+                <p className="text-sm font-semibold uppercase tracking-[0.25em] text-slate-400">
+                  Apresentação
+                </p>
+                <h1 className="mt-2 text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">
+                  {company_name}
+                </h1>
+              </div>
+            )}
+          </div>
+
+          {/* CONTEÚDO */}
+          <section className="px-6 py-12 sm:px-10 sm:py-14">
+            <div className="max-w-3xl">
+              <span className="inline-flex rounded-full bg-violet-100 px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] text-violet-700">
+                Institucional
+              </span>
+
+              <div className="mt-5">
+                <h2 className="text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">
+                  Sobre nós
+                </h2>
+                <div className="mt-4 h-1 w-20 rounded-full bg-gradient-to-r from-violet-600 to-fuchsia-500" />
+              </div>
+
+              <div className="mt-8 whitespace-pre-line text-base leading-8 text-slate-700 sm:text-lg">
+                {about_simple || about || "—"}
+              </div>
+            </div>
+          </section>
+
+          {/* RODAPÉ */}
+          <footer className="border-t border-slate-200 bg-slate-50 px-6 py-8 sm:px-10">
+            <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200/70">
+              <div className="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-slate-400">
+                Informações
+              </div>
+              <div className="whitespace-pre-line text-sm leading-7 text-slate-600">
+                {footer}
+              </div>
+            </div>
+          </footer>
         </div>
-
-        {/* SOBRE NÓS */}
-        <section className="mt-14">
-          <div className="border-l-4 border-slate-900 pl-4">
-            <h1 className="text-3xl font-black uppercase tracking-tight sm:text-4xl">
-              Sobre nós
-            </h1>
-          </div>
-
-          <div className="mt-6 whitespace-pre-line text-base leading-8 text-slate-700 sm:text-lg">
-            {about_simple || about || "—"}
-          </div>
-        </section>
-
-        {/* RODAPÉ */}
-        <footer className="mt-20 border-t border-slate-200 pt-8">
-          <div className="whitespace-pre-line text-sm leading-7 text-slate-600">
-            {footer}
-          </div>
-        </footer>
       </div>
     </main>
   );
