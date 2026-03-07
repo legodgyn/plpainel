@@ -122,47 +122,43 @@ export default async function PublicSitePage(props: PageProps) {
   const waCta = waWithText(waUrl, "Olá, gostaria de mais informações.");
 
   // =========================================================
-  // ✅ TEMPLATE SIMPLES
+  // ✅ TEMPLATE SIMPLES (PRETO)
   // =========================================================
-if (template_type === "simple") {
-  return (
-    <main className="min-h-screen bg-black text-white flex flex-col items-center">
+  if (template_type === "simple") {
+    return (
+      <main className="min-h-screen bg-black text-white">
+        <div className="mx-auto flex max-w-5xl flex-col items-center px-4 py-12 sm:py-16">
+          {/* LOGO */}
+          {logo_url ? (
+            <img
+              src={logo_url}
+              alt={company_name}
+              className="w-[220px] max-w-full object-contain sm:w-[260px]"
+            />
+          ) : null}
 
-      {/* LOGO */}
-      <div className="mt-16 flex justify-center">
-        {logo_url ? (
-          <img
-            src={logo_url}
-            alt={company_name}
-            className="w-[220px] object-contain"
-          />
-        ) : null}
-      </div>
+          {/* TÍTULO */}
+          <h1 className="mt-8 text-center text-2xl font-bold sm:text-3xl">
+            Quem é {company_name}?
+          </h1>
 
-      {/* TÍTULO */}
-      <div className="mt-8 text-center px-6">
-        <h1 className="text-lg font-semibold">
-          Quem é {company_name}?
-        </h1>
-      </div>
-
-      {/* TEXTO */}
-      <div className="mt-6 max-w-xl text-center px-6">
-        <p className="text-sm leading-relaxed text-gray-300 whitespace-pre-line">
-          {about_simple || about || "—"}
-        </p>
-      </div>
-
-      {/* RODAPÉ */}
-      <footer className="mt-16 w-full bg-blue-700 text-center py-6 px-6 text-sm">
-        <div className="whitespace-pre-line">
-          {footer}
+          {/* TEXTO */}
+          <div className="mt-8 max-w-3xl text-center">
+            <p className="whitespace-pre-line text-sm leading-7 text-gray-200 sm:text-base sm:leading-8">
+              {about_simple || about || "—"}
+            </p>
+          </div>
         </div>
-      </footer>
 
-    </main>
-  );
-}
+        {/* RODAPÉ AZUL */}
+        <footer className="mt-16 w-full bg-blue-700 px-6 py-8 text-center text-sm text-white">
+          <div className="mx-auto max-w-5xl whitespace-pre-line leading-7">
+            {footer}
+          </div>
+        </footer>
+      </main>
+    );
+  }
 
   // =========================================================
   // ✅ TEMPLATE ATUAL (PADRÃO)
