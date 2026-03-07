@@ -133,14 +133,14 @@ export default async function PublicSitePage(props: PageProps) {
             <img
               src={logo_url}
               alt={company_name}
-              className="w-[220px] max-w-full object-contain sm:w-[260px]"
+              className="w-[300px] max-w-full object-contain sm:w-[320px]"
             />
           ) : null}
 
           {/* TÍTULO */}
-          <h1 className="mt-8 text-center text-2xl font-bold sm:text-3xl">
+          <h3 className="mt-8 text-center text-1xl font-bold sm:text-1xl">
             Quem é {company_name}?
-          </h1>
+          </h3>
 
           {/* TEXTO */}
           <div className="mt-8 max-w-3xl text-center">
