@@ -126,45 +126,40 @@ export default async function PublicSitePage(props: PageProps) {
   // =========================================================
 if (template_type === "simple") {
   return (
-    <main className="min-h-screen bg-black text-white flex flex-col">
-      {/* CONTEÚDO CENTRAL */}
-      <div className="flex-1 flex items-start justify-center px-6 py-10">
-        <div className="w-full max-w-4xl text-center">
-          {/* LOGO */}
-          <div className="flex justify-center">
-            {logo_url ? (
-              <img
-                src={logo_url}
-                alt={company_name || "Logo"}
-                className="h-auto max-h-[260px] w-auto object-contain"
-              />
-            ) : (
-              <div className="text-xl font-semibold text-white/50">Logo</div>
-            )}
-          </div>
+    <main className="min-h-screen bg-black text-white flex flex-col items-center">
 
-          {/* TÍTULO */}
-          <section className="mt-3">
-            <h1 className="text-2xl font-bold sm:text-3xl">
-              Quem é {company_name || "a empresa"}?
-            </h1>
-          </section>
+      {/* LOGO */}
+      <div className="mt-16 flex justify-center">
+        {logo_url ? (
+          <img
+            src={logo_url}
+            alt={company_name}
+            className="w-[220px] object-contain"
+          />
+        ) : null}
+      </div>
 
-          {/* TEXTO */}
-          <section className="mx-auto mt-10 max-w-3xl">
-            <div className="whitespace-pre-line text-base leading-8 text-white/95 sm:text-lg">
-              {about_simple || about || "—"}
-            </div>
-          </section>
-        </div>
+      {/* TÍTULO */}
+      <div className="mt-8 text-center px-6">
+        <h1 className="text-lg font-semibold">
+          Quem é {company_name}?
+        </h1>
+      </div>
+
+      {/* TEXTO */}
+      <div className="mt-6 max-w-xl text-center px-6">
+        <p className="text-sm leading-relaxed text-gray-300 whitespace-pre-line">
+          {about_simple || about || "—"}
+        </p>
       </div>
 
       {/* RODAPÉ */}
-      <footer className="w-full bg-blue-700 px-6 py-10 text-center">
-        <div className="mx-auto max-w-5xl whitespace-pre-line text-sm leading-7 text-white sm:text-base">
+      <footer className="mt-16 w-full bg-blue-700 text-center py-6 px-6 text-sm">
+        <div className="whitespace-pre-line">
           {footer}
         </div>
       </footer>
+
     </main>
   );
 }
