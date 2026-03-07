@@ -124,50 +124,46 @@ export default async function PublicSitePage(props: PageProps) {
   // =========================================================
   // ✅ TEMPLATE SIMPLES
   // =========================================================
-  if (template_type === "simple") {
-    return (
-      <main className="min-h-screen bg-white text-black">
-        <div className="mx-auto max-w-5xl px-4 py-12">
-          {/* LOGO */}
-          <div className="flex justify-center">
-            <div className="flex min-h-[180px] w-full max-w-xs items-center justify-center border-4 border-black p-6 sm:max-w-sm">
-              {logo_url ? (
-                <img
-                  src={logo_url}
-                  alt={company_name}
-                  className="max-h-36 max-w-full object-contain"
-                />
-              ) : (
-                <span className="text-4xl font-black uppercase">Logo</span>
-              )}
-            </div>
-          </div>
+if (template_type === "simple") {
+  return (
+    <main className="min-h-screen bg-white text-slate-900">
+      <div className="mx-auto max-w-4xl px-6 py-16">
+        {/* LOGO */}
+        <div className="flex justify-center">
+          {logo_url ? (
+            <img
+              src={logo_url}
+              alt={company_name}
+              className="max-h-40 max-w-full object-contain"
+            />
+          ) : (
+            <div className="text-xl font-semibold text-slate-400">Logo</div>
+          )}
+        </div>
 
-          {/* SOBRE NÓS TÍTULO */}
-          <div className="mt-10 border-4 border-black px-6 py-4">
-            <h1 className="text-3xl font-black uppercase sm:text-5xl">
+        {/* SOBRE NÓS */}
+        <section className="mt-14">
+          <div className="border-l-4 border-slate-900 pl-4">
+            <h1 className="text-3xl font-black uppercase tracking-tight sm:text-4xl">
               Sobre nós
             </h1>
           </div>
 
-          {/* TEXTO */}
-          <div className="mt-8 min-h-[180px] whitespace-pre-line text-base leading-relaxed sm:text-lg">
+          <div className="mt-6 whitespace-pre-line text-base leading-8 text-slate-700 sm:text-lg">
             {about_simple || about || "—"}
           </div>
+        </section>
 
-          {/* RODAPÉ */}
-          <footer className="mt-16 border-4 border-black px-6 py-4 text-center">
-            <div className="text-3xl font-black uppercase sm:text-5xl">
-              Rodapé
-            </div>
-            <div className="mt-4 whitespace-pre-line text-sm leading-relaxed sm:text-base">
-              {footer}
-            </div>
-          </footer>
-        </div>
-      </main>
-    );
-  }
+        {/* RODAPÉ */}
+        <footer className="mt-20 border-t border-slate-200 pt-8">
+          <div className="whitespace-pre-line text-sm leading-7 text-slate-600">
+            {footer}
+          </div>
+        </footer>
+      </div>
+    </main>
+  );
+}
 
   // =========================================================
   // ✅ TEMPLATE ATUAL (PADRÃO)
