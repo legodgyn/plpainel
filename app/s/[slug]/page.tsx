@@ -35,11 +35,9 @@ function extractMetaContent(input?: string | null) {
   const raw = String(input || "").trim();
   if (!raw) return null;
 
-  // se vier tag completa: <meta ... content="XYZ">
   const m = raw.match(/content\s*=\s*["']([^"']+)["']/i);
   if (m?.[1]) return m[1].trim();
 
-  // se vier só o token
   return raw;
 }
 
@@ -47,15 +45,13 @@ function extractMetaName(input?: string | null) {
   const raw = String(input || "").trim();
   if (!raw) return null;
 
-  // se vier tag completa: <meta name="XYZ" ...>
   const m = raw.match(/name\s*=\s*["']([^"']+)["']/i);
   if (m?.[1]) return m[1].trim();
 
-  // se vier só o nome
   return raw;
 }
 
-// ✅ BM meta tag dinâmica SEM QUEBRAR (mesmo se colunas não existirem)
+// ✅ BM meta tag dinâmica
 export async function generateMetadata(props: PageProps): Promise<Metadata> {
   const { slug } = await Promise.resolve(props.params);
 
@@ -64,7 +60,6 @@ export async function generateMetadata(props: PageProps): Promise<Metadata> {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
-  // ⚠️ pega tudo pra não quebrar se você renomear/adição de coluna
   const { data } = await supabase
     .from("sites")
     .select("*")
@@ -99,7 +94,6 @@ export default async function PublicSitePage(props: PageProps) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
-  // ✅ pega tudo pra não quebrar quando você adiciona coluna nova
   const { data, error } = await supabase
     .from("sites")
     .select("*")
@@ -109,7 +103,6 @@ export default async function PublicSitePage(props: PageProps) {
 
   if (error || !data) return notFound();
 
-  // normaliza campos (não assume nada como obrigatório)
   const company_name = (data.company_name as string | null) || "Empresa";
   const cnpj = (data.cnpj as string | null) || "—";
   const mission = (data.mission as string | null) || "";
@@ -118,13 +111,67 @@ export default async function PublicSitePage(props: PageProps) {
   const instagram = (data.instagram as string | null) || null;
   const whatsapp = (data.whatsapp as string | null) || "";
   const about = (data.about as string | null) || "";
-  const privacy = (data.privacy as string | null) || null; // ✅ separado
+  const about_simple = (data.about_simple as string | null) || "";
+  const logo_url = (data.logo_url as string | null) || "";
+  const template_type = (data.template_type as string | null) || "default";
+  const privacy = (data.privacy as string | null) || null;
   const footer = (data.footer as string | null) || "—";
 
   const igUrl = normalizeInstagram(instagram);
   const waUrl = normalizeWhatsApp(whatsapp);
   const waCta = waWithText(waUrl, "Olá, gostaria de mais informações.");
 
+  // =========================================================
+  // ✅ TEMPLATE SIMPLES
+  // =========================================================
+  if (template_type === "simple") {
+    return (
+      <main className="min-h-screen bg-white text-black">
+        <div className="mx-auto max-w-5xl px-4 py-12">
+          {/* LOGO */}
+          <div className="flex justify-center">
+            <div className="flex min-h-[180px] w-full max-w-xs items-center justify-center border-4 border-black p-6 sm:max-w-sm">
+              {logo_url ? (
+                <img
+                  src={logo_url}
+                  alt={company_name}
+                  className="max-h-36 max-w-full object-contain"
+                />
+              ) : (
+                <span className="text-4xl font-black uppercase">Logo</span>
+              )}
+            </div>
+          </div>
+
+          {/* SOBRE NÓS TÍTULO */}
+          <div className="mt-10 border-4 border-black px-6 py-4">
+            <h1 className="text-3xl font-black uppercase sm:text-5xl">
+              Sobre nós
+            </h1>
+          </div>
+
+          {/* TEXTO */}
+          <div className="mt-8 min-h-[180px] whitespace-pre-line text-base leading-relaxed sm:text-lg">
+            {about_simple || about || "—"}
+          </div>
+
+          {/* RODAPÉ */}
+          <footer className="mt-16 border-4 border-black px-6 py-4 text-center">
+            <div className="text-3xl font-black uppercase sm:text-5xl">
+              Rodapé
+            </div>
+            <div className="mt-4 whitespace-pre-line text-sm leading-relaxed sm:text-base">
+              {footer}
+            </div>
+          </footer>
+        </div>
+      </main>
+    );
+  }
+
+  // =========================================================
+  // ✅ TEMPLATE ATUAL (PADRÃO)
+  // =========================================================
   return (
     <main className="min-h-screen bg-[#F5F0FA] text-slate-900">
       {/* TOP */}
@@ -221,9 +268,7 @@ export default async function PublicSitePage(props: PageProps) {
 
       {/* CONTENT */}
       <section className="mx-auto max-w-5xl px-4 pb-14">
-        {/* Linha 1: Sobre nós + lateral */}
         <div className="grid gap-6 md:grid-cols-[1.4fr_.6fr]">
-          {/* Sobre nós */}
           <div className="rounded-2xl bg-white border border-purple-200 shadow-sm p-6 sm:p-7">
             <h2 className="text-lg font-extrabold text-slate-900">QUEM SOMOS?</h2>
             <div className="mt-4 whitespace-pre-line leading-relaxed text-slate-800">
@@ -231,7 +276,6 @@ export default async function PublicSitePage(props: PageProps) {
             </div>
           </div>
 
-          {/* Lateral */}
           <div className="space-y-6">
             <div className="rounded-2xl bg-white border border-purple-200 shadow-sm p-6 sm:p-7">
               <h3 className="text-sm font-extrabold tracking-widest text-purple-700">
@@ -315,7 +359,6 @@ export default async function PublicSitePage(props: PageProps) {
           </div>
         </div>
 
-        {/* Linha 2: Política de Privacidade (separada + estilo missão) */}
         {privacy ? (
           <div className="mt-6">
             <div className="rounded-2xl bg-white border border-purple-200 shadow-sm p-6 sm:p-7">
