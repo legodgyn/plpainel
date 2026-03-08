@@ -1,5 +1,3 @@
-// src/app/s/[slug]/page.tsx
-
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
@@ -51,7 +49,6 @@ function extractMetaName(input?: string | null) {
   return raw;
 }
 
-// ✅ BM meta tag dinâmica
 export async function generateMetadata(props: PageProps): Promise<Metadata> {
   const { slug } = await Promise.resolve(props.params);
 
@@ -114,6 +111,7 @@ export default async function PublicSitePage(props: PageProps) {
   const about_simple = (data.about_simple as string | null) || "";
   const logo_url = (data.logo_url as string | null) || "";
   const template_type = (data.template_type as string | null) || "default";
+  const simple_title = (data.simple_title as string | null) || "";
   const privacy = (data.privacy as string | null) || null;
   const footer = (data.footer as string | null) || "—";
 
@@ -121,28 +119,22 @@ export default async function PublicSitePage(props: PageProps) {
   const waUrl = normalizeWhatsApp(whatsapp);
   const waCta = waWithText(waUrl, "Olá, gostaria de mais informações.");
 
-  // =========================================================
-  // ✅ TEMPLATE SIMPLES (PRETO)
-  // =========================================================
   if (template_type === "simple") {
     return (
       <main className="min-h-screen bg-black text-white">
         <div className="mx-auto flex max-w-5xl flex-col items-center px-4 py-12 sm:py-16">
-          {/* LOGO */}
           {logo_url ? (
             <img
               src={logo_url}
               alt={company_name}
-              className="w-[300px] max-w-full object-contain sm:w-[320px]"
+              className="w-[220px] max-w-full object-contain sm:w-[260px]"
             />
           ) : null}
 
-          {/* TÍTULO */}
-          <h3 className="mt-8 text-center text-1xl font-bold sm:text-1xl">
-            Quem é {company_name}?
-          </h3>
+          <h1 className="mt-8 text-center text-2xl font-bold sm:text-3xl">
+            Quem é {simple_title || company_name}?
+          </h1>
 
-          {/* TEXTO */}
           <div className="mt-8 max-w-3xl text-center">
             <p className="whitespace-pre-line text-sm leading-7 text-gray-200 sm:text-base sm:leading-8">
               {about_simple || about || "—"}
@@ -150,7 +142,6 @@ export default async function PublicSitePage(props: PageProps) {
           </div>
         </div>
 
-        {/* RODAPÉ AZUL */}
         <footer className="mt-16 w-full bg-blue-700 px-6 py-8 text-center text-sm text-white">
           <div className="mx-auto max-w-5xl whitespace-pre-line leading-7">
             {footer}
@@ -160,12 +151,8 @@ export default async function PublicSitePage(props: PageProps) {
     );
   }
 
-  // =========================================================
-  // ✅ TEMPLATE ATUAL (PADRÃO)
-  // =========================================================
   return (
     <main className="min-h-screen bg-[#F5F0FA] text-slate-900">
-      {/* TOP */}
       <header className="bg-white/90 backdrop-blur border-b border-purple-200">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4">
           <div className="flex items-center gap-3">
@@ -198,7 +185,6 @@ export default async function PublicSitePage(props: PageProps) {
         </div>
       </header>
 
-      {/* HERO */}
       <section className="mx-auto max-w-5xl px-4 pt-10 pb-8">
         <div className="rounded-2xl bg-white border border-purple-200 shadow-sm">
           <div className="p-7 sm:p-10">
@@ -214,8 +200,7 @@ export default async function PublicSitePage(props: PageProps) {
               </h1>
 
               <div className="mt-2 text-sm sm:text-base text-slate-700">
-                <span className="font-semibold text-slate-900">CNPJ:</span>{" "}
-                {cnpj}
+                <span className="font-semibold text-slate-900">CNPJ:</span> {cnpj}
               </div>
 
               {mission ? (
@@ -257,7 +242,6 @@ export default async function PublicSitePage(props: PageProps) {
         </div>
       </section>
 
-      {/* CONTENT */}
       <section className="mx-auto max-w-5xl px-4 pb-14">
         <div className="grid gap-6 md:grid-cols-[1.4fr_.6fr]">
           <div className="rounded-2xl bg-white border border-purple-200 shadow-sm p-6 sm:p-7">
@@ -364,7 +348,6 @@ export default async function PublicSitePage(props: PageProps) {
         ) : null}
       </section>
 
-      {/* FOOTER */}
       <footer className="border-t border-purple-200 bg-white">
         <div className="mx-auto max-w-5xl px-4 py-10">
           <div className="whitespace-pre-line text-sm text-slate-700">{footer}</div>
