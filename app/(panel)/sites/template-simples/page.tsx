@@ -14,6 +14,7 @@ type SiteRow = {
   about_simple: string | null;
   logo_url: string | null;
   template_type: string | null;
+  simple_title: string | null;
 };
 
 export default function TemplateSimplePage() {
@@ -22,6 +23,7 @@ export default function TemplateSimplePage() {
   const [sites, setSites] = useState<SiteRow[]>([]);
   const [siteId, setSiteId] = useState("");
   const [aboutSimple, setAboutSimple] = useState("");
+  const [simpleTitle, setSimpleTitle] = useState("");
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [currentSite, setCurrentSite] = useState<SiteRow | null>(null);
@@ -47,7 +49,6 @@ export default function TemplateSimplePage() {
       return;
     }
 
-    // ✅ AGORA FILTRA SÓ OS SITES DO USUÁRIO LOGADO
     const { data, error } = await supabase
       .from("sites")
       .select("*")
@@ -69,6 +70,7 @@ export default function TemplateSimplePage() {
       setSiteId(first.id);
       setCurrentSite(first);
       setAboutSimple(first.about_simple || first.about || "");
+      setSimpleTitle(first.simple_title || first.company_name || "");
       setLogoUrl(first.logo_url || null);
       setUploadName("");
     }
@@ -82,6 +84,7 @@ export default function TemplateSimplePage() {
     const selected = sites.find((s) => s.id === nextId) || null;
     setCurrentSite(selected);
     setAboutSimple(selected?.about_simple || selected?.about || "");
+    setSimpleTitle(selected?.simple_title || selected?.company_name || "");
     setLogoUrl(selected?.logo_url || null);
     setLogoFile(null);
     setUploadName("");
@@ -92,6 +95,11 @@ export default function TemplateSimplePage() {
 
     if (!siteId) {
       setMsg("Selecione um site.");
+      return;
+    }
+
+    if (!simpleTitle.trim()) {
+      setMsg("Preencha o nome da empresa no template.");
       return;
     }
 
@@ -142,6 +150,7 @@ export default function TemplateSimplePage() {
           template_type: "simple",
           logo_url: uploadedLogo,
           about_simple: aboutSimple.trim(),
+          simple_title: simpleTitle.trim() || null,
         })
         .eq("id", siteId);
 
@@ -166,7 +175,7 @@ export default function TemplateSimplePage() {
     <main className="mx-auto max-w-6xl px-4 py-8 text-white">
       <h1 className="text-2xl font-bold">Template Simples</h1>
       <p className="mt-1 text-sm text-white/60">
-        Atualize um site já criado usando o mesmo domínio, com logo, sobre nós e rodapé.
+        Atualize um site já criado usando o mesmo domínio, com logo, nome personalizado, sobre nós e rodapé.
       </p>
 
       {msg && (
@@ -187,7 +196,6 @@ export default function TemplateSimplePage() {
         </div>
       ) : (
         <div className="mt-6 grid gap-6 md:grid-cols-2">
-          {/* FORM */}
           <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
             <div className="text-sm text-white/60 mb-4">
               Atualize um site já criado usando o mesmo domínio.
@@ -209,8 +217,6 @@ export default function TemplateSimplePage() {
 
             <div className="mt-5">
               <label className="text-sm font-semibold">Upload da logo</label>
-
-              {/* ✅ BOTÃO BONITO DE UPLOAD */}
               <div className="mt-2 flex flex-wrap items-center gap-3">
                 <label className="inline-flex cursor-pointer items-center rounded-xl bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-500">
                   Escolher arquivo
@@ -233,6 +239,16 @@ export default function TemplateSimplePage() {
                   {uploadName || "Nenhum arquivo escolhido"}
                 </span>
               </div>
+            </div>
+
+            <div className="mt-5">
+              <label className="text-sm font-semibold">Nome da empresa no template</label>
+              <input
+                value={simpleTitle}
+                onChange={(e) => setSimpleTitle(e.target.value)}
+                className="mt-2 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-white outline-none focus:border-violet-400"
+                placeholder="Ex: MT Cap"
+              />
             </div>
 
             <div className="mt-5">
@@ -264,12 +280,10 @@ export default function TemplateSimplePage() {
             </div>
           </div>
 
-          {/* PRÉVIA */}
           <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
             <div className="text-sm font-semibold mb-4">Prévia</div>
 
-            <div className="rounded-2xl bg-white p-8 text-slate-900">
-              {/* LOGO */}
+            <div className="min-h-[560px] rounded-2xl bg-black p-8 text-white">
               <div className="flex justify-center">
                 {logoUrl ? (
                   <img
@@ -278,24 +292,24 @@ export default function TemplateSimplePage() {
                     className="max-h-36 max-w-full object-contain"
                   />
                 ) : (
-                  <div className="text-lg font-semibold text-slate-400">Nenhuma logo enviada</div>
+                  <div className="text-lg font-semibold text-white/40">Nenhuma logo enviada</div>
                 )}
               </div>
 
-              {/* SOBRE NÓS */}
-              <div className="mt-12">
-                <div className="border-l-4 border-slate-900 pl-4">
-                  <h2 className="text-2xl font-black uppercase">Sobre nós</h2>
-                </div>
+              <div className="mt-10 text-center">
+                <h2 className="text-2xl font-bold">
+                  Quem é {simpleTitle || currentSite?.company_name || "Empresa"}?
+                </h2>
+              </div>
 
-                <div className="mt-6 whitespace-pre-line text-base leading-8 text-slate-700">
+              <div className="mt-6 text-center">
+                <div className="whitespace-pre-line text-sm leading-7 text-gray-300">
                   {aboutSimple || "Seu texto sobre nós aparecerá aqui."}
                 </div>
               </div>
 
-              {/* RODAPÉ */}
-              <div className="mt-16 border-t border-slate-200 pt-6">
-                <div className="whitespace-pre-line text-sm leading-7 text-slate-600">
+              <div className="mt-16 bg-blue-700 px-6 py-6 text-center">
+                <div className="whitespace-pre-line text-sm leading-7 text-white">
                   {currentSite?.footer || "Rodapé do site"}
                 </div>
               </div>
