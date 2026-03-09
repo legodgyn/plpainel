@@ -116,7 +116,6 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
       if (!alive) return;
       setTokens(tokenRow?.balance ?? 0);
 
-      // verifica profile/whatsapp
       const { data: profileData, error: profileError } = await supabase
         .from("profiles")
         .select("name, whatsapp")
@@ -128,8 +127,7 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
       if (profileError) {
         setNeedsWhatsapp(true);
       } else {
-        const savedName =
-          String(profileData?.name || user.user_metadata?.name || "").trim();
+        const savedName = String(profileData?.name || user.user_metadata?.name || "").trim();
         const savedWhatsapp = String(profileData?.whatsapp || "").trim();
 
         setProfileName(savedName);
@@ -209,7 +207,7 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
     <div className="min-h-screen bg-[#0b1220]">
       {/* Top bar */}
       <div className="bg-gradient-to-r from-violet-600 via-fuchsia-600 to-violet-600">
-        <div className="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between">
+        <div className="mx-auto max-w-[1600px] px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="h-9 w-9 rounded-xl bg-black/20 border border-white/10 flex items-center justify-center text-white font-black">
               PL
@@ -255,7 +253,7 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
         </div>
       </div>
 
-      <div className="mx-auto max-w-6xl px-4 py-8 flex gap-6">
+      <div className="mx-auto max-w-[1600px] px-4 py-8 flex gap-6">
         {/* Sidebar */}
         <aside className="w-64 shrink-0">
           <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
@@ -300,7 +298,7 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
         </aside>
 
         {/* Content */}
-        <main className="flex-1">
+        <main className="min-w-0 flex-1">
           {loading ? (
             <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-white/70">
               Carregando painel...
