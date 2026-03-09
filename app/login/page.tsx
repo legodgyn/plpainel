@@ -4,6 +4,40 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseBrowser";
 
+function onlyDigits(v: string) {
+  return String(v || "").replace(/\D/g, "");
+}
+
+function formatBRPhone(input: string) {
+  const digitsRaw = onlyDigits(input);
+
+  if (!digitsRaw) return "";
+
+  let digits = digitsRaw;
+  if (digits.length > 11) digits = digits.slice(-11);
+
+  const ddd = digits.slice(0, 2);
+  const rest = digits.slice(2);
+
+  if (digits.length <= 2) return `(${digits}`;
+  if (digits.length <= 6) return `(${ddd}) ${rest}`;
+
+  if (digits.length === 10) {
+    const p1 = rest.slice(0, 4);
+    const p2 = rest.slice(4, 8);
+    return `(${ddd}) ${p1}-${p2}`;
+  }
+
+  const r = digits.slice(2, 11);
+  const p1 = r.slice(0, 5);
+  const p2 = r.slice(5, 9);
+  return `(${ddd}) ${p1}-${p2}`;
+}
+
+function isValidEmail(email: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || "").trim().toLowerCase());
+}
+
 export default function LoginPage() {
   const router = useRouter();
 
@@ -14,7 +48,7 @@ export default function LoginPage() {
   // UI states
   const [loadingLogin, setLoadingLogin] = useState(false);
 
-  // ✅ Mensagem com tipo (sucesso/erro)
+  // Mensagem com tipo (sucesso/erro)
   const [msg, setMsg] = useState<string | null>(null);
   const [msgType, setMsgType] = useState<"error" | "success">("error");
 
@@ -22,6 +56,7 @@ export default function LoginPage() {
   const [openRegister, setOpenRegister] = useState(false);
   const [regName, setRegName] = useState("");
   const [regEmail, setRegEmail] = useState("");
+  const [regWhatsapp, setRegWhatsapp] = useState("");
   const [regPassword, setRegPassword] = useState("");
   const [regPassword2, setRegPassword2] = useState("");
   const [loadingRegister, setLoadingRegister] = useState(false);
@@ -29,9 +64,8 @@ export default function LoginPage() {
 
   const canSubmitLogin = useMemo(() => {
     return email.trim().length > 3 && password.trim().length >= 6 && !loadingLogin;
-  }, [, password, loadingLogin]);
+  }, [email, password, loadingLogin]);
 
-  // Fecha modal com ESC
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") setOpenRegister(false);
@@ -43,7 +77,6 @@ export default function LoginPage() {
   async function handleLogin(e?: React.FormEvent) {
     e?.preventDefault();
 
-    // ✅ sempre que tentar logar, limpa msg
     setMsg(null);
     setMsgType("error");
 
@@ -54,6 +87,12 @@ export default function LoginPage() {
       setMsgType("error");
       return setMsg("Digite seu e-mail.");
     }
+
+    if (!isValidEmail(e1)) {
+      setMsgType("error");
+      return setMsg("Digite um e-mail válido.");
+    }
+
     if (p1.length < 6) {
       setMsgType("error");
       return setMsg("Digite sua senha (mín. 6 caracteres).");
@@ -82,10 +121,10 @@ export default function LoginPage() {
   }
 
   async function handleOpenRegister() {
-    // limpa e abre
     setRegMsg(null);
     setRegName("");
     setRegEmail(email || "");
+    setRegWhatsapp("");
     setRegPassword("");
     setRegPassword2("");
     setOpenRegister(true);
@@ -96,9 +135,17 @@ export default function LoginPage() {
     setRegMsg(null);
 
     const e1 = regEmail.trim().toLowerCase();
+    const w1 = onlyDigits(regWhatsapp);
     const p1 = regPassword;
+    const n1 = regName.trim();
 
+    if (!n1) return setRegMsg("Digite seu nome.");
     if (!e1) return setRegMsg("Digite um e-mail.");
+    if (!isValidEmail(e1)) return setRegMsg("Digite um e-mail válido.");
+    if (!w1) return setRegMsg("Digite seu WhatsApp.");
+    if (w1.length < 10 || w1.length > 11) {
+      return setRegMsg("Digite um WhatsApp válido com DDD.");
+    }
     if (p1.length < 6) return setRegMsg("Crie uma senha com no mínimo 6 caracteres.");
     if (regPassword2 !== p1) return setRegMsg("As senhas não conferem.");
 
@@ -109,27 +156,35 @@ export default function LoginPage() {
         password: p1,
         options: {
           data: {
-            name: regName.trim() || null,
+            name: n1,
           },
         },
       });
 
-      if (error) {
-        setRegMsg(error.message || "Não foi possível criar a conta.");
+      if (error || !data?.user) {
+        setRegMsg(error?.message || "Não foi possível criar a conta.");
         return;
       }
 
-      // volta pro login com email preenchido
+      // salva perfil com whatsapp obrigatório
+      const { error: profileError } = await supabase.from("profiles").upsert({
+        user_id: data.user.id,
+        name: n1,
+        whatsapp: w1,
+      });
+
+      if (profileError) {
+        setRegMsg(profileError.message || "Conta criada, mas não foi possível salvar o WhatsApp.");
+        return;
+      }
+
       setEmail(e1);
       setPassword("");
       setOpenRegister(false);
 
-      // ✅ Agora essa mensagem é SUCESSO (verde)
       setMsgType("success");
       setMsg(
-        data?.user
-          ? "Conta criada! Agora faça o login (Confirme o e-mail abaixo)."
-          : "Conta criada! Agora faça o login."
+        "Conta criada! Agora faça o login. Seu WhatsApp foi salvo com sucesso."
       );
     } catch (err: any) {
       setRegMsg(err?.message || "Erro ao criar conta.");
@@ -138,7 +193,6 @@ export default function LoginPage() {
     }
   }
 
-  // ✅ classes do box principal de msg (verde ou vermelho)
   const msgBoxClass =
     msgType === "success"
       ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-200"
@@ -146,7 +200,6 @@ export default function LoginPage() {
 
   return (
     <main className="min-h-screen bg-[#0b1220] text-white">
-      {/* BG glow */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute -top-24 left-1/2 h-[520px] w-[860px] -translate-x-1/2 rounded-full bg-violet-700/20 blur-3xl" />
         <div className="absolute top-40 right-[-120px] h-[360px] w-[360px] rounded-full bg-emerald-500/10 blur-3xl" />
@@ -219,20 +272,17 @@ export default function LoginPage() {
           </div>
 
           <div className="mt-5 text-center text-xs text-white/45">
-            © {new Date().getFullYear()} PL - Painel
+            ©️ {new Date().getFullYear()} PL - Painel
           </div>
         </div>
       </div>
 
-      {/* Register Modal */}
       {openRegister && (
         <div className="fixed inset-0 z-[999]">
-          {/* overlay */}
           <div
             className="absolute inset-0 bg-black/60 backdrop-blur-[2px]"
             onClick={() => setOpenRegister(false)}
           />
-          {/* modal */}
           <div className="absolute inset-0 flex items-center justify-center px-4">
             <div className="w-full max-w-md rounded-3xl border border-white/10 bg-[#0b1220] p-6 shadow-[0_30px_120px_rgba(0,0,0,.65)]">
               <div className="flex items-start justify-between gap-4">
@@ -267,6 +317,17 @@ export default function LoginPage() {
                     placeholder="Seu nome"
                     className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 outline-none focus:border-emerald-400"
                     autoComplete="name"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs text-white/70">WhatsApp* (Obrigatório)</label>
+                  <input
+                    value={regWhatsapp}
+                    onChange={(e) => setRegWhatsapp(formatBRPhone(e.target.value))}
+                    placeholder="(62) 99999-9999"
+                    className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 outline-none focus:border-emerald-400"
+                    autoComplete="tel"
                   />
                 </div>
 
