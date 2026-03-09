@@ -7,6 +7,7 @@ type Row = {
   id: string;
   created_at: string;
   email: string | null;
+  whatsapp: string | null;
   total_label: string;
   status: string;
   status_label: string;
@@ -110,6 +111,7 @@ export default function AdminDashboard() {
               <tr className="border-b border-white/10">
                 <th className="py-3 text-left font-medium">Data</th>
                 <th className="py-3 text-left font-medium">E-mail</th>
+                <th className="py-3 text-left font-medium">WhatsApp</th>
                 <th className="py-3 text-left font-medium">Total</th>
                 <th className="py-3 text-left font-medium">Status</th>
                 <th className="py-3 text-left font-medium">Afiliado</th>
@@ -119,13 +121,13 @@ export default function AdminDashboard() {
             <tbody className="divide-y divide-white/5">
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="py-6 text-white/60">
+                  <td colSpan={6} className="py-6 text-white/60">
                     Carregando...
                   </td>
                 </tr>
               ) : rows.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="py-6 text-white/60">
+                  <td colSpan={6} className="py-6 text-white/60">
                     Nenhuma compra encontrada.
                   </td>
                 </tr>
@@ -133,16 +135,35 @@ export default function AdminDashboard() {
                 rows.map((o) => (
                   <tr key={o.id} className="hover:bg-white/5">
                     <td className="py-3 text-white/70">{fmt(o.created_at)}</td>
+
                     <td className="py-3">
                       <div className="font-semibold text-white/90">{o.email || "—"}</div>
                       <div className="text-[11px] text-white/40">{o.id}</div>
                     </td>
+
+                    <td className="py-3">
+                      {o.whatsapp ? (
+                        <a
+                          href={`https://wa.me/${String(o.whatsapp).replace(/\D/g, "")}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="font-semibold text-emerald-300 hover:text-emerald-200"
+                        >
+                          {o.whatsapp}
+                        </a>
+                      ) : (
+                        <span className="text-white/50">—</span>
+                      )}
+                    </td>
+
                     <td className="py-3">{o.total_label}</td>
+
                     <td className="py-3">
                       <span className={`rounded-full border px-3 py-1 text-xs ${badge(o.status)}`}>
                         {o.status_label}
                       </span>
                     </td>
+
                     <td className="py-3">
                       {o.affiliate_code ? (
                         <span className="rounded-full border border-violet-500/20 bg-violet-500/10 px-3 py-1 text-xs text-violet-200">
