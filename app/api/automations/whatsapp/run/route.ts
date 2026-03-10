@@ -86,7 +86,7 @@ export async function GET(req: Request) {
       const text =
         `Olá ${user.name || ""}! 👋\n\n` +
         `Vi que você criou uma conta no PL Painel, mas ainda não fez sua primeira compra.\n\n` +
-        `Se quiser, posso te ajudar a começar e criar seu primeiro site. 🚀`;
+        `Se quiser, posso te ajudar a começar e criar seu primeiro site e VERIFICAR sua BM em tempo recorde. 🚀`;
 
       await sendEvolutionText(user.whatsapp, text);
 
@@ -143,7 +143,7 @@ export async function GET(req: Request) {
         `Olá ${profile.name || ""}! ✅\n\n` +
         `Seu pagamento no PL Painel foi confirmado com sucesso.\n\n` +
         `Valor: ${totalLabel}\n\n` +
-        `Se precisar de ajuda para usar seus tokens, me chama aqui.`;
+        `Se precisar de ajuda para usar seus tokens, me chama aqui que te ajudo como verificar sua BM em tempo recorde.`;
 
       await sendEvolutionText(profile.whatsapp, text);
 
@@ -199,7 +199,7 @@ export async function GET(req: Request) {
       const text =
         `Olá ${profile.name || ""}! ⚠️\n\n` +
         `Seus tokens no PL Painel acabaram.\n\n` +
-        `Quando quiser continuar criando sites e usando a plataforma, é só recarregar. 🚀`;
+        `Quando quiser continuar criando sites e usando a plataforma, é só recarregar ou se tiver alguma dúvida estamos prontos para ajudar você!. 🚀`;
 
       await sendEvolutionText(profile.whatsapp, text);
 
@@ -228,4 +228,5 @@ export async function GET(req: Request) {
       { status: 500 }
     );
   }
+
 }
