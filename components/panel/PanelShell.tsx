@@ -64,13 +64,13 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
 
   const baseNav = useMemo(
     () => [
-      { href: "/dashboard", label: "Dashboard", icon: "▦" },
-      { href: "/sites", label: "Meus Sites", icon: "▤" },
-      { href: "/sites/new", label: "Criar Site", icon: "+" },
-      { href: "/tokens", label: "Comprar Tokens", icon: "◈" },
-      { href: "/billing", label: "Minhas Compras", icon: "◈" },
-      { href: "/sites/template-simples", label: "Alterar Layout", icon: "◈" },
-      { href: "/affiliate", label: "Afiliados", icon: "◈" },
+      { href: "/dashboard", label: "Dashboard", icon: "📊" },
+      { href: "/sites", label: "Meus Sites", icon: "🌐" },
+      { href: "/sites/new", label: "Criar Site", icon: "➕" },
+      { href: "/tokens", label: "Comprar Tokens", icon: "💳" },
+      { href: "/billing", label: "Minhas Compras", icon: "🧾" },
+      { href: "/sites/template-simples", label: "Alterar Layout", icon: "🎨" },
+      { href: "/affiliate", label: "Afiliados", icon: "🤝" },
     ],
     []
   );
@@ -78,8 +78,8 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
   const nav = useMemo(() => {
     const items = [...baseNav];
     if (isAdminMaster) {
-      items.push({ href: "/admin", label: "Compras na Plataforma", icon: "◈" });
-      items.push({ href: "/users", label: "Usuários", icon: "◈" });
+      items.push({ href: "/admin", label: "Compras na Plataforma", icon: "🛒" });
+      items.push({ href: "/users", label: "Usuários", icon: "👥" });
     }
     return items;
   }, [baseNav, isAdminMaster]);
@@ -297,7 +297,7 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
               onClick={signOut}
               className="mt-5 w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white hover:bg-white/10"
             >
-              Sair
+              🚪 Sair
             </button>
           </div>
         </aside>
