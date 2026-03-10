@@ -267,7 +267,7 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
     className="h-10 w-10 rounded-xl object-cover"
   />
   <div className="min-w-0">
-    <div className="text-white font-semibold truncate">{name || "Conta"}</div>
+    <div className="text-white font-semibold truncate">{email || "Conta"}</div>
     <div className="text-white/60 text-xs truncate">Seja bem vindo!!</div>
   </div>
 </div>
