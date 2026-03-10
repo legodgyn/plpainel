@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 
 export const dynamic = "force-dynamic";
 
@@ -15,14 +16,18 @@ export default function HomePage() {
       <header className="sticky top-0 z-50 border-b border-white/10 bg-[#070712]/80 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
           <div className="flex items-center gap-3">
-            <div className="grid h-9 w-9 place-items-center rounded-xl bg-white/10 border border-white/10">
-              <span className="text-sm font-black">PL</span>
-            </div>
-            <div className="leading-tight">
-              <div className="text-sm font-semibold">PL - Painel</div>
-              <div className="text-[11px] text-white/50">Sites rápidos • BM-safe</div>
-            </div>
-          </div>
+  <Image
+    src="/logo-icon.png"
+    alt="PL Painel"
+    width={40}
+    height={40}
+    className="h-10 w-10 rounded-xl object-cover"
+  />
+  <div className="leading-tight">
+    <div className="text-sm font-semibold">PL - Painel</div>
+    <div className="text-[11px] text-white/50">Sites rápidos • BM-safe</div>
+  </div>
+</div>
 
           <nav className="hidden items-center gap-6 md:flex">
             <a href="#como-funciona" className="text-sm text-white/70 hover:text-white">
