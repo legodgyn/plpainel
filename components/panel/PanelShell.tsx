@@ -211,16 +211,12 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
         <div className="mx-auto max-w-[1600px] px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
   <Image
-    src="/logo-icon.png"
+    src="/logo.png"
     alt="PL Painel"
-    width={40}
-    height={40}
-    className="h-10 w-10 rounded-xl object-cover"
+    width={32}
+    height={32}
+    className="h-8 w-8"
   />
-  <div className="leading-tight">
-    <div className="text-sm font-semibold text-white">plpainel.com — Painel</div>
-    <div className="text-[11px] text-white/70">Suporte rápido via WhatsApp</div>
-  </div>
 </div>
 
           <a
