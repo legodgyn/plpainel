@@ -263,14 +263,18 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
         <aside className="w-64 shrink-0">
           <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl bg-violet-600/30 border border-white/10 flex items-center justify-center text-white font-bold">
-                P
-              </div>
-              <div className="min-w-0">
-                <div className="text-white font-semibold truncate">{email || "Conta"}</div>
-                <div className="text-white/60 text-xs truncate">Acesso ao painel</div>
-              </div>
-            </div>
+  <Image
+    src="/logo-icon.png"
+    alt="PL Painel"
+    width={40}
+    height={40}
+    className="h-10 w-10 rounded-xl object-cover"
+  />
+  <div className="min-w-0">
+    <div className="text-white font-semibold truncate">{email || "Conta"}</div>
+    <div className="text-white/60 text-xs truncate">Acesso ao painel</div>
+  </div>
+</div>
 
             <nav className="mt-5 space-y-1">
               {nav.map((item) => {
