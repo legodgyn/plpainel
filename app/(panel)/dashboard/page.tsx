@@ -108,7 +108,7 @@ export default function DashboardPage() {
       <div className="grid gap-4 md:grid-cols-3">
         {/* Tokens */}
         <div className="rounded-2xl border border-white/10 bg-white/5 p-5 shadow-[0_10px_30px_rgba(0,0,0,.35)]">
-          <div className="text-sm font-semibold text-white">Tokens disponíveis</div>
+          <div className="text-sm font-semibold text-white">⚡ Tokens disponíveis</div>
 
           <div className="mt-2 text-4xl font-bold tracking-tight text-white">
             {loading ? "—" : balance ?? 0}
@@ -121,7 +121,7 @@ export default function DashboardPage() {
 
         {/* Criar novo */}
         <div className="rounded-2xl border border-white/10 bg-white/5 p-5 shadow-[0_10px_30px_rgba(0,0,0,.35)]">
-          <div className="text-sm font-semibold text-white">Criar Novo Site</div>
+          <div className="text-sm font-semibold text-white">➕ Criar Novo Site</div>
           <div className="mt-1 text-sm text-white/60">Gere seu site em segundos.</div>
 
           <div className="mt-4">
@@ -136,7 +136,7 @@ export default function DashboardPage() {
 
         {/* Meus sites */}
         <div className="rounded-2xl border border-white/10 bg-white/5 p-5 shadow-[0_10px_30px_rgba(0,0,0,.35)]">
-          <div className="text-sm font-semibold text-white">Meus Sites</div>
+          <div className="text-sm font-semibold text-white">🌐 Meus Sites</div>
           <div className="mt-1 text-sm text-white/60">Veja todos os sites criados.</div>
 
           <div className="mt-4">
