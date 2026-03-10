@@ -260,7 +260,7 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
           <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
             <div className="flex items-center gap-3">
   <Image
-    src="/logo-icon.png"
+    src="/favicon.png"
     alt="PL Painel"
     width={40}
     height={40}
