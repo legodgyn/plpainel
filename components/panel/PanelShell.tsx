@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseBrowser";
@@ -209,14 +210,18 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
       <div className="bg-gradient-to-r from-violet-600 via-fuchsia-600 to-violet-600">
         <div className="mx-auto max-w-[1600px] px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-xl bg-black/20 border border-white/10 flex items-center justify-center text-white font-black">
-              PL
-            </div>
-            <div className="leading-tight">
-              <div className="text-sm font-semibold text-white">plpainel.com — Painel</div>
-              <div className="text-[11px] text-white/70">Suporte rápido via WhatsApp</div>
-            </div>
-          </div>
+  <Image
+    src="/logo-icon.png"
+    alt="PL Painel"
+    width={40}
+    height={40}
+    className="h-10 w-10 rounded-xl object-cover"
+  />
+  <div className="leading-tight">
+    <div className="text-sm font-semibold text-white">plpainel.com — Painel</div>
+    <div className="text-[11px] text-white/70">Suporte rápido via WhatsApp</div>
+  </div>
+</div>
 
           <a
             href={supportLink}
