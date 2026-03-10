@@ -215,7 +215,7 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
     alt="PL Painel"
     width={200}
     height={80}
-    className="h-12 w-40"
+    className="h-14 w-40"
   />
 </div>
 
