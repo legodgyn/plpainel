@@ -16,12 +16,6 @@ function daysAgo(days: number) {
   return d;
 }
 
-function hoursAgo(hours: number) {
-  const d = new Date();
-  d.setHours(d.getHours() - hours);
-  return d;
-}
-
 function isPaid(status: string | null | undefined) {
   return String(status || "").toLowerCase() === "paid";
 }
@@ -105,65 +99,7 @@ export async function GET(req: Request) {
     }
 
     // =========================================================
-    // 2) COMPRA APROVADA
-    // =========================================================
-    const { data: recentOrders, error: recentOrdersErr } = await supabaseAdmin
-      .from("token_orders")
-      .select("id,user_id,total_cents,status,created_at")
-      .gte("created_at", hoursAgo(24).toISOString());
-
-    if (recentOrdersErr) throw new Error(recentOrdersErr.message);
-
-    for (const order of recentOrders || []) {
-      if (!isPaid(order.status)) continue;
-
-      const { data: alreadySent } = await supabaseAdmin
-        .from("whatsapp_automation_logs")
-        .select("id")
-        .eq("user_id", order.user_id)
-        .eq("event_key", `order_paid_${order.id}`)
-        .limit(1);
-
-      if ((alreadySent || []).length > 0) continue;
-
-      const { data: profile } = await supabaseAdmin
-        .from("profiles")
-        .select("name,whatsapp")
-        .eq("user_id", order.user_id)
-        .maybeSingle();
-
-      if (!profile?.whatsapp) continue;
-
-      const totalLabel = (Number(order.total_cents || 0) / 100).toLocaleString("pt-BR", {
-        style: "currency",
-        currency: "BRL",
-      });
-
-      const text =
-        `Olá ${profile.name || ""}! ✅\n\n` +
-        `Seu pagamento no PL Painel foi confirmado com sucesso.\n\n` +
-        `Valor: ${totalLabel}\n\n` +
-        `Se precisar de ajuda para usar seus tokens, me chama aqui que te ajudo como verificar sua BM em tempo recorde.`;
-
-      await sendEvolutionText(profile.whatsapp, text);
-
-      await supabaseAdmin.from("whatsapp_automation_logs").insert({
-        user_id: order.user_id,
-        event_key: `order_paid_${order.id}`,
-        sent_to: profile.whatsapp,
-        payload: { automation: "order_paid", order_id: order.id },
-      });
-
-      results.push({
-        user_id: order.user_id,
-        event: "order_paid",
-        order_id: order.id,
-        whatsapp: profile.whatsapp,
-      });
-    }
-
-    // =========================================================
-    // 3) TOKENS ZERADOS
+    // 2) TOKENS ZERADOS
     // =========================================================
     const { data: tokenBalances, error: tokenErr } = await supabaseAdmin
       .from("user_tokens")
@@ -182,7 +118,7 @@ export async function GET(req: Request) {
         .order("created_at", { ascending: false })
         .limit(1);
 
-      // evita mandar todo dia sem controle
+      // evita mandar toda hora
       if ((alreadySent || []).length > 0) {
         const last = new Date(alreadySent![0].created_at);
         if (last > daysAgo(7)) continue;
@@ -199,7 +135,7 @@ export async function GET(req: Request) {
       const text =
         `Olá ${profile.name || ""}! ⚠️\n\n` +
         `Seus tokens no PL Painel acabaram.\n\n` +
-        `Quando quiser continuar criando sites e usando a plataforma, é só recarregar ou se tiver alguma dúvida estamos prontos para ajudar você!. 🚀`;
+        `Quando quiser continuar criando sites e usando a plataforma, é só recarregar ou, se tiver alguma dúvida, estamos prontos para ajudar você! 🚀`;
 
       await sendEvolutionText(profile.whatsapp, text);
 
@@ -228,5 +164,4 @@ export async function GET(req: Request) {
       { status: 500 }
     );
   }
-
 }
