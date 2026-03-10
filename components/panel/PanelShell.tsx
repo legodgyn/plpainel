@@ -213,8 +213,8 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
   <Image
     src="/logo.png"
     alt="PL Painel"
-    width={32}
-    height={32}
+    width={40}
+    height={16}
     className="h-8 w-8"
   />
 </div>
