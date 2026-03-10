@@ -197,28 +197,36 @@ export default function TemplateSimplePage() {
       ) : (
         <div className="mt-6 grid gap-6 md:grid-cols-2">
           <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
-            <div className="text-sm text-white/60 mb-4">
+            <div className="mb-4 text-sm text-white/60">
               Atualize um site já criado usando o mesmo domínio.
             </div>
 
             <label className="text-sm font-semibold">Escolha o site</label>
-            <select
-              value={siteId}
-              onChange={(e) => handleSelectSite(e.target.value)}
-              className="mt-2 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-white outline-none focus:border-violet-400"
-            >
-              <option value="">Selecione</option>
-              {sites.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.slug}
+            <div className="mt-2">
+              <select
+                value={siteId}
+                onChange={(e) => handleSelectSite(e.target.value)}
+                className="w-full appearance-none rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none transition hover:border-violet-400/60 focus:border-violet-400 focus:ring-2 focus:ring-violet-500/30"
+              >
+                <option className="bg-slate-900 text-white" value="">
+                  Selecione
                 </option>
-              ))}
-            </select>
+                {sites.map((s) => (
+                  <option
+                    key={s.id}
+                    value={s.id}
+                    className="bg-slate-900 text-white"
+                  >
+                    {s.slug}
+                  </option>
+                ))}
+              </select>
+            </div>
 
             <div className="mt-5">
               <label className="text-sm font-semibold">Upload da logo</label>
               <div className="mt-2 flex flex-wrap items-center gap-3">
-                <label className="inline-flex cursor-pointer items-center rounded-xl bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-500">
+                <label className="inline-flex cursor-pointer items-center rounded-xl bg-violet-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-violet-500">
                   Escolher arquivo
                   <input
                     type="file"
@@ -246,7 +254,7 @@ export default function TemplateSimplePage() {
               <input
                 value={simpleTitle}
                 onChange={(e) => setSimpleTitle(e.target.value)}
-                className="mt-2 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-white outline-none focus:border-violet-400"
+                className="mt-2 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none transition hover:border-violet-400/60 focus:border-violet-400 focus:ring-2 focus:ring-violet-500/30"
                 placeholder="Ex: MT Cap"
               />
             </div>
@@ -256,7 +264,7 @@ export default function TemplateSimplePage() {
               <textarea
                 value={aboutSimple}
                 onChange={(e) => setAboutSimple(e.target.value)}
-                className="mt-2 w-full rounded-xl border border-white/10 bg-black/20 p-4 text-white outline-none focus:border-violet-400"
+                className="mt-2 w-full rounded-xl border border-white/10 bg-slate-900 p-4 text-white outline-none transition hover:border-violet-400/60 focus:border-violet-400 focus:ring-2 focus:ring-violet-500/30"
                 rows={8}
                 placeholder="Digite o novo texto do sobre nós"
               />
@@ -266,14 +274,14 @@ export default function TemplateSimplePage() {
               <button
                 onClick={handleApply}
                 disabled={saving}
-                className="rounded-xl bg-emerald-600 px-5 py-2.5 font-semibold text-white hover:bg-emerald-500 disabled:opacity-60"
+                className="rounded-xl bg-emerald-600 px-5 py-2.5 font-semibold text-white transition hover:bg-emerald-500 disabled:opacity-60"
               >
                 {saving ? "Aplicando..." : "Aplicar template"}
               </button>
 
               <button
                 onClick={() => router.push("/sites")}
-                className="rounded-xl border border-white/10 bg-white/5 px-5 py-2.5 font-semibold text-white/80 hover:bg-white/10"
+                className="rounded-xl border border-white/10 bg-white/5 px-5 py-2.5 font-semibold text-white/80 transition hover:bg-white/10"
               >
                 Voltar
               </button>
@@ -281,7 +289,7 @@ export default function TemplateSimplePage() {
           </div>
 
           <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
-            <div className="text-sm font-semibold mb-4">Prévia</div>
+            <div className="mb-4 text-sm font-semibold">Prévia</div>
 
             <div className="min-h-[560px] rounded-2xl bg-black p-8 text-white">
               <div className="flex justify-center">
@@ -292,7 +300,9 @@ export default function TemplateSimplePage() {
                     className="max-h-36 max-w-full object-contain"
                   />
                 ) : (
-                  <div className="text-lg font-semibold text-white/40">Nenhuma logo enviada</div>
+                  <div className="text-lg font-semibold text-white/40">
+                    Nenhuma logo enviada
+                  </div>
                 )}
               </div>
 
