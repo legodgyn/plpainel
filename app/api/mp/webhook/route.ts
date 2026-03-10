@@ -62,20 +62,24 @@ async function fetchPayment(paymentId: string) {
   return null;
 }
 
-async function triggerWhatsappAutomation() {
+async function triggerOrderPaidWhatsapp(orderId: string) {
   const siteUrl = optEnv("NEXT_PUBLIC_SITE_URL");
-  const secret = optEnv("WHATSAPP_AUTOMATION_SECRET");
+  const internalToken = optEnv("INTERNAL_AUTOMATION_TOKEN");
 
-  if (!siteUrl || !secret) return;
+  if (!siteUrl || !internalToken || !orderId) return;
 
   try {
-    await fetch(
-      `${siteUrl}/api/automations/whatsapp/run?secret=${encodeURIComponent(secret)}`,
-      {
-        method: "GET",
-        cache: "no-store",
-      }
-    );
+    await fetch(`${siteUrl}/api/automations/whatsapp/order-paid`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${internalToken}`,
+      },
+      body: JSON.stringify({
+        order_id: orderId,
+      }),
+      cache: "no-store",
+    });
   } catch {
     // não quebra o webhook se a automação falhar
   }
@@ -156,8 +160,8 @@ export async function POST(req: Request) {
         })
         .eq("id", orderId);
 
-      // 5) dispara automação de WhatsApp
-      await triggerWhatsappAutomation();
+      // 5) dispara apenas a automação de compra aprovada
+      await triggerOrderPaidWhatsapp(orderId);
     }
 
     return NextResponse.json({
@@ -165,7 +169,7 @@ export async function POST(req: Request) {
       orderId,
       mpStatus,
       marked_paid: !alreadyPaid,
-      whatsapp_automation_triggered: !alreadyPaid,
+      whatsapp_order_paid_triggered: !alreadyPaid,
       token_used: fetched.used,
     });
   } catch (e: any) {
