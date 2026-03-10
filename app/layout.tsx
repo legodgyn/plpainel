@@ -15,8 +15,13 @@ const geistMono = Geist_Mono({
 export const metadata = {
   title: "PL Painel",
   icons: {
-    icon: "/favicon.png",
-  },
+    icon: [
+      { url: "/favicon.png", sizes: "16x16", type: "image/png" },
+      { url: "/favicon.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon.png", sizes: "48x48", type: "image/png" },
+      { url: "/favicon.png", sizes: "96x96", type: "image/png" }
+    ]
+  }
 };
 
 export default function RootLayout({
