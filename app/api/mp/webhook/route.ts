@@ -30,7 +30,6 @@ function extractPaymentId(body: any) {
   if (r) {
     const m = r.match(/\/payments\/(\d+)/);
     if (m?.[1]) return m[1];
-    // às vezes vem só "123"
     if (/^\d+$/.test(r)) return r;
   }
 
@@ -38,8 +37,8 @@ function extractPaymentId(body: any) {
 }
 
 async function fetchPayment(paymentId: string) {
-  const prod = optEnv("MP_ACCESS_TOKEN"); // APP_USR...
-  const test = optEnv("MP_ACCESS_TOKEN_TEST"); // TEST-... opcional
+  const prod = optEnv("MP_ACCESS_TOKEN");
+  const test = optEnv("MP_ACCESS_TOKEN_TEST");
 
   const tryToken = async (token: string) => {
     const r = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
@@ -63,34 +62,62 @@ async function fetchPayment(paymentId: string) {
   return null;
 }
 
+async function triggerWhatsappAutomation() {
+  const siteUrl = optEnv("NEXT_PUBLIC_SITE_URL");
+  const secret = optEnv("WHATSAPP_AUTOMATION_SECRET");
+
+  if (!siteUrl || !secret) return;
+
+  try {
+    await fetch(
+      `${siteUrl}/api/automations/whatsapp/run?secret=${encodeURIComponent(secret)}`,
+      {
+        method: "GET",
+        cache: "no-store",
+      }
+    );
+  } catch {
+    // não quebra o webhook se a automação falhar
+  }
+}
+
 export async function POST(req: Request) {
   try {
     const body = await req.json().catch(() => ({} as any));
     const paymentId = extractPaymentId(body);
 
     // sempre responde 200 pro MP não ficar re-tentando infinito
-    if (!paymentId) return NextResponse.json({ ok: true, ignored: "no_payment_id" });
+    if (!paymentId) {
+      return NextResponse.json({ ok: true, ignored: "no_payment_id" });
+    }
 
-    const supabase = createClient(env("NEXT_PUBLIC_SUPABASE_URL"), env("SUPABASE_SERVICE_ROLE_KEY"));
+    const supabase = createClient(
+      env("NEXT_PUBLIC_SUPABASE_URL"),
+      env("SUPABASE_SERVICE_ROLE_KEY")
+    );
 
     const fetched = await fetchPayment(paymentId);
     if (!fetched) {
-      // não conseguiu buscar no MP -> ignora (mas 200)
       return NextResponse.json({ ok: true, mp_fetch_failed: true, paymentId });
     }
 
     const payment = fetched.payment;
 
-    const mpStatus = String(payment?.status ?? "").trim().toLowerCase(); // approved | pending | rejected...
+    const mpStatus = String(payment?.status ?? "").trim().toLowerCase();
     const mpPaymentId = String(payment?.id ?? paymentId).trim();
 
-    // ⚠️ Aqui é o ponto-chave: external_reference deve ser o ID da sua token_orders
+    // external_reference = id da token_orders
     const orderId = String(payment?.external_reference ?? "").trim();
     if (!orderId) {
-      return NextResponse.json({ ok: true, ignored: "no_external_reference", mpStatus, mpPaymentId });
+      return NextResponse.json({
+        ok: true,
+        ignored: "no_external_reference",
+        mpStatus,
+        mpPaymentId,
+      });
     }
 
-    // 1) sempre atualiza MP status e id na order
+    // 1) atualiza sempre o status/id do MP na order
     await supabase
       .from("token_orders")
       .update({
@@ -99,13 +126,12 @@ export async function POST(req: Request) {
       })
       .eq("id", orderId);
 
-    // 2) se NÃO aprovado, não marca como pago
+    // 2) se não aprovado, não marca como paid
     if (mpStatus !== "approved") {
       return NextResponse.json({ ok: true, orderId, mpStatus });
     }
 
-    // 3) aprovado => marca como paid (isso dispara seu TRIGGER que credita tokens)
-    //    (idempotente: só troca se ainda não estiver paid)
+    // 3) busca a order atual
     const { data: order, error: orderErr } = await supabase
       .from("token_orders")
       .select("id,status")
@@ -117,6 +143,8 @@ export async function POST(req: Request) {
     }
 
     const alreadyPaid = String(order.status || "").toLowerCase() === "paid";
+
+    // 4) se ainda não estava paid, marca como paid
     if (!alreadyPaid) {
       await supabase
         .from("token_orders")
@@ -127,6 +155,9 @@ export async function POST(req: Request) {
           mp_payment_id: mpPaymentId,
         })
         .eq("id", orderId);
+
+      // 5) dispara automação de WhatsApp
+      await triggerWhatsappAutomation();
     }
 
     return NextResponse.json({
@@ -134,10 +165,10 @@ export async function POST(req: Request) {
       orderId,
       mpStatus,
       marked_paid: !alreadyPaid,
+      whatsapp_automation_triggered: !alreadyPaid,
       token_used: fetched.used,
     });
   } catch (e: any) {
-    // mesmo em erro, melhor devolver 200 pro MP (pra não virar loop)
     return NextResponse.json({ ok: true, error: e?.message || "Erro" });
   }
 }
