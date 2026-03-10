@@ -12,9 +12,11 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "PL - Painel",
-  description: "Sua plataforma de verificação de BM's",
+export const metadata = {
+  title: "PL Painel",
+  icons: {
+    icon: "/favicon.png",
+  },
 };
 
 export default function RootLayout({
