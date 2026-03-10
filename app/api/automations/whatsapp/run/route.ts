@@ -153,6 +153,65 @@ export async function GET(req: Request) {
       });
     }
 
+    // =========================================================
+    // 3) ÚLTIMA COMPRA PAGA HÁ MAIS DE 30 DIAS
+    // =========================================================
+    for (const user of profileRows) {
+      if (!user.whatsapp) continue;
+
+      const { data: paidOrders } = await supabaseAdmin
+        .from("token_orders")
+        .select("id,status,created_at")
+        .eq("user_id", user.user_id)
+        .eq("status", "paid")
+        .order("created_at", { ascending: false });
+
+      if (!paidOrders || paidOrders.length === 0) continue;
+
+      const lastPaidOrder = paidOrders[0];
+      const lastPaidAt = new Date(lastPaidOrder.created_at);
+
+      if (lastPaidAt > daysAgo(30)) continue;
+
+      const { data: alreadySent } = await supabaseAdmin
+        .from("whatsapp_automation_logs")
+        .select("id,created_at")
+        .eq("user_id", user.user_id)
+        .eq("event_key", "repurchase_30d")
+        .order("created_at", { ascending: false })
+        .limit(1);
+
+      // evita repetir em menos de 30 dias
+      if ((alreadySent || []).length > 0) {
+        const last = new Date(alreadySent![0].created_at);
+        if (last > daysAgo(30)) continue;
+      }
+
+      const text =
+        `Olá ${user.name || ""}! 👋\n\n` +
+        `Já faz um tempo desde sua última compra no PL Painel.\n\n` +
+        `Se quiser voltar a criar sites e usar a plataforma, me chama aqui que posso te ajudar a retomar e verificar sua BM em tempo recorde. 🚀`;
+
+      await sendEvolutionText(user.whatsapp, text);
+
+      await supabaseAdmin.from("whatsapp_automation_logs").insert({
+        user_id: user.user_id,
+        event_key: "repurchase_30d",
+        sent_to: user.whatsapp,
+        payload: {
+          automation: "repurchase_30d",
+          last_paid_order_id: lastPaidOrder.id,
+          last_paid_at: lastPaidOrder.created_at,
+        },
+      });
+
+      results.push({
+        user_id: user.user_id,
+        event: "repurchase_30d",
+        whatsapp: user.whatsapp,
+      });
+    }
+
     return NextResponse.json({
       ok: true,
       total_sent: results.length,
