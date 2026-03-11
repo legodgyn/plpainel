@@ -32,10 +32,24 @@ export default function TemplateSimplePage() {
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [uploadName, setUploadName] = useState("");
+  const [aboutTouched, setAboutTouched] = useState(false);
 
   useEffect(() => {
     loadSites();
   }, []);
+
+  function buildAutoAbout(simpleName: string, companyName: string) {
+    const marca = String(simpleName || "").trim();
+    const empresaMae = String(companyName || "").trim();
+
+    if (!marca) return "";
+
+    if (!empresaMae) {
+      return `A ${marca} é uma marca criada para representar nossa atuação com qualidade, profissionalismo e compromisso com cada cliente.`;
+    }
+
+    return `A ${marca} é uma marca pertencente à ${empresaMae}. Criada dentro da empresa, ela faz parte do nosso ecossistema de soluções criativas, mantendo os mesmos valores de qualidade, profissionalismo e compromisso com cada cliente.`;
+  }
 
   async function loadSites() {
     setLoading(true);
@@ -67,12 +81,17 @@ export default function TemplateSimplePage() {
 
     if (rows.length > 0) {
       const first = rows[0];
+      const initialTitle = first.simple_title || first.company_name || "";
+
       setSiteId(first.id);
       setCurrentSite(first);
-      setAboutSimple(first.about_simple || first.about || "");
-      setSimpleTitle(first.simple_title || first.company_name || "");
+      setSimpleTitle(initialTitle);
+      setAboutSimple(
+        first.about_simple || buildAutoAbout(initialTitle, first.company_name || "")
+      );
       setLogoUrl(first.logo_url || null);
       setUploadName("");
+      setAboutTouched(false);
     }
 
     setLoading(false);
@@ -82,12 +101,17 @@ export default function TemplateSimplePage() {
     setSiteId(nextId);
 
     const selected = sites.find((s) => s.id === nextId) || null;
+    const nextTitle = selected?.simple_title || selected?.company_name || "";
+
     setCurrentSite(selected);
-    setAboutSimple(selected?.about_simple || selected?.about || "");
-    setSimpleTitle(selected?.simple_title || selected?.company_name || "");
+    setSimpleTitle(nextTitle);
+    setAboutSimple(
+      selected?.about_simple || buildAutoAbout(nextTitle, selected?.company_name || "")
+    );
     setLogoUrl(selected?.logo_url || null);
     setLogoFile(null);
     setUploadName("");
+    setAboutTouched(false);
   }
 
   async function handleApply() {
@@ -253,7 +277,16 @@ export default function TemplateSimplePage() {
               <label className="text-sm font-semibold">Nome da empresa no template</label>
               <input
                 value={simpleTitle}
-                onChange={(e) => setSimpleTitle(e.target.value)}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setSimpleTitle(value);
+
+                  if (!aboutTouched) {
+                    setAboutSimple(
+                      buildAutoAbout(value, currentSite?.company_name || "")
+                    );
+                  }
+                }}
                 className="mt-2 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none transition hover:border-violet-400/60 focus:border-violet-400 focus:ring-2 focus:ring-violet-500/30"
                 placeholder="Ex: MT Cap"
               />
@@ -263,7 +296,10 @@ export default function TemplateSimplePage() {
               <label className="text-sm font-semibold">Sobre nós</label>
               <textarea
                 value={aboutSimple}
-                onChange={(e) => setAboutSimple(e.target.value)}
+                onChange={(e) => {
+                  setAboutTouched(true);
+                  setAboutSimple(e.target.value);
+                }}
                 className="mt-2 w-full rounded-xl border border-white/10 bg-slate-900 p-4 text-white outline-none transition hover:border-violet-400/60 focus:border-violet-400 focus:ring-2 focus:ring-violet-500/30"
                 rows={8}
                 placeholder="Digite o novo texto do sobre nós"
