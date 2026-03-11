@@ -216,7 +216,7 @@ export default function TokensPage() {
               </div>
 
               <div className="flex items-center justify-between">
-                <span>Preço unitário base</span>
+                <span>Preço unitário</span>
                 <span className="font-semibold text-white">{money(baseUnitPriceCents)}</span>
               </div>
 
