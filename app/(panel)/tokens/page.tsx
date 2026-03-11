@@ -266,9 +266,6 @@ export default function TokensPage() {
               {loading ? "Gerando PIX..." : "Comprar via PIX"}
             </button>
 
-            <div className="mt-4 text-xs leading-6 text-white/55">
-              Após gerar, vá em <span className="text-white/80">Minhas Compras</span> para copiar o código PIX.
-            </div>
           </div>
         </div>
       </div>
