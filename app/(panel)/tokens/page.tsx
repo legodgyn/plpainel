@@ -24,6 +24,13 @@ function money(cents: number) {
   });
 }
 
+function getDiscountPercent(qty: number) {
+  if (qty >= 100) return 20;
+  if (qty >= 50) return 10;
+  if (qty >= 25) return 5;
+  return 0;
+}
+
 export default function TokensPage() {
   const router = useRouter();
 
@@ -38,8 +45,17 @@ export default function TokensPage() {
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
-  const unitPriceCents = 400;
-  const totalCents = Math.max(0, Number(tokens || 0)) * unitPriceCents;
+  const baseUnitPriceCents = 400;
+  const discountPercent = getDiscountPercent(Number(tokens || 0));
+  const originalTotalCents = Math.max(0, Number(tokens || 0)) * baseUnitPriceCents;
+  const discountedTotalCents = Math.round(
+    originalTotalCents * (1 - discountPercent / 100)
+  );
+  const savedCents = Math.max(0, originalTotalCents - discountedTotalCents);
+  const effectiveUnitPriceCents =
+    Number(tokens || 0) > 0
+      ? Math.round(discountedTotalCents / Number(tokens || 0))
+      : baseUnitPriceCents;
 
   const packs = [
     { label: "10 tokens", qty: 10 },
@@ -123,21 +139,45 @@ export default function TokensPage() {
         </div>
 
         <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          {packs.map((p) => (
-            <button
-              key={p.qty}
-              disabled={loading}
-              onClick={() => setTokens(p.qty)}
-              className={`rounded-2xl border px-4 py-4 text-left transition ${
-                tokens === p.qty
-                  ? "border-violet-400/40 bg-violet-500/15 shadow-[0_0_0_1px_rgba(167,139,250,.15)]"
-                  : "border-white/10 bg-black/20 hover:bg-black/30"
-              }`}
-            >
-              <div className="text-base font-semibold">{p.label}</div>
-              <div className="mt-1 text-sm text-white/60">{money(p.qty * unitPriceCents)}</div>
-            </button>
-          ))}
+          {packs.map((p) => {
+            const packDiscount = getDiscountPercent(p.qty);
+            const packOriginal = p.qty * baseUnitPriceCents;
+            const packFinal = Math.round(packOriginal * (1 - packDiscount / 100));
+
+            return (
+              <button
+                key={p.qty}
+                disabled={loading}
+                onClick={() => setTokens(p.qty)}
+                className={`relative rounded-2xl border px-4 py-4 text-left transition ${
+                  tokens === p.qty
+                    ? "border-violet-400/40 bg-violet-500/15 shadow-[0_0_0_1px_rgba(167,139,250,.15)]"
+                    : "border-white/10 bg-black/20 hover:bg-black/30"
+                }`}
+              >
+                {packDiscount > 0 ? (
+                  <div className="absolute right-3 top-3 rounded-full bg-emerald-500/15 px-2 py-1 text-[10px] font-bold text-emerald-300 border border-emerald-500/20">
+                    {packDiscount}% OFF
+                  </div>
+                ) : null}
+
+                <div className="text-base font-semibold">{p.label}</div>
+
+                {packDiscount > 0 ? (
+                  <div className="mt-2 space-y-1">
+                    <div className="text-xs text-white/40 line-through">
+                      {money(packOriginal)}
+                    </div>
+                    <div className="text-sm font-semibold text-white">
+                      {money(packFinal)}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mt-1 text-sm text-white/60">{money(packOriginal)}</div>
+                )}
+              </button>
+            );
+          })}
         </div>
 
         <div className="mt-6 grid gap-4 xl:grid-cols-[1.1fr_.9fr]">
@@ -176,13 +216,45 @@ export default function TokensPage() {
               </div>
 
               <div className="flex items-center justify-between">
-                <span>Preço unitário</span>
-                <span className="font-semibold text-white">{money(unitPriceCents)}</span>
+                <span>Preço unitário base</span>
+                <span className="font-semibold text-white">{money(baseUnitPriceCents)}</span>
               </div>
+
+              {discountPercent > 0 ? (
+                <>
+                  <div className="flex items-center justify-between">
+                    <span>Desconto</span>
+                    <span className="font-semibold text-emerald-300">{discountPercent}% OFF</span>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <span>Preço unitário com desconto</span>
+                    <span className="font-semibold text-white">
+                      {money(effectiveUnitPriceCents)}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <span>Valor original</span>
+                    <span className="font-semibold text-white/50 line-through">
+                      {money(originalTotalCents)}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <span>Você economiza</span>
+                    <span className="font-semibold text-emerald-300">
+                      {money(savedCents)}
+                    </span>
+                  </div>
+                </>
+              ) : null}
 
               <div className="flex items-center justify-between border-t border-white/10 pt-3">
                 <span>Total</span>
-                <span className="text-3xl font-bold text-white">{money(totalCents)}</span>
+                <span className="text-3xl font-bold text-white">
+                  {money(discountedTotalCents)}
+                </span>
               </div>
             </div>
 
