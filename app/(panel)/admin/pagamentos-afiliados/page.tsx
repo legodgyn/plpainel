@@ -74,13 +74,13 @@ export default function AffiliatePaymentsPage() {
       return;
     }
 
-    const { data: adminRow, error: adminErr } = await supabase
-      .from("admin_users")
-      .select("id")
-      .eq("user_id", user.id)
-      .maybeSingle();
+    const adminMasterEmail = (process.env.NEXT_PUBLIC_ADMIN_MASTER_EMAIL || "")
+      .trim()
+      .toLowerCase();
 
-    if (adminErr || !adminRow) {
+    const currentEmail = String(user.email || "").trim().toLowerCase();
+
+    if (!adminMasterEmail || currentEmail !== adminMasterEmail) {
       router.push("/dashboard");
       return;
     }
@@ -147,30 +147,17 @@ export default function AffiliatePaymentsPage() {
 
       const profileRows = (profilesData as any[]) || [];
 
-      const { data: authUser } = await supabase.auth.getUser();
-      const currentUser = authUser?.user;
+      const profileEmailMap = new Map<string, string | null>();
 
-      // Como o supabaseBrowser não acessa auth.admin, vamos preencher email via view se existir
-      const { data: emailsData } = await supabase
-        .from("sites_with_user_email")
-        .select("user_id, user_email")
-        .in("user_id", userIds);
-
-      const emailMap = new Map<string, string | null>();
-      ((emailsData as any[]) || []).forEach((e) => {
-        if (!emailMap.has(e.user_id)) emailMap.set(e.user_id, e.user_email || null);
+      profileRows.forEach((p) => {
+        profileEmailMap.set(p.user_id, null);
       });
-
-      // fallback para usuário atual
-      if (currentUser?.id && currentUser?.email && !emailMap.has(currentUser.id)) {
-        emailMap.set(currentUser.id, currentUser.email);
-      }
 
       profileMap = new Map(
         profileRows.map((p) => [
           p.user_id,
           {
-            email: emailMap.get(p.user_id) || null,
+            email: profileEmailMap.get(p.user_id) || null,
             whatsapp: p.whatsapp || null,
             name: p.name || null,
           },
@@ -207,6 +194,7 @@ export default function AffiliatePaymentsPage() {
       return;
     }
 
+    setMsg("Pagamento marcado como pago com sucesso.");
     await load();
     setUpdatingId(null);
   }
@@ -375,7 +363,7 @@ export default function AffiliatePaymentsPage() {
 
                       <td className="py-3">
                         <div className="font-semibold text-white/90">
-                          {r.profile?.email || r.profile?.name || "Afiliado"}
+                          {r.profile?.name || r.profile?.email || "Afiliado"}
                         </div>
                         <div className="text-[11px] text-white/40">
                           {r.affiliate?.code ? `Código: ${r.affiliate.code}` : "Sem código"}
