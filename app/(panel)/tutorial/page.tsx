@@ -15,7 +15,7 @@ export default function TutorialPage() {
           <div className="aspect-video w-full">
             <iframe
               className="h-full w-full"
-              src="https://youtu.be/IlibDdtFn5c?si=SL4DsXoflNCHACgt"
+              src="https://www.youtube.com/embed/IlibDdtFn5c"
               title="Tutorial da Plataforma"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
               allowFullScreen
@@ -27,5 +27,6 @@ export default function TutorialPage() {
   );
 
 }
+
 
 
