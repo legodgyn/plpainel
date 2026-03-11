@@ -4,21 +4,19 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabaseBrowser";
 import { useRouter } from "next/navigation";
 
-type Row = {
+type WithdrawRow = {
   id: string;
-  affiliate_id: string;
+  user_id: string;
   amount: number | string;
   pix_key: string | null;
   status: string | null;
   created_at: string;
-  affiliate?: {
-    user_id: string;
-    code: string | null;
-  } | null;
   profile?: {
-    email: string | null;
-    whatsapp: string | null;
     name: string | null;
+    whatsapp: string | null;
+  } | null;
+  affiliate?: {
+    code: string | null;
   } | null;
 };
 
@@ -41,22 +39,24 @@ function onlyDigits(v: string) {
   return String(v || "").replace(/\D/g, "");
 }
 
-function waLink(phone?: string | null) {
+function waLink(phone?: string | null, text?: string) {
   const digits = onlyDigits(phone || "");
   if (!digits) return null;
   const n = digits.startsWith("55") ? digits : `55${digits}`;
-  return `https://wa.me/${n}`;
+  const base = `https://wa.me/${n}`;
+  if (!text) return base;
+  return `${base}?text=${encodeURIComponent(text)}`;
 }
 
 export default function AffiliatePaymentsPage() {
   const router = useRouter();
 
-  const [loading, setLoading] = useState(true);
   const [checkingAdmin, setCheckingAdmin] = useState(true);
-  const [rows, setRows] = useState<Row[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [rows, setRows] = useState<WithdrawRow[]>([]);
   const [msg, setMsg] = useState<string | null>(null);
   const [filter, setFilter] = useState<"all" | "pending" | "paid">("pending");
-  const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   useEffect(() => {
     checkAdminAndLoad();
@@ -95,7 +95,7 @@ export default function AffiliatePaymentsPage() {
 
     const { data, error } = await supabase
       .from("affiliate_withdraw_requests")
-      .select("id, affiliate_id, amount, pix_key, status, created_at")
+      .select("*")
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -105,75 +105,57 @@ export default function AffiliatePaymentsPage() {
       return;
     }
 
-    const baseRows = ((data as any[]) || []) as Row[];
+    const baseRows = (data || []) as any[];
 
-    const affiliateIds = Array.from(
-      new Set(baseRows.map((r) => r.affiliate_id).filter(Boolean))
-    );
-
-    let affiliateMap = new Map<string, { user_id: string; code: string | null }>();
-    if (affiliateIds.length > 0) {
-      const { data: affiliatesData } = await supabase
-        .from("affiliates")
-        .select("id, user_id, code")
-        .in("id", affiliateIds);
-
-      affiliateMap = new Map(
-        ((affiliatesData as any[]) || []).map((a) => [
-          a.id,
-          { user_id: a.user_id, code: a.code || null },
-        ])
-      );
+    if (baseRows.length === 0) {
+      setRows([]);
+      setLoading(false);
+      return;
     }
 
     const userIds = Array.from(
-      new Set(
-        baseRows
-          .map((r) => affiliateMap.get(r.affiliate_id)?.user_id)
-          .filter(Boolean)
-      )
+      new Set(baseRows.map((r) => r.user_id).filter(Boolean))
     ) as string[];
 
-    let profileMap = new Map<
+    const { data: profilesData } = await supabase
+      .from("profiles")
+      .select("user_id, name, whatsapp")
+      .in("user_id", userIds);
+
+    const { data: affiliatesData } = await supabase
+      .from("affiliates")
+      .select("user_id, code")
+      .in("user_id", userIds);
+
+    const profileMap = new Map<
       string,
-      { email: string | null; whatsapp: string | null; name: string | null }
+      { name: string | null; whatsapp: string | null }
     >();
 
-    if (userIds.length > 0) {
-      const { data: profilesData } = await supabase
-        .from("profiles")
-        .select("user_id, name, whatsapp")
-        .in("user_id", userIds);
-
-      const profileRows = (profilesData as any[]) || [];
-
-      const profileEmailMap = new Map<string, string | null>();
-
-      profileRows.forEach((p) => {
-        profileEmailMap.set(p.user_id, null);
+    ((profilesData as any[]) || []).forEach((p) => {
+      profileMap.set(p.user_id, {
+        name: p.name || null,
+        whatsapp: p.whatsapp || null,
       });
-
-      profileMap = new Map(
-        profileRows.map((p) => [
-          p.user_id,
-          {
-            email: profileEmailMap.get(p.user_id) || null,
-            whatsapp: p.whatsapp || null,
-            name: p.name || null,
-          },
-        ])
-      );
-    }
-
-    const finalRows: Row[] = baseRows.map((r) => {
-      const affiliate = affiliateMap.get(r.affiliate_id) || null;
-      const profile = affiliate?.user_id ? profileMap.get(affiliate.user_id) || null : null;
-      return {
-        ...r,
-        affiliate,
-        profile,
-      };
     });
+
+    const affiliateMap = new Map<string, { code: string | null }>();
+    ((affiliatesData as any[]) || []).forEach((a) => {
+      affiliateMap.set(a.user_id, {
+        code: a.code || null,
+      });
+    });
+
+    const finalRows: WithdrawRow[] = baseRows.map((r) => ({
+      id: r.id,
+      user_id: r.user_id,
+      amount: Number(r.amount || 0),
+      pix_key: r.pix_key || null,
+      status: r.status || null,
+      created_at: r.created_at,
+      profile: profileMap.get(r.user_id) || null,
+      affiliate: affiliateMap.get(r.user_id) || null,
+    }));
 
     setRows(finalRows);
     setLoading(false);
@@ -189,12 +171,12 @@ export default function AffiliatePaymentsPage() {
       .eq("id", id);
 
     if (error) {
-      setMsg(error.message || "Erro ao marcar pagamento como pago.");
+      setMsg(error.message || "Erro ao marcar como pago.");
       setUpdatingId(null);
       return;
     }
 
-    setMsg("Pagamento marcado como pago com sucesso.");
+    setMsg("Pagamento marcado como pago.");
     await load();
     setUpdatingId(null);
   }
@@ -229,7 +211,52 @@ export default function AffiliatePaymentsPage() {
       .filter((r) => String(r.status || "").toLowerCase() === "paid")
       .reduce((acc, r) => acc + Number(r.amount || 0), 0);
 
-    return { pending, paid, total: pending + paid };
+    const total = rows.reduce((acc, r) => acc + Number(r.amount || 0), 0);
+
+    return { pending, paid, total };
+  }, [rows]);
+
+  const ranking = useMemo(() => {
+    const map = new Map<
+      string,
+      {
+        user_id: string;
+        name: string;
+        code: string;
+        total: number;
+        whatsapp: string | null;
+      }
+    >();
+
+    rows.forEach((r) => {
+      const key = r.user_id;
+      const current = map.get(key);
+
+      const name =
+        r.profile?.name ||
+        r.affiliate?.code ||
+        "Afiliado";
+
+      const code = r.affiliate?.code || "Sem código";
+      const whatsapp = r.profile?.whatsapp || null;
+      const amount = Number(r.amount || 0);
+
+      if (!current) {
+        map.set(key, {
+          user_id: key,
+          name,
+          code,
+          total: amount,
+          whatsapp,
+        });
+      } else {
+        current.total += amount;
+      }
+    });
+
+    return Array.from(map.values())
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 5);
   }, [rows]);
 
   if (checkingAdmin) {
@@ -266,9 +293,9 @@ export default function AffiliatePaymentsPage() {
         </div>
       ) : null}
 
-      <div className="mb-6 grid gap-4 md:grid-cols-3">
+      <div className="mb-6 grid gap-4 lg:grid-cols-4">
         <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-          <div className="text-sm text-white/60">Total pendente</div>
+          <div className="text-sm text-white/60">Total a pagar</div>
           <div className="mt-2 text-3xl font-bold text-amber-300">
             {money(totals.pending)}
           </div>
@@ -287,6 +314,63 @@ export default function AffiliatePaymentsPage() {
             {money(totals.total)}
           </div>
         </div>
+
+        <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+          <div className="text-sm text-white/60">Pedidos</div>
+          <div className="mt-2 text-3xl font-bold text-white">
+            {rows.length}
+          </div>
+        </div>
+      </div>
+
+      <div className="mb-6 rounded-2xl border border-white/10 bg-white/5 p-5">
+        <div className="mb-4 text-sm font-semibold text-white">Ranking de afiliados</div>
+
+        {ranking.length === 0 ? (
+          <div className="text-sm text-white/50">Nenhum afiliado com solicitações ainda.</div>
+        ) : (
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+            {ranking.map((item, index) => {
+              const autoWa = waLink(
+                item.whatsapp,
+                `Olá! Seu total acumulado em solicitações de saque está em ${money(
+                  item.total
+                )}.`
+              );
+
+              return (
+                <div
+                  key={item.user_id}
+                  className="rounded-2xl border border-white/10 bg-black/20 p-4"
+                >
+                  <div className="text-xs text-white/50">#{index + 1} no ranking</div>
+                  <div className="mt-2 truncate font-semibold text-white">
+                    {item.name}
+                  </div>
+                  <div className="mt-1 text-xs text-white/50">{item.code}</div>
+                  <div className="mt-3 text-xl font-bold text-amber-300">
+                    {money(item.total)}
+                  </div>
+
+                  {autoWa ? (
+                    <a
+                      href={autoWa}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-4 inline-flex rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-500"
+                    >
+                      WhatsApp automático
+                    </a>
+                  ) : (
+                    <div className="mt-4 text-xs text-white/40">
+                      Sem WhatsApp
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       <div className="mb-4 flex flex-wrap gap-2">
@@ -355,7 +439,15 @@ export default function AffiliatePaymentsPage() {
               ) : (
                 filteredRows.map((r) => {
                   const paid = String(r.status || "").toLowerCase() === "paid";
-                  const whatsappHref = waLink(r.profile?.whatsapp);
+
+                  const whatsappAuto = waLink(
+                    r.profile?.whatsapp,
+                    `Olá! Seu pedido de saque no valor de ${money(
+                      Number(r.amount || 0)
+                    )} está em análise${
+                      paid ? " e já foi marcado como pago." : "."
+                    }`
+                  );
 
                   return (
                     <tr key={r.id} className="hover:bg-white/5">
@@ -363,7 +455,7 @@ export default function AffiliatePaymentsPage() {
 
                       <td className="py-3">
                         <div className="font-semibold text-white/90">
-                          {r.profile?.name || r.profile?.email || "Afiliado"}
+                          {r.profile?.name || r.affiliate?.code || "Afiliado"}
                         </div>
                         <div className="text-[11px] text-white/40">
                           {r.affiliate?.code ? `Código: ${r.affiliate.code}` : "Sem código"}
@@ -416,14 +508,14 @@ export default function AffiliatePaymentsPage() {
 
                       <td className="py-3">
                         <div className="flex flex-wrap gap-2">
-                          {whatsappHref ? (
+                          {whatsappAuto ? (
                             <a
-                              href={whatsappHref}
+                              href={whatsappAuto}
                               target="_blank"
                               rel="noreferrer"
                               className="rounded-lg bg-emerald-600 px-3 py-1 text-xs font-semibold text-white hover:bg-emerald-500"
                             >
-                              WhatsApp
+                              WhatsApp automático
                             </a>
                           ) : null}
 
