@@ -13,6 +13,13 @@ function optEnv(name: string) {
   return process.env[name] || "";
 }
 
+function getDiscountPercent(qty: number) {
+  if (qty >= 100) return 20;
+  if (qty >= 50) return 10;
+  if (qty >= 25) return 5;
+  return 0;
+}
+
 export async function POST(req: Request) {
   try {
     const { tokens } = await req.json();
@@ -27,10 +34,11 @@ export async function POST(req: Request) {
       getEnv("SUPABASE_SERVICE_ROLE_KEY")
     );
 
-    // Auth via header (Bearer)
     const authHeader = req.headers.get("authorization") || "";
     const jwt = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
-    if (!jwt) return NextResponse.json({ error: "Sem token de auth" }, { status: 401 });
+    if (!jwt) {
+      return NextResponse.json({ error: "Sem token de auth" }, { status: 401 });
+    }
 
     const { data: userRes, error: userErr } = await supabase.auth.getUser(jwt);
     if (userErr || !userRes?.user) {
@@ -39,17 +47,18 @@ export async function POST(req: Request) {
 
     const user = userRes.user;
 
-    const unitPriceCents = 400;
-    const totalCents = qty * unitPriceCents;
+    const baseUnitPriceCents = 400;
+    const discountPercent = getDiscountPercent(qty);
+
+    const originalTotalCents = qty * baseUnitPriceCents;
+    const totalCents = Math.round(originalTotalCents * (1 - discountPercent / 100));
+    const unitPriceCents = Math.round(totalCents / qty);
     const total = totalCents / 100;
 
-    // ✅ PRODUÇÃO (VPS): webhook real
-    // Se quiser, você pode colocar isso em env MP_WEBHOOK_URL
     const notificationUrl =
       optEnv("MP_WEBHOOK_URL")?.trim() ||
       "https://plpainel.com/api/mp/webhook";
 
-    // cria order (pending)
     const { data: order, error: orderErr } = await supabase
       .from("token_orders")
       .insert({
@@ -59,6 +68,8 @@ export async function POST(req: Request) {
         total_cents: totalCents,
         provider: "mercadopago",
         status: "pending",
+        discount_percent: discountPercent,
+        original_total_cents: originalTotalCents,
       })
       .select("id")
       .single();
@@ -70,7 +81,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // Token PROD por padrão (em produção use APP_USR)
     const mpToken = getEnv("MP_ACCESS_TOKEN");
 
     const mpRes = await fetch("https://api.mercadopago.com/v1/payments", {
@@ -82,7 +92,10 @@ export async function POST(req: Request) {
       },
       body: JSON.stringify({
         transaction_amount: total,
-        description: `${qty} tokens - plpainel.com`,
+        description:
+          discountPercent > 0
+            ? `${qty} tokens - plpainel.com (${discountPercent}% OFF)`
+            : `${qty} tokens - plpainel.com`,
         payment_method_id: "pix",
         payer: { email: user.email },
         notification_url: notificationUrl,
@@ -131,6 +144,14 @@ export async function POST(req: Request) {
       qr_code: qrCode,
       pix_copy_paste: copyPaste,
       notification_url: notificationUrl,
+      pricing: {
+        tokens: qty,
+        base_unit_price_cents: baseUnitPriceCents,
+        unit_price_cents: unitPriceCents,
+        discount_percent: discountPercent,
+        original_total_cents: originalTotalCents,
+        total_cents: totalCents,
+      },
     });
   } catch (e: any) {
     return NextResponse.json({ error: e?.message || "Erro" }, { status: 500 });
