@@ -22,15 +22,8 @@ export default function TutorialPage() {
             />
           </div>
         </div>
-
-        <div className="mt-6 rounded-2xl border border-white/10 bg-black/20 p-5">
-          <h2 className="text-lg font-semibold">O que você vai aprender</h2>
-
-          <div className="mt-4 space-y-3 text-sm leading-7 text-white/75">
-            <p>Como verificar sua BM em tempo recorde.</p>
-          </div>
-        </div>
       </div>
     </main>
   );
+
 }
