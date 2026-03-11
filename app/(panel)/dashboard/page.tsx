@@ -121,7 +121,7 @@ export default function DashboardPage() {
 
         {/* Criar novo */}
         <div className="rounded-2xl border border-white/10 bg-white/5 p-5 shadow-[0_10px_30px_rgba(0,0,0,.35)]">
-          <div className="text-sm font-semibold text-white">➕ Criar Novo Site</div>
+          <div className="text-sm font-semibold text-white">🚀 Criar Novo Site</div>
           <div className="mt-1 text-sm text-white/60">Gere seu site em segundos.</div>
 
           <div className="mt-4">
