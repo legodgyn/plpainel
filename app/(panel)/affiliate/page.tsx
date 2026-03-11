@@ -50,34 +50,22 @@ function normalizeStatus(status: string) {
 function statusLabel(status: string) {
   const s = normalizeStatus(status);
 
-  // comissões
   if (s === "paid") return "Pago";
   if (s === "approved") return "Aprovado";
   if (s === "pending") return "Pendente";
   if (s === "canceled") return "Cancelado";
-
-  // saques
   if (s === "requested") return "Solicitado";
   if (s === "rejected") return "Rejeitado";
 
-  // fallback
   return status || "-";
 }
 
 function statusBadge(status: string) {
   const s = normalizeStatus(status);
 
-  // ✅ cores padronizadas:
-  // pago = verde
   if (s === "paid") return "bg-emerald-500/15 text-emerald-200 border-emerald-500/25";
-
-  // aprovado = azul
   if (s === "approved") return "bg-sky-500/15 text-sky-200 border-sky-500/25";
-
-  // pendente / solicitado = amarelo
   if (s === "pending" || s === "requested") return "bg-amber-500/15 text-amber-200 border-amber-500/25";
-
-  // cancelado / rejeitado = vermelho
   if (s === "canceled" || s === "rejected") return "bg-red-500/15 text-red-200 border-red-500/25";
 
   return "bg-white/10 text-white/70 border-white/10";
@@ -92,14 +80,12 @@ export default function AffiliatePage() {
   const [withdraws, setWithdraws] = useState<Withdraw[]>([]);
   const [msg, setMsg] = useState<string | null>(null);
 
-  // Form saque
   const [pixKey, setPixKey] = useState("");
   const [pixType, setPixType] = useState<Withdraw["pix_key_type"]>("random");
   const [amountBRL, setAmountBRL] = useState("");
   const [reqLoading, setReqLoading] = useState(false);
 
   const appBase = useMemo(() => {
-    // Se existir, usa env; se não, cai no domínio fixo
     const envUrl = (process.env.NEXT_PUBLIC_APP_URL || "").trim();
     return envUrl || "https://plpainel.com";
   }, []);
@@ -119,7 +105,6 @@ export default function AffiliatePage() {
       else if (s === "canceled") canceled += v;
     }
 
-    // Saques já pagos / em análise
     let withdrawPaid = 0;
     let withdrawRequested = 0;
 
@@ -130,7 +115,6 @@ export default function AffiliatePage() {
       if (s === "requested" || s === "approved") withdrawRequested += v;
     }
 
-    // Disponível (simples): aprovado - já pago em saque - em análise
     const available = Math.max(0, approved - withdrawPaid - withdrawRequested);
 
     return { pending, approved, paid, canceled, withdrawPaid, withdrawRequested, available };
@@ -149,7 +133,6 @@ export default function AffiliatePage() {
 
     const userId = auth.user.id;
 
-    // affiliate
     const affRes = await supabase
       .from("affiliates")
       .select("user_id,code,commission_rate,is_active,created_at")
@@ -164,7 +147,6 @@ export default function AffiliatePage() {
 
     setAffiliate(affRes.data ?? null);
 
-    // commissions
     const commRes = await supabase
       .from("affiliate_commissions")
       .select("id,amount_cents,status,created_at,referred_user_id,order_id")
@@ -172,7 +154,6 @@ export default function AffiliatePage() {
       .order("created_at", { ascending: false })
       .limit(200);
 
-    // withdraws
     const wdRes = await supabase
       .from("affiliate_withdraw_requests")
       .select("id,amount_cents,pix_key,pix_key_type,status,created_at,updated_at")
@@ -191,7 +172,6 @@ export default function AffiliatePage() {
 
   useEffect(() => {
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function copy(text: string) {
@@ -210,14 +190,12 @@ export default function AffiliatePage() {
     const key = pixKey.trim();
     if (!key) return setMsg("Informe sua chave PIX.");
 
-    // amount
     const amount = Number(String(amountBRL).replace(",", "."));
     if (!Number.isFinite(amount) || amount <= 0) return setMsg("Informe um valor válido.");
 
     const cents = Math.round(amount * 100);
 
-    // mínimo (ajusta se quiser)
-    const minCents = 5000; // R$50,00
+    const minCents = 5000;
     if (cents < minCents) return setMsg(`Saque mínimo: ${money(minCents)}.`);
 
     if (cents > totals.available) {
@@ -247,6 +225,7 @@ export default function AffiliatePage() {
 
       setPixKey("");
       setAmountBRL("");
+      setPixType("random");
       await load();
       alert("Pedido de saque enviado! Vamos analisar e pagar via PIX.");
     } finally {
@@ -254,9 +233,8 @@ export default function AffiliatePage() {
     }
   }
 
-  // Link do afiliado -> login com ref
   const refLink = affiliate?.code
-    ? `https://plpainel.com/login?ref=${encodeURIComponent(affiliate.code)}`
+    ? `${appBase}/login?ref=${encodeURIComponent(affiliate.code)}`
     : "";
 
   return (
@@ -294,7 +272,6 @@ export default function AffiliatePage() {
         </div>
       ) : null}
 
-      {/* Link afiliado */}
       {affiliate ? (
         <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
           <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
@@ -332,7 +309,6 @@ export default function AffiliatePage() {
         </div>
       ) : null}
 
-      {/* Resumo */}
       {affiliate ? (
         <div className="grid gap-4 md:grid-cols-4">
           <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
@@ -360,7 +336,6 @@ export default function AffiliatePage() {
         </div>
       ) : null}
 
-      {/* Solicitar saque */}
       {affiliate ? (
         <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
           <div className="flex items-center justify-between">
@@ -378,13 +353,23 @@ export default function AffiliatePage() {
               <select
                 value={pixType}
                 onChange={(e) => setPixType(e.target.value)}
-                className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 text-white outline-none focus:border-violet-400"
+                className="mt-1 w-full appearance-none rounded-xl border border-white/10 bg-slate-900 px-4 py-2 text-white outline-none transition hover:border-violet-400/60 focus:border-violet-400 focus:ring-2 focus:ring-violet-500/30"
               >
-                <option value="random">Aleatória</option>
-                <option value="cpf">CPF</option>
-                <option value="cnpj">CNPJ</option>
-                <option value="email">E-mail</option>
-                <option value="phone">Telefone</option>
+                <option className="bg-slate-900 text-white" value="random">
+                  Aleatória
+                </option>
+                <option className="bg-slate-900 text-white" value="cpf">
+                  CPF
+                </option>
+                <option className="bg-slate-900 text-white" value="cnpj">
+                  CNPJ
+                </option>
+                <option className="bg-slate-900 text-white" value="email">
+                  E-mail
+                </option>
+                <option className="bg-slate-900 text-white" value="phone">
+                  Telefone
+                </option>
               </select>
             </div>
 
@@ -394,7 +379,7 @@ export default function AffiliatePage() {
                 value={pixKey}
                 onChange={(e) => setPixKey(e.target.value)}
                 placeholder="Digite sua chave PIX"
-                className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 text-white outline-none focus:border-violet-400"
+                className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-2 text-white outline-none transition hover:border-violet-400/60 focus:border-violet-400 focus:ring-2 focus:ring-violet-500/30"
               />
             </div>
 
@@ -404,7 +389,7 @@ export default function AffiliatePage() {
                 value={amountBRL}
                 onChange={(e) => setAmountBRL(e.target.value)}
                 placeholder="50.00"
-                className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 text-white outline-none focus:border-violet-400"
+                className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-2 text-white outline-none transition hover:border-violet-400/60 focus:border-violet-400 focus:ring-2 focus:ring-violet-500/30"
               />
             </div>
           </div>
@@ -421,10 +406,8 @@ export default function AffiliatePage() {
         </div>
       ) : null}
 
-      {/* Tabelas */}
       {affiliate ? (
         <div className="grid gap-4 lg:grid-cols-2">
-          {/* Comissões */}
           <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
             <div className="text-base font-semibold">Comissões</div>
             <div className="mt-4 overflow-x-auto">
@@ -461,7 +444,6 @@ export default function AffiliatePage() {
             </div>
           </div>
 
-          {/* Saques */}
           <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
             <div className="text-base font-semibold">Saques</div>
             <div className="mt-4 overflow-x-auto">
@@ -508,4 +490,3 @@ export default function AffiliatePage() {
     </div>
   );
 }
-
