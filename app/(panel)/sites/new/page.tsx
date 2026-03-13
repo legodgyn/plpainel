@@ -590,7 +590,10 @@ export default function NewSitePage() {
         p_meta_verify_content: meta_verify_content,
       });
 
-      if (json.error === "insufficient_tokens") {
+      if (
+  json.error === "insufficient_tokens" ||
+  json.error === "not_enough_tokens"
+) {
   setError("Você não possui tokens suficientes para criar um site. Compre tokens para continuar.");
 } else {
   setError(json.error || "Erro ao criar site.");
