@@ -23,13 +23,7 @@ export default function HomePage() {
     height={40}
     className="h-10 w-10 rounded-xl object-cover"
   />
-  <div className="leading-tight">
-    <div className="text-sm font-semibold">PL - Painel</div>
-    <div className="text-[11px] text-white/50">Sites rápidos • BM-safe</div>
-  </div>
-</div>
-
-          <nav className="hidden items-center gap-6 md:flex">
+            <nav className="hidden items-center gap-6 md:flex">
             <a href="#como-funciona" className="text-sm text-white/70 hover:text-white">
               Como funciona
             </a>
