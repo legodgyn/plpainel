@@ -591,12 +591,12 @@ export default function NewSitePage() {
       });
 
       if (
-  json.error === "insufficient_tokens" ||
-  json.error === "not_enough_tokens"
+  data.error === "insufficient_tokens" ||
+  data.error === "not_enough_tokens"
 ) {
   setError("Você não possui tokens suficientes para criar um site. Compre tokens para continuar.");
 } else {
-  setError(json.error || "Erro ao criar site.");
+  setError(data.error || "Erro ao criar site.");
 }
 
       // atualiza saldo na UI (opcional)
