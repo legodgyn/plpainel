@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseBrowser";
 
@@ -11,12 +11,10 @@ function onlyDigits(v: string) {
   return String(v || "").replace(/\D/g, "");
 }
 
-// ✅ Máscara CNPJ: 11.111.111/1111-11
 function formatCNPJ(input: string) {
-  const digits = onlyDigits(input).slice(0, 14); // limita em 14
+  const digits = onlyDigits(input).slice(0, 14);
   if (!digits) return "";
 
-  // monta parcialmente enquanto digita
   const p1 = digits.slice(0, 2);
   const p2 = digits.slice(2, 5);
   const p3 = digits.slice(5, 8);
@@ -32,14 +30,11 @@ function formatCNPJ(input: string) {
   return out;
 }
 
-// ✅ Formata telefone BR: (99) 99999-9999 ou (99) 9999-9999
 function formatBRPhone(input: string) {
   const digitsRaw = onlyDigits(input);
 
   if (!digitsRaw) return "";
 
-  // Se vier com DDI/extra, pega os últimos 11 (celular) ou 10 (fixo) depois
-  // Preferência: 11 dígitos
   let digits = digitsRaw;
   if (digits.length > 11) digits = digits.slice(-11);
 
@@ -49,16 +44,14 @@ function formatBRPhone(input: string) {
   if (digits.length <= 2) return `(${digits}`;
   if (digits.length <= 6) return `(${ddd}) ${rest}`;
 
-  // 10 dígitos total: (99) 9999-9999
   if (digits.length === 10) {
     const p1 = rest.slice(0, 4);
     const p2 = rest.slice(4, 8);
     return `(${ddd}) ${p1}-${p2}`;
   }
 
-  // 11 dígitos total: (99) 99999-9999
   if (digits.length >= 11) {
-    const r = digits.slice(2, 11); // 9 dígitos
+    const r = digits.slice(2, 11);
     const p1 = r.slice(0, 5);
     const p2 = r.slice(5, 9);
     return `(${ddd}) ${p1}-${p2}`;
@@ -71,7 +64,7 @@ function slugify(input: string) {
   return String(input || "")
     .toLowerCase()
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "") // remove acentos
+    .replace(/[\u0300-\u036f]/g, "")
     .trim()
     .replace(/[\s_]+/g, "-")
     .replace(/[^\w-]+/g, "")
@@ -84,7 +77,7 @@ function buildEmailFromCompany(name: string) {
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
-    .replace(/\b(ltda|me|epp|s\/a|sa|eireli)\b/gi, "") // remove sufixos comuns
+    .replace(/\b(ltda|me|epp|s\/a|sa|eireli)\b/gi, "")
     .replace(/[^a-z0-9 ]/g, "")
     .trim()
     .replace(/\s+/g, "");
@@ -96,7 +89,6 @@ function parseMetaTag(input: string) {
   const raw = String(input || "").trim();
   if (!raw) return { name: null as string | null, content: null as string | null };
 
-  // Se colar só o código, assume facebook-domain-verification
   if (!raw.toLowerCase().includes("<meta")) {
     return { name: "facebook-domain-verification", content: raw };
   }
@@ -107,7 +99,6 @@ function parseMetaTag(input: string) {
   const name = nameMatch?.[1] ?? null;
   const content = contentMatch?.[1] ?? null;
 
-  // fallback: se só tiver content, assume facebook-domain-verification
   if (!name && content) {
     return { name: "facebook-domain-verification", content };
   }
@@ -124,9 +115,6 @@ function fmtDateBR(iso?: string | null) {
   }
 }
 
-// =====================
-// Templates (ajuste livre)
-// =====================
 function makeMission(company: string) {
   return `A missão da ${company} é desenvolver e executar estratégias eficientes, orientadas a resultados, que fortaleçam a presença de marcas, ampliem oportunidades de negócio e impulsionem o crescimento sustentável de nossos clientes.
 
@@ -269,27 +257,19 @@ type BalanceRow = { balance: number | null };
 type FormState = {
   slug: string;
   cnpj: string;
-
-  company_name: string; // razão social
-  fantasy_name: string; // nome fantasia
-
+  company_name: string;
+  fantasy_name: string;
   phone: string;
   whatsapp: string;
   email: string;
-
   instagram: string;
   facebook: string;
-
   meta_tag: string;
-
   about: string;
   mission: string;
   privacy: string;
   footer: string;
-
   is_public: boolean;
-
-  // Extras capturados da BrasilAPI (opcional)
   opened_at: string | null;
   address_full: string;
   cep: string;
@@ -306,26 +286,19 @@ type FormState = {
 const initialForm: FormState = {
   slug: "",
   cnpj: "",
-
   company_name: "",
   fantasy_name: "",
-
   phone: "",
   whatsapp: "",
   email: "",
-
   instagram: "https://instagram.com",
   facebook: "https://facebook.com",
-
   meta_tag: "",
-
   about: "",
   mission: "",
   privacy: "",
   footer: "",
-
   is_public: true,
-
   opened_at: null,
   address_full: "",
   cep: "",
@@ -346,11 +319,11 @@ export default function NewSitePage() {
   const [loading, setLoading] = useState(false);
   const [genLoading, setGenLoading] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+  const [insufficientTokens, setInsufficientTokens] = useState(false);
 
   const [balance, setBalance] = useState<number | null>(null);
   const [balanceLoading, setBalanceLoading] = useState(true);
 
-  // Load token balance (optional)
   useEffect(() => {
     let alive = true;
 
@@ -389,6 +362,7 @@ export default function NewSitePage() {
 
   async function generateFromCnpj() {
     setMsg(null);
+    setInsufficientTokens(false);
 
     const cnpjDigits = onlyDigits(form.cnpj);
     if (!cnpjDigits || cnpjDigits.length < 14) {
@@ -398,7 +372,6 @@ export default function NewSitePage() {
 
     setGenLoading(true);
     try {
-      // BrasilAPI CNPJ v1
       const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpjDigits}`, {
         cache: "no-store",
       });
@@ -410,7 +383,6 @@ export default function NewSitePage() {
 
       const data: any = await res.json();
 
-      // Campos comuns na BrasilAPI
       const razao: string = data.razao_social || data.razao || "";
       const fantasia: string = data.nome_fantasia || data.fantasia || "";
       const abertura: string | null = data.data_inicio_atividade || data.data_abertura || null;
@@ -446,13 +418,9 @@ export default function NewSitePage() {
           ? `${data.ddd}${data.telefone_1 || ""}`
           : "";
 
-      // ✅ Formata aqui também
       const phone = formatBRPhone(String(phoneRaw || "").trim());
-
-      // slug: prefere fantasia, senão razão
       const nextSlugBase = fantasia || razao || form.slug || "meu-site";
       const nextSlug = slugify(nextSlugBase);
-
       const email = buildEmailFromCompany(razao || fantasia || nextSlugBase);
 
       const porte = data.porte || "";
@@ -504,28 +472,18 @@ export default function NewSitePage() {
       setForm((prev) => ({
         ...prev,
         cnpj: formatCNPJ(String(data.cnpj || prev.cnpj)),
-
-        // ✅ guarda os dois
         company_name: razao || prev.company_name,
         fantasy_name: fantasia || prev.fantasy_name,
-
-        // slug automático (editável)
         slug: nextSlug || prev.slug,
-
-        // ✅ Telefones formatados
         phone: phone || prev.phone,
         whatsapp: phone || prev.whatsapp,
-
         email: email || prev.email,
-
         instagram: prev.instagram || "https://instagram.com",
         facebook: prev.facebook || "https://facebook.com",
-
         mission,
         about,
         privacy,
         footer,
-
         opened_at: abertura,
         address_full: enderecoFull,
         cep,
@@ -547,6 +505,7 @@ export default function NewSitePage() {
 
   async function handleCreate() {
     setMsg(null);
+    setInsufficientTokens(false);
 
     const { data: auth, error: authErr } = await supabase.auth.getUser();
     const user = auth?.user;
@@ -568,12 +527,9 @@ export default function NewSitePage() {
     try {
       const { name: meta_verify_name, content: meta_verify_content } = parseMetaTag(form.meta_tag);
 
-      // ✅ garante padrão antes de salvar
       const phoneFmt = formatBRPhone(form.phone);
       const whatsappFmt = formatBRPhone(form.whatsapp);
 
-      // ✅ IMPORTANTÍSSIMO:
-      // aqui a gente chama a RPC que debita token + cria o site em transação
       const { data, error } = await supabase.rpc("create_site_with_token", {
         p_slug: slug,
         p_company_name: form.company_name.trim(),
@@ -590,18 +546,30 @@ export default function NewSitePage() {
         p_meta_verify_content: meta_verify_content,
       });
 
-       if (error) {
-        // mensagens comuns: teste mensagem / no_balance_row
-        setMsg(error.message || "Erro ao criar site.");
+      if (error) {
+        if (
+          error.message === "insufficient_tokens" ||
+          error.message === "not_enough_tokens"
+        ) {
+          setInsufficientTokens(true);
+          setMsg("Você não possui tokens suficientes para criar um site.");
+        } else {
+          setMsg(error.message || "Erro ao criar site.");
+        }
         return;
       }
 
-      // atualiza saldo na UI (opcional)
       setBalance((prev) => (typeof prev === "number" ? Math.max(0, prev - 1) : prev));
-
       router.push("/sites");
     } catch (e: any) {
-      setMsg(e?.message || "Erro ao criar site.");
+      const message = e?.message || "Erro ao criar site.";
+
+      if (message === "insufficient_tokens" || message === "not_enough_tokens") {
+        setInsufficientTokens(true);
+        setMsg("Você não possui tokens suficientes para criar um site.");
+      } else {
+        setMsg(message);
+      }
     } finally {
       setLoading(false);
     }
@@ -623,14 +591,31 @@ export default function NewSitePage() {
         </div>
       </div>
 
-      {msg && (
+      {msg && !insufficientTokens && (
         <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-200">
           {msg}
         </div>
       )}
 
+      {insufficientTokens && (
+        <div className="mt-4 rounded-xl border border-amber-500/20 bg-amber-500/10 px-4 py-4 text-sm text-amber-200">
+          <div className="font-semibold">Você não possui tokens suficientes para criar um site.</div>
+          <div className="mt-1 text-amber-100/80">
+            Cada site criado consome 1 token. Compre mais tokens para continuar.
+          </div>
+
+          <div className="mt-4">
+            <button
+              onClick={() => router.push("/tokens")}
+              className="rounded-xl bg-violet-600 px-4 py-2 font-semibold text-white transition hover:bg-violet-500"
+            >
+              Comprar Tokens
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="mt-6 space-y-4">
-        {/* CNPJ + Gerar */}
         <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
           <div className="grid gap-3 md:grid-cols-3 md:items-end">
             <div className="md:col-span-2">
@@ -759,7 +744,6 @@ export default function NewSitePage() {
           </div>
         </div>
 
-        {/* Meta tag verificação */}
         <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
           <div className="text-sm font-semibold">Meta tag de verificação</div>
           <div className="mt-1 text-xs text-white/60">
@@ -775,7 +759,6 @@ export default function NewSitePage() {
           />
         </div>
 
-        {/* Textos */}
         <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
           <div className="grid gap-4 md:grid-cols-2">
             <div>
@@ -820,7 +803,6 @@ export default function NewSitePage() {
           </div>
         </div>
 
-        {/* Actions */}
         <div className="flex gap-3">
           <button
             onClick={() => router.push("/sites")}
