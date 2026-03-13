@@ -590,14 +590,11 @@ export default function NewSitePage() {
         p_meta_verify_content: meta_verify_content,
       });
 
-      if (
-  data.error === "insufficient_tokens" ||
-  data.error === "not_enough_tokens"
-) {
-  setError("Você não possui tokens suficientes para criar um site. Compre tokens para continuar.");
-} else {
-  setError(data.error || "Erro ao criar site.");
-}
+       if (error) {
+        // mensagens comuns: teste mensagem / no_balance_row
+        setMsg(error.message || "Erro ao criar site.");
+        return;
+      }
 
       // atualiza saldo na UI (opcional)
       setBalance((prev) => (typeof prev === "number" ? Math.max(0, prev - 1) : prev));
