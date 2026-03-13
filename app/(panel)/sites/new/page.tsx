@@ -590,11 +590,11 @@ export default function NewSitePage() {
         p_meta_verify_content: meta_verify_content,
       });
 
-      if (error) {
-        // mensagens comuns: insufficient_tokens / no_balance_row
-        setMsg(error.message || "Erro ao criar site.");
-        return;
-      }
+      if (json.error === "insufficient_tokens") {
+  setError("Você não possui tokens suficientes para criar um site. Compre tokens para continuar.");
+} else {
+  setError(json.error || "Erro ao criar site.");
+}
 
       // atualiza saldo na UI (opcional)
       setBalance((prev) => (typeof prev === "number" ? Math.max(0, prev - 1) : prev));
