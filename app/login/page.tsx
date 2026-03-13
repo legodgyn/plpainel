@@ -115,7 +115,7 @@ export default function LoginPage() {
 
             <div className="grid h-12 w-12 place-items-center rounded-2xl border border-white/10 bg-white/10 p-1">
               <Image
-                src="/favicon.png"
+                src="/logo.png"
                 alt="Logo"
                 width={48}
                 height={48}
