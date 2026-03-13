@@ -210,8 +210,13 @@ export default function LoginPage() {
         <div className="w-full max-w-md">
           <div className="rounded-3xl border border-white/10 bg-white/5 p-7 shadow-[0_24px_80px_rgba(0,0,0,.45)]">
             <div className="flex items-center gap-3">
-              <div className="grid h-11 w-11 place-items-center rounded-2xl border border-white/10 bg-white/10 font-black">
-                PL
+              <div className="grid h-11 w-11 place-items-center rounded-2xl border border-white/10 bg-white/10 p-1">
+  <img
+    src="/logo.png"
+    alt="PL Painel"
+    className="h-full w-full object-contain"
+  />
+</div>
               </div>
               <div>
                 <div className="text-xl font-bold">Login</div>
