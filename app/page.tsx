@@ -21,7 +21,7 @@ export default function HomePage() {
               alt="PL Painel"
               width={160}
               height={44}
-              className="h-10 w-auto object-contain"
+              className="h-14 w-auto object-contain"
               priority
             />
           </div>
