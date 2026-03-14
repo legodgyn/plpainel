@@ -557,37 +557,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* CTA final */}
-      <section className="mx-auto max-w-7xl px-4 pb-14 md:px-6 md:pb-20">
-        <div className="rounded-[36px] border border-[#E7E0EC] bg-[#F7F2FA] p-8 md:p-10">
-          <div className="grid gap-6 lg:grid-cols-[1fr_auto] lg:items-center">
-            <div>
-              <h2 className="text-3xl font-black tracking-[-0.03em] text-[#1C1B1F] md:text-4xl">
-                Deixe sua página inicial mais chamativa, mais clara e mais vendedora
-              </h2>
-              <p className="mt-3 max-w-2xl text-sm leading-7 text-[#625B71] md:text-base">
-                Esta versão foi pensada para aumentar percepção de valor, parecer mais SaaS
-                e tornar o primeiro impacto visual mais convidativo para o usuário final.
-              </p>
-            </div>
-
-            <div className="flex flex-col gap-3 sm:flex-row lg:flex-col">
-              <Link href="/sites/new" className={primaryButton}>
-                Criar meu site
-              </Link>
-              <a
-                href={SUPPORT_LINK}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={outlinedButton}
-              >
-                Entrar em contato
-              </a>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* Footer */}
       <footer className="border-t border-[#E7E0EC] bg-white/70">
         <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-8 md:flex-row md:items-center md:justify-between md:px-6">
