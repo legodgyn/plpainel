@@ -25,7 +25,7 @@ export default function HomePage() {
   />
   <div className="leading-tight">
     <div className="text-sm font-semibold">PL - Painel</div>
-    <div className="text-[11px] text-white/50">Sites rápidos • BM-safe</div>
+    <div className="text-[11px] text-white/50">Sites rápidos • BM`s</div>
   </div>
 </div>
             <nav className="hidden items-center gap-6 md:flex">
@@ -243,7 +243,7 @@ export default function HomePage() {
             {[
               { n: "01", title: "Digite o CNPJ", desc: "Clique em “Gerar dados” e o sistema preenche tudo." },
               { n: "02", title: "Ajuste o que quiser", desc: "Edite textos e contatos. Deixe do seu jeito." },
-              { n: "03", title: "Publicou. Vendeu.", desc: "Seu site fica em seu-site.plpainel.com pronto pra verificação." },
+              { n: "03", title: "Publicou. Verificou.", desc: "Seu site fica em seu-site.plpainel.com pronto pra verificação." },
             ].map((s) => (
               <div key={s.n} className="rounded-2xl border border-white/10 bg-black/20 p-5">
                 <div className="text-xs font-bold text-white/60">{s.n}</div>
