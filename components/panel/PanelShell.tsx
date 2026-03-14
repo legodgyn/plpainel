@@ -213,7 +213,7 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
         <div className="mx-auto max-w-[1600px] px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
   <Image
-    src="/logo.png"
+    src="/logo1.png"
     alt="PL Painel"
     width={200}
     height={80}
