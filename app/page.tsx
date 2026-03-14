@@ -17,7 +17,7 @@ export default function HomePage() {
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
           <div className="flex items-center">
             <Image
-              src="/logo-icon.png"
+              src="/logo.png"
               alt="PL Painel"
               width={160}
               height={44}
