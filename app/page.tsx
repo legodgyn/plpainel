@@ -279,7 +279,7 @@ export default function HomePage() {
 
                         <div className="rounded-[22px] bg-[#EEF2FF] p-4">
                           <div className="text-xs font-medium text-[#625B71]">Template</div>
-                          <div className="mt-2 text-base font-bold text-[#1C1B1F]">SaaS Light</div>
+                          <div className="mt-2 text-base font-bold text-[#1C1B1F]">Simples</div>
                           <div className="mt-1 text-sm text-[#625B71]">Visual moderno</div>
                         </div>
 
