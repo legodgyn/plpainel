@@ -4,7 +4,7 @@ import Image from "next/image";
 export const dynamic = "force-dynamic";
 
 export default function HomePage() {
-  const SUPPORT_WHATSAPP = "62999994162";
+  const SUPPORT_WHATSAPP = "+5562999994162";
   const SUPPORT_TEXT = encodeURIComponent(
     "Olá! Vim pelo PL - Painel e gostaria de entrar em contato para saber mais."
   );
