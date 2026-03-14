@@ -185,24 +185,14 @@ export default function HomePage() {
         <div className="mx-auto max-w-7xl px-4 pb-14 pt-12 md:px-6 md:pb-20 md:pt-16">
           <div className="grid items-center gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-14">
             <div>
-              <div className="inline-flex flex-wrap items-center gap-2">
-                <span className="rounded-full bg-[#E8DEF8] px-3 py-1 text-xs font-semibold text-[#4F378B]">
-                  Plataforma com visual SaaS moderno
-                </span>
-                <span className="rounded-full bg-[#EEF2FF] px-3 py-1 text-xs font-semibold text-[#355CA8]">
-                  1 token = R$ 4,00
-                </span>
-              </div>
 
               <h1 className="mt-5 max-w-3xl text-4xl font-black leading-tight tracking-[-0.04em] md:text-5xl lg:text-6xl">
-                Gere sites profissionais em minutos e entregue uma experiência
-                que passa mais valor para o seu cliente.
+                Gere sites profissionais em minutos para verificação de BM's.
               </h1>
 
               <p className="mt-5 max-w-xl text-base leading-7 text-[#625B71] md:text-lg">
                 Crie páginas a partir do CNPJ, personalize o conteúdo com rapidez
-                e publique em uma plataforma clara, convidativa e com aparência
-                de produto SaaS premium.
+                e publique e veja sua BM ser verificada rapidamente.
               </p>
 
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -468,7 +458,7 @@ export default function HomePage() {
               Preço simples
             </div>
             <h2 className="mt-4 text-3xl font-black tracking-[-0.03em] md:text-4xl">
-              Modelo direto para vender melhor e operar com liberdade
+              Modelo direto para você verificar sua BM rapidamente.
             </h2>
             <p className="mt-3 max-w-2xl text-base leading-7 text-[#625B71]">
               Sem assinatura fixa. Você compra tokens e cria conforme sua necessidade, com
@@ -503,11 +493,11 @@ export default function HomePage() {
               Comece agora
             </div>
             <h3 className="mt-4 text-3xl font-black tracking-[-0.03em]">
-              Faça sua home parecer um produto mais forte
+              Cansado de tentar aprovar sua BM?
             </h3>
             <p className="mt-3 text-sm leading-7 text-white/85">
-              Uma landing mais clara e mais chamativa ajuda o usuário a entender
-              o valor do produto mais rápido e aumenta a sensação de confiança.
+              Uma landing mais clara e mais chamativa que ajuda a meta a entender
+              sua empresa e verificar rapidamente.
             </p>
 
             <div className="mt-6 flex flex-col gap-3">
@@ -526,7 +516,7 @@ export default function HomePage() {
             </div>
 
             <div className="mt-6 rounded-[24px] bg-white/10 p-4 text-sm text-white/85">
-              Sem mensalidade. Sem complexidade. Mais velocidade para criar e publicar.
+              Sem complexidade. Mais velocidade para criar e publicar.
             </div>
           </div>
         </div>
