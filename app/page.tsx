@@ -325,39 +325,6 @@ export default function HomePage() {
                       </div>
                     </div>
 
-                    <div className="space-y-4">
-                      <div className={`${softCard} p-5`}>
-                        <div className="text-xs font-semibold uppercase tracking-[0.14em] text-[#625B71]">
-                          Tempo de criação
-                        </div>
-                        <div className="mt-2 text-3xl font-black text-[#1C1B1F]">Minutos</div>
-                        <div className="mt-1 text-sm text-[#625B71]">Da geração até a publicação</div>
-                      </div>
-
-                      <div className={`${softCard} p-5`}>
-                        <div className="text-xs font-semibold uppercase tracking-[0.14em] text-[#625B71]">
-                          Tokens disponíveis
-                        </div>
-                        <div className="mt-2 text-3xl font-black text-[#1C1B1F]">24</div>
-                        <div className="mt-1 text-sm text-[#625B71]">Use conforme sua demanda</div>
-                      </div>
-
-                      <div className={`${softCard} p-5`}>
-                        <div className="text-xs font-semibold uppercase tracking-[0.14em] text-[#625B71]">
-                          Resultado
-                        </div>
-                        <div className="mt-2 text-lg font-bold text-[#1C1B1F]">
-                          Mais valor percebido
-                        </div>
-                        <div className="mt-1 text-sm text-[#625B71]">
-                          Uma home mais bonita, clara e convidativa para vender melhor.
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
               <div className="absolute -left-5 top-10 hidden rounded-[24px] border border-[#E7E0EC] bg-white px-4 py-3 shadow-[0_8px_24px_rgba(103,80,164,0.10)] md:block">
                 <div className="text-xs text-[#625B71]">Publicação</div>
                 <div className="mt-1 text-sm font-semibold text-[#1C1B1F]">site pronto para uso</div>
