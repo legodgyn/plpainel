@@ -10,8 +10,8 @@ export default function HomePage() {
 
   const benefits = [
     {
-      title: "Criação guiada",
-      desc: "Gere a estrutura do site com rapidez e tenha uma base pronta para personalizar.",
+      title: "Criação em minutos",
+      desc: "Gere a estrutura do site com rapidez e reduza o tempo entre ideia e publicação.",
       icon: (
         <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.8">
           <path d="M12 3l7 4v10l-7 4-7-4V7l7-4Z" />
@@ -20,8 +20,8 @@ export default function HomePage() {
       ),
     },
     {
-      title: "Dados automáticos",
-      desc: "Aproveite o preenchimento inicial com base no CNPJ para ganhar tempo no processo.",
+      title: "Dados automáticos por CNPJ",
+      desc: "Acelere o preenchimento inicial com informações da empresa e comece já com uma base pronta.",
       icon: (
         <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.8">
           <rect x="4" y="5" width="16" height="14" rx="3" />
@@ -30,18 +30,8 @@ export default function HomePage() {
       ),
     },
     {
-      title: "Publicação rápida",
-      desc: "Saia do rascunho para um site publicado em poucos passos dentro do painel.",
-      icon: (
-        <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.8">
-          <path d="M12 3v18M3 12h18" />
-          <circle cx="12" cy="12" r="8" />
-        </svg>
-      ),
-    },
-    {
-      title: "Fluxo com tokens",
-      desc: "Sem mensalidade obrigatória. Você compra e utiliza conforme sua demanda.",
+      title: "Sem mensalidade",
+      desc: "Você compra tokens e usa conforme a necessidade, sem assinatura recorrente.",
       icon: (
         <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.8">
           <rect x="3" y="6" width="18" height="12" rx="3" />
@@ -50,18 +40,27 @@ export default function HomePage() {
       ),
     },
     {
-      title: "Layout responsivo",
-      desc: "Visual moderno e adaptado para diferentes telas desde o primeiro acesso.",
+      title: "Visual profissional",
+      desc: "Páginas com aparência moderna, mais confiáveis e mais agradáveis para o usuário final.",
       icon: (
         <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.8">
-          <rect x="5" y="4" width="14" height="16" rx="2.5" />
-          <path d="M10 17h4" />
+          <path d="M4 6h16M4 12h16M4 18h10" />
         </svg>
       ),
     },
     {
-      title: "Escala organizada",
-      desc: "Crie e gerencie vários sites em um ambiente visualmente mais profissional.",
+      title: "Publicação rápida",
+      desc: "Depois de ajustar os detalhes, seu site pode ir ao ar em poucos passos.",
+      icon: (
+        <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.8">
+          <path d="M12 3v18M3 12h18" />
+          <circle cx="12" cy="12" r="8" />
+        </svg>
+      ),
+    },
+    {
+      title: "Escala no painel",
+      desc: "Crie vários sites com um fluxo mais organizado e centralizado em um só lugar.",
       icon: (
         <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.8">
           <path d="M5 18V9M12 18V6M19 18v-4" />
@@ -75,57 +74,58 @@ export default function HomePage() {
     {
       n: "01",
       title: "Digite o CNPJ",
-      desc: "Comece com os dados da empresa para acelerar a criação da estrutura inicial.",
+      desc: "A plataforma prepara automaticamente a base do site com mais rapidez.",
     },
     {
       n: "02",
-      title: "Revise e personalize",
-      desc: "Ajuste conteúdo, contatos e detalhes visuais para deixar tudo alinhado com sua entrega.",
+      title: "Ajuste o conteúdo",
+      desc: "Personalize textos, contatos e informações para deixar a página pronta para uso.",
     },
     {
       n: "03",
-      title: "Publique no painel",
-      desc: "Finalize e deixe o site disponível em poucos minutos, com um processo direto.",
+      title: "Publique e compartilhe",
+      desc: "Finalize o processo e coloque o site no ar em um fluxo direto e intuitivo.",
     },
   ];
 
   const faqs = [
     {
       q: "Quanto custa criar um site?",
-      a: "Cada site utiliza 1 token. Atualmente, 1 token custa R$ 4,00.",
+      a: "Cada site utiliza 1 token. Hoje, 1 token custa R$ 4,00.",
     },
     {
-      q: "O site fica online rapidamente?",
-      a: "Sim. Após concluir o processo, o site pode ser publicado no subdomínio gerado pela plataforma.",
+      q: "Preciso pagar mensalidade?",
+      a: "Não. O modelo é por uso. Você compra tokens e utiliza conforme sua necessidade.",
+    },
+    {
+      q: "Posso editar o site depois?",
+      a: "Sim. Você pode atualizar conteúdo, contatos e outras informações quando quiser.",
     },
     {
       q: "Preciso contratar hospedagem?",
-      a: "Não. A estrutura da plataforma já cobre o necessário para colocar o site no ar.",
-    },
-    {
-      q: "Posso editar depois?",
-      a: "Sim. Você pode atualizar textos, contatos e outros dados sempre que precisar.",
+      a: "Não. A estrutura da plataforma já cobre o necessário para a publicação do site.",
     },
   ];
 
-  const materialCard =
-    "rounded-[28px] border border-[#E7E0EC] bg-white shadow-[0_1px_2px_rgba(0,0,0,0.06),0_8px_24px_rgba(103,80,164,0.08)]";
-  const materialButtonPrimary =
-    "inline-flex items-center justify-center rounded-full bg-[#6750A4] px-6 py-3.5 text-sm font-semibold text-white shadow-[0_6px_18px_rgba(103,80,164,0.28)] transition hover:bg-[#5D4797]";
-  const materialButtonTonal =
+  const softCard =
+    "rounded-[28px] border border-[#E7E0EC] bg-white shadow-[0_1px_2px_rgba(0,0,0,0.05),0_10px_30px_rgba(103,80,164,0.08)]";
+  const primaryButton =
+    "inline-flex items-center justify-center rounded-full bg-[#6750A4] px-6 py-3.5 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(103,80,164,0.28)] transition hover:bg-[#5D4797]";
+  const tonalButton =
     "inline-flex items-center justify-center rounded-full bg-[#E8DEF8] px-6 py-3.5 text-sm font-semibold text-[#4F378B] transition hover:bg-[#DED0F4]";
-  const materialButtonOutlined =
+  const outlinedButton =
     "inline-flex items-center justify-center rounded-full border border-[#CAC4D0] bg-white px-6 py-3.5 text-sm font-semibold text-[#4F378B] transition hover:bg-[#F7F2FA]";
 
   return (
     <main className="min-h-screen bg-[#FFFBFE] text-[#1C1B1F]">
       <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
-        <div className="absolute left-[-120px] top-[-80px] h-[320px] w-[320px] rounded-full bg-[#E8DEF8] blur-3xl" />
-        <div className="absolute right-[-100px] top-[80px] h-[300px] w-[300px] rounded-full bg-[#DDE3FF] blur-3xl" />
-        <div className="absolute bottom-[-120px] left-1/2 h-[340px] w-[340px] -translate-x-1/2 rounded-full bg-[#F7E1EC] blur-3xl" />
+        <div className="absolute left-[-140px] top-[-100px] h-[340px] w-[340px] rounded-full bg-[#E8DEF8] blur-3xl" />
+        <div className="absolute right-[-120px] top-[80px] h-[320px] w-[320px] rounded-full bg-[#DDE3FF] blur-3xl" />
+        <div className="absolute bottom-[-140px] left-1/2 h-[360px] w-[360px] -translate-x-1/2 rounded-full bg-[#FBE4EC] blur-3xl" />
       </div>
 
-      <header className="sticky top-0 z-50 border-b border-[#E7E0EC] bg-[#FFFBFE]/85 backdrop-blur-xl">
+      {/* Header */}
+      <header className="sticky top-0 z-50 border-b border-[#E7E0EC] bg-[#FFFBFE]/88 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 md:px-6">
           <div className="flex items-center gap-3">
             <Image
@@ -137,16 +137,16 @@ export default function HomePage() {
             />
             <div className="leading-tight">
               <div className="text-sm font-semibold text-[#1C1B1F]">PL - Painel</div>
-              <div className="text-xs text-[#625B71]">Sites rápidos com experiência moderna</div>
+              <div className="text-xs text-[#625B71]">Crie sites com velocidade e aparência profissional</div>
             </div>
           </div>
 
           <nav className="hidden items-center gap-6 md:flex">
-            <a href="#como-funciona" className="text-sm font-medium text-[#625B71] transition hover:text-[#1C1B1F]">
-              Como funciona
-            </a>
             <a href="#beneficios" className="text-sm font-medium text-[#625B71] transition hover:text-[#1C1B1F]">
               Benefícios
+            </a>
+            <a href="#como-funciona" className="text-sm font-medium text-[#625B71] transition hover:text-[#1C1B1F]">
+              Como funciona
             </a>
             <a href="#preco" className="text-sm font-medium text-[#625B71] transition hover:text-[#1C1B1F]">
               Preço
@@ -173,193 +173,194 @@ export default function HomePage() {
               Entrar
             </Link>
 
-            <Link href="/sites/new" className="inline-flex rounded-full bg-[#6750A4] px-5 py-2.5 text-sm font-semibold text-white shadow-[0_6px_18px_rgba(103,80,164,0.28)] transition hover:bg-[#5D4797]">
+            <Link href="/sites/new" className="inline-flex rounded-full bg-[#6750A4] px-5 py-2.5 text-sm font-semibold text-white shadow-[0_8px_20px_rgba(103,80,164,0.25)] transition hover:bg-[#5D4797]">
               Criar meu site
             </Link>
           </div>
         </div>
       </header>
 
+      {/* Hero */}
       <section className="relative">
         <div className="mx-auto max-w-7xl px-4 pb-14 pt-12 md:px-6 md:pb-20 md:pt-16">
           <div className="grid items-center gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-14">
             <div>
               <div className="inline-flex flex-wrap items-center gap-2">
                 <span className="rounded-full bg-[#E8DEF8] px-3 py-1 text-xs font-semibold text-[#4F378B]">
-                  Design inspirado em Material 3
+                  Plataforma com visual SaaS moderno
                 </span>
                 <span className="rounded-full bg-[#EEF2FF] px-3 py-1 text-xs font-semibold text-[#355CA8]">
-                  SaaS claro, moderno e convidativo
+                  1 token = R$ 4,00
                 </span>
               </div>
 
-              <h1 className="mt-5 max-w-2xl text-4xl font-black leading-tight tracking-[-0.04em] md:text-5xl lg:text-6xl">
-                Crie sites com aparência profissional em uma plataforma que
-                transmite valor desde o primeiro clique.
+              <h1 className="mt-5 max-w-3xl text-4xl font-black leading-tight tracking-[-0.04em] md:text-5xl lg:text-6xl">
+                Gere sites profissionais em minutos e entregue uma experiência
+                que passa mais valor para o seu cliente.
               </h1>
 
               <p className="mt-5 max-w-xl text-base leading-7 text-[#625B71] md:text-lg">
-                Gere páginas a partir do CNPJ, personalize em poucos minutos e
-                publique em um fluxo simples, bonito e com cara de produto SaaS
-                moderno.
+                Crie páginas a partir do CNPJ, personalize o conteúdo com rapidez
+                e publique em uma plataforma clara, convidativa e com aparência
+                de produto SaaS premium.
               </p>
 
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <Link href="/sites/new" className={materialButtonPrimary}>
+                <Link href="/sites/new" className={primaryButton}>
                   Criar meu site agora
                 </Link>
-                <a href="#preco" className={materialButtonOutlined}>
-                  Ver preço do token
+                <a href="#como-funciona" className={outlinedButton}>
+                  Ver como funciona
                 </a>
               </div>
 
-              <div className="mt-8 grid max-w-xl gap-3 sm:grid-cols-3">
-                <div className={`${materialCard} p-4`}>
-                  <div className="text-sm font-semibold text-[#1C1B1F]">Fluxo intuitivo</div>
-                  <div className="mt-1 text-sm text-[#625B71]">Menos atrito para criar e publicar</div>
+              <div className="mt-8 grid max-w-2xl gap-3 sm:grid-cols-3">
+                <div className={`${softCard} p-4`}>
+                  <div className="text-sm font-semibold text-[#1C1B1F]">Mais conversão visual</div>
+                  <div className="mt-1 text-sm text-[#625B71]">Cara de software real e confiável</div>
                 </div>
-                <div className={`${materialCard} p-4`}>
-                  <div className="text-sm font-semibold text-[#1C1B1F]">Visual confiável</div>
-                  <div className="mt-1 text-sm text-[#625B71]">Experiência leve e mais premium</div>
+                <div className={`${softCard} p-4`}>
+                  <div className="text-sm font-semibold text-[#1C1B1F]">Menos esforço</div>
+                  <div className="mt-1 text-sm text-[#625B71]">Fluxo simples do início à publicação</div>
                 </div>
-                <div className={`${materialCard} p-4`}>
-                  <div className="text-sm font-semibold text-[#1C1B1F]">Sem mensalidade</div>
-                  <div className="mt-1 text-sm text-[#625B71]">Use tokens conforme precisar</div>
+                <div className={`${softCard} p-4`}>
+                  <div className="text-sm font-semibold text-[#1C1B1F]">Escala com controle</div>
+                  <div className="mt-1 text-sm text-[#625B71]">Crie vários sites no mesmo painel</div>
+                </div>
+              </div>
+
+              <div className="mt-8 flex flex-wrap items-center gap-4 text-sm text-[#625B71]">
+                <div className="flex items-center gap-2">
+                  <span className="h-2.5 w-2.5 rounded-full bg-[#4CAF50]" />
+                  Publicação rápida
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="h-2.5 w-2.5 rounded-full bg-[#6750A4]" />
+                  Sem mensalidade
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="h-2.5 w-2.5 rounded-full bg-[#4F8CFF]" />
+                  Visual moderno
                 </div>
               </div>
             </div>
 
+            {/* Mock SaaS / conversão */}
             <div className="relative">
-              <div className="rounded-[36px] border border-[#E7E0EC] bg-[#F7F2FA] p-3 shadow-[0_2px_8px_rgba(0,0,0,0.06),0_30px_60px_rgba(103,80,164,0.14)]">
+              <div className="rounded-[36px] border border-[#E7E0EC] bg-[#F7F2FA] p-3 shadow-[0_2px_10px_rgba(0,0,0,0.05),0_30px_60px_rgba(103,80,164,0.14)]">
                 <div className="rounded-[32px] border border-[#E7E0EC] bg-white p-4 md:p-5">
-                  <div className="flex items-center justify-between rounded-[24px] bg-[#F8F5FF] px-4 py-3">
+                  <div className="flex items-center justify-between rounded-[24px] bg-[#FCFCFF] px-4 py-3 ring-1 ring-[#E7E0EC]">
                     <div>
-                      <div className="text-sm font-semibold text-[#1C1B1F]">Workspace</div>
-                      <div className="mt-1 text-xs text-[#625B71]">Seu painel de criação</div>
+                      <div className="text-sm font-semibold text-[#1C1B1F]">Painel de criação</div>
+                      <div className="mt-1 text-xs text-[#625B71]">Fluxo rápido para gerar e publicar</div>
                     </div>
-                    <div className="rounded-full bg-[#E8DEF8] px-3 py-1 text-xs font-semibold text-[#4F378B]">
-                      ativo
+                    <div className="rounded-full bg-[#EEF7F1] px-3 py-1 text-xs font-semibold text-[#3D5E49]">
+                      online
                     </div>
                   </div>
 
-                  <div className="mt-4 grid gap-4 lg:grid-cols-[84px_1fr]">
-                    <aside className="rounded-[24px] bg-[#F8F5FF] p-3">
-                      <div className="space-y-3">
-                        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#6750A4] text-white shadow-[0_8px_16px_rgba(103,80,164,0.22)]">
-                          <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
-                            <path d="M4 6h16M4 12h16M4 18h10" />
-                          </svg>
+                  <div className="mt-4 grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
+                    <div className={`${softCard} p-5`}>
+                      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                        <div>
+                          <div className="text-xs font-semibold uppercase tracking-[0.14em] text-[#625B71]">
+                            Novo site
+                          </div>
+                          <div className="mt-2 text-xl font-black text-[#1C1B1F]">
+                            Empresa criada com sucesso
+                          </div>
+                          <p className="mt-2 text-sm leading-6 text-[#625B71]">
+                            A plataforma já preparou a estrutura da página com base no
+                            CNPJ e deixou o seu fluxo mais rápido.
+                          </p>
                         </div>
-                        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-[#6750A4] shadow-sm ring-1 ring-[#E7E0EC]">
-                          <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
-                            <rect x="4" y="5" width="16" height="14" rx="3" />
-                          </svg>
-                        </div>
-                        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-[#6750A4] shadow-sm ring-1 ring-[#E7E0EC]">
-                          <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
-                            <path d="M5 18V9M12 18V6M19 18v-4" />
-                            <path d="M3 18h18" />
-                          </svg>
+
+                        <div className="rounded-2xl bg-[#E8DEF8] px-3 py-2 text-xs font-semibold text-[#4F378B]">
+                          1 token usado
                         </div>
                       </div>
-                    </aside>
+
+                      <div className="mt-6 grid gap-3 sm:grid-cols-3">
+                        <div className="rounded-[22px] bg-[#F8F5FF] p-4">
+                          <div className="text-xs font-medium text-[#625B71]">Origem</div>
+                          <div className="mt-2 text-base font-bold text-[#1C1B1F]">CNPJ</div>
+                          <div className="mt-1 text-sm text-[#625B71]">Base inicial pronta</div>
+                        </div>
+
+                        <div className="rounded-[22px] bg-[#EEF2FF] p-4">
+                          <div className="text-xs font-medium text-[#625B71]">Template</div>
+                          <div className="mt-2 text-base font-bold text-[#1C1B1F]">SaaS Light</div>
+                          <div className="mt-1 text-sm text-[#625B71]">Visual moderno</div>
+                        </div>
+
+                        <div className="rounded-[22px] bg-[#EEF7F1] p-4">
+                          <div className="text-xs font-medium text-[#625B71]">Status</div>
+                          <div className="mt-2 text-base font-bold text-[#1C1B1F]">Publicado</div>
+                          <div className="mt-1 text-sm text-[#625B71]">Pronto para uso</div>
+                        </div>
+                      </div>
+
+                      <div className="mt-5 rounded-[24px] border border-[#E7E0EC] bg-[#FFFBFE] p-4">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                          <div>
+                            <div className="text-sm font-semibold text-[#1C1B1F]">Prévia do site</div>
+                            <div className="mt-1 text-sm text-[#625B71]">seu-site.plpainel.com</div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="rounded-full bg-[#E8DEF8] px-3 py-1 text-xs font-semibold text-[#4F378B]">
+                              responsivo
+                            </span>
+                            <span className="rounded-full bg-[#FFF4E5] px-3 py-1 text-xs font-semibold text-[#8A5A00]">
+                              pronto para personalizar
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="mt-4 rounded-[24px] border border-[#E7E0EC] bg-white p-5">
+                          <div className="h-5 w-28 rounded-full bg-[#E8DEF8]" />
+                          <div className="mt-4 h-10 w-4/5 rounded-2xl bg-[#F3EDF7]" />
+                          <div className="mt-3 h-3 w-full rounded-full bg-[#EEE7F2]" />
+                          <div className="mt-2 h-3 w-5/6 rounded-full bg-[#EEE7F2]" />
+                          <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                            <div className="rounded-2xl bg-[#F8F5FF] p-4">
+                              <div className="h-3 w-20 rounded-full bg-[#D0BCFF]" />
+                              <div className="mt-3 h-8 rounded-xl bg-[#E8DEF8]" />
+                            </div>
+                            <div className="rounded-2xl bg-[#EEF2FF] p-4">
+                              <div className="h-3 w-20 rounded-full bg-[#B3C5FF]" />
+                              <div className="mt-3 h-8 rounded-xl bg-[#DDE3FF]" />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
 
                     <div className="space-y-4">
-                      <div className={`${materialCard} overflow-hidden`}>
-                        <div className="border-b border-[#E7E0EC] bg-[#FCFCFF] px-5 py-4">
-                          <div className="flex items-center justify-between gap-4">
-                            <div>
-                              <div className="text-xs font-semibold uppercase tracking-[0.14em] text-[#625B71]">
-                                Novo projeto
-                              </div>
-                              <div className="mt-1 text-lg font-bold text-[#1C1B1F]">
-                                Empresa criada com sucesso
-                              </div>
-                            </div>
-                            <div className="rounded-full bg-[#EEF7F1] px-3 py-1 text-xs font-semibold text-[#3D5E49]">
-                              publicado
-                            </div>
-                          </div>
+                      <div className={`${softCard} p-5`}>
+                        <div className="text-xs font-semibold uppercase tracking-[0.14em] text-[#625B71]">
+                          Tempo de criação
                         </div>
-
-                        <div className="p-5">
-                          <div className="grid gap-4 md:grid-cols-3">
-                            <div className="rounded-[22px] bg-[#F8F5FF] p-4">
-                              <div className="text-xs font-medium text-[#625B71]">Origem</div>
-                              <div className="mt-2 text-base font-bold text-[#1C1B1F]">CNPJ</div>
-                              <div className="mt-1 text-sm text-[#625B71]">Base preenchida</div>
-                            </div>
-                            <div className="rounded-[22px] bg-[#EEF2FF] p-4">
-                              <div className="text-xs font-medium text-[#625B71]">Template</div>
-                              <div className="mt-2 text-base font-bold text-[#1C1B1F]">SaaS Light</div>
-                              <div className="mt-1 text-sm text-[#625B71]">Visual profissional</div>
-                            </div>
-                            <div className="rounded-[22px] bg-[#FFF4E5] p-4">
-                              <div className="text-xs font-medium text-[#625B71]">Token</div>
-                              <div className="mt-2 text-base font-bold text-[#1C1B1F]">1 utilizado</div>
-                              <div className="mt-1 text-sm text-[#625B71]">Sem recorrência</div>
-                            </div>
-                          </div>
-
-                          <div className="mt-5 rounded-[24px] border border-[#E7E0EC] bg-[#FFFBFE] p-4">
-                            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                              <div>
-                                <div className="text-sm font-semibold text-[#1C1B1F]">
-                                  Prévia do site
-                                </div>
-                                <div className="mt-1 text-sm text-[#625B71]">
-                                  seu-site.plpainel.com
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <span className="rounded-full bg-[#E8DEF8] px-3 py-1 text-xs font-semibold text-[#4F378B]">
-                                  responsivo
-                                </span>
-                                <span className="rounded-full bg-[#EEF7F1] px-3 py-1 text-xs font-semibold text-[#3D5E49]">
-                                  online
-                                </span>
-                              </div>
-                            </div>
-
-                            <div className="mt-4 rounded-[24px] border border-[#E7E0EC] bg-white p-5">
-                              <div className="h-5 w-32 rounded-full bg-[#E8DEF8]" />
-                              <div className="mt-4 h-10 w-3/4 rounded-2xl bg-[#F3EDF7]" />
-                              <div className="mt-3 h-3 w-full rounded-full bg-[#EEE7F2]" />
-                              <div className="mt-2 h-3 w-5/6 rounded-full bg-[#EEE7F2]" />
-                              <div className="mt-5 grid gap-3 sm:grid-cols-3">
-                                <div className="rounded-2xl bg-[#F8F5FF] p-4">
-                                  <div className="h-3 w-16 rounded-full bg-[#D0BCFF]" />
-                                  <div className="mt-3 h-8 rounded-xl bg-[#E8DEF8]" />
-                                </div>
-                                <div className="rounded-2xl bg-[#EEF2FF] p-4">
-                                  <div className="h-3 w-16 rounded-full bg-[#B3C5FF]" />
-                                  <div className="mt-3 h-8 rounded-xl bg-[#DDE3FF]" />
-                                </div>
-                                <div className="rounded-2xl bg-[#EEF7F1] p-4">
-                                  <div className="h-3 w-16 rounded-full bg-[#B9E5C7]" />
-                                  <div className="mt-3 h-8 rounded-xl bg-[#D8F3DF]" />
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
+                        <div className="mt-2 text-3xl font-black text-[#1C1B1F]">Minutos</div>
+                        <div className="mt-1 text-sm text-[#625B71]">Da geração até a publicação</div>
                       </div>
 
-                      <div className="grid gap-4 sm:grid-cols-2">
-                        <div className={`${materialCard} p-5`}>
-                          <div className="text-xs font-semibold uppercase tracking-[0.14em] text-[#625B71]">
-                            Tokens
-                          </div>
-                          <div className="mt-2 text-3xl font-black text-[#1C1B1F]">24</div>
-                          <div className="mt-1 text-sm text-[#625B71]">Disponíveis no painel</div>
+                      <div className={`${softCard} p-5`}>
+                        <div className="text-xs font-semibold uppercase tracking-[0.14em] text-[#625B71]">
+                          Tokens disponíveis
                         </div>
+                        <div className="mt-2 text-3xl font-black text-[#1C1B1F]">24</div>
+                        <div className="mt-1 text-sm text-[#625B71]">Use conforme sua demanda</div>
+                      </div>
 
-                        <div className={`${materialCard} p-5`}>
-                          <div className="text-xs font-semibold uppercase tracking-[0.14em] text-[#625B71]">
-                            Tempo de criação
-                          </div>
-                          <div className="mt-2 text-3xl font-black text-[#1C1B1F]">Minutos</div>
-                          <div className="mt-1 text-sm text-[#625B71]">Fluxo rápido e direto</div>
+                      <div className={`${softCard} p-5`}>
+                        <div className="text-xs font-semibold uppercase tracking-[0.14em] text-[#625B71]">
+                          Resultado
+                        </div>
+                        <div className="mt-2 text-lg font-bold text-[#1C1B1F]">
+                          Mais valor percebido
+                        </div>
+                        <div className="mt-1 text-sm text-[#625B71]">
+                          Uma home mais bonita, clara e convidativa para vender melhor.
                         </div>
                       </div>
                     </div>
@@ -367,12 +368,12 @@ export default function HomePage() {
                 </div>
               </div>
 
-              <div className="absolute -left-5 top-12 hidden rounded-[24px] border border-[#E7E0EC] bg-white px-4 py-3 shadow-[0_8px_24px_rgba(103,80,164,0.12)] md:block">
-                <div className="text-xs text-[#625B71]">Novo site</div>
-                <div className="mt-1 text-sm font-semibold text-[#1C1B1F]">gerado com sucesso</div>
+              <div className="absolute -left-5 top-10 hidden rounded-[24px] border border-[#E7E0EC] bg-white px-4 py-3 shadow-[0_8px_24px_rgba(103,80,164,0.10)] md:block">
+                <div className="text-xs text-[#625B71]">Publicação</div>
+                <div className="mt-1 text-sm font-semibold text-[#1C1B1F]">site pronto para uso</div>
               </div>
 
-              <div className="absolute -bottom-5 right-5 hidden rounded-[24px] border border-[#E7E0EC] bg-white px-4 py-3 shadow-[0_8px_24px_rgba(103,80,164,0.12)] md:block">
+              <div className="absolute -bottom-5 right-5 hidden rounded-[24px] border border-[#E7E0EC] bg-white px-4 py-3 shadow-[0_8px_24px_rgba(103,80,164,0.10)] md:block">
                 <div className="text-xs text-[#625B71]">Subdomínio</div>
                 <div className="mt-1 text-sm font-semibold text-[#1C1B1F]">seu-site.plpainel.com</div>
               </div>
@@ -381,23 +382,36 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Logos / prova visual leve */}
+      <section className="mx-auto max-w-7xl px-4 py-4 md:px-6">
+        <div className="rounded-[28px] border border-[#E7E0EC] bg-white px-6 py-5 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+          <div className="text-center text-sm text-[#625B71]">
+            Pensado para quem quer criar páginas com mais rapidez, mais clareza e mais valor percebido
+          </div>
+        </div>
+      </section>
+
+      {/* Benefícios */}
       <section id="beneficios" className="mx-auto max-w-7xl px-4 py-14 md:px-6 md:py-20">
         <div className="max-w-2xl">
           <div className="inline-flex rounded-full bg-[#E8DEF8] px-3 py-1 text-xs font-semibold text-[#4F378B]">
             Benefícios
           </div>
           <h2 className="mt-4 text-3xl font-black tracking-[-0.03em] md:text-4xl">
-            Uma experiência mais agradável para vender, criar e publicar
+            Tudo o que você precisa para criar páginas com mais velocidade e mais apelo visual
           </h2>
           <p className="mt-3 text-base leading-7 text-[#625B71]">
-            Esta versão traz uma linguagem visual mais clara, confiável e alinhada
-            à percepção de um produto SaaS moderno.
+            Uma home mais clara, mais moderna e mais orientada à conversão faz o produto parecer
+            mais forte logo no primeiro contato.
           </p>
         </div>
 
         <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {benefits.map((b) => (
-            <div key={b.title} className={`${materialCard} p-6 transition hover:-translate-y-0.5 hover:shadow-[0_2px_10px_rgba(0,0,0,0.08),0_16px_30px_rgba(103,80,164,0.12)]`}>
+            <div
+              key={b.title}
+              className={`${softCard} p-6 transition hover:-translate-y-0.5 hover:shadow-[0_2px_10px_rgba(0,0,0,0.08),0_16px_30px_rgba(103,80,164,0.12)]`}
+            >
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#F3EDF7] text-[#6750A4]">
                 {b.icon}
               </div>
@@ -408,18 +422,57 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section id="preco" className="mx-auto max-w-7xl px-4 py-14 md:px-6 md:py-20">
-        <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-          <div className={`${materialCard} p-6 md:p-8`}>
+      {/* Como funciona */}
+      <section id="como-funciona" className="mx-auto max-w-7xl px-4 py-14 md:px-6 md:py-20">
+        <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
+          <div className={`${softCard} p-6 md:p-8`}>
             <div className="inline-flex rounded-full bg-[#E8DEF8] px-3 py-1 text-xs font-semibold text-[#4F378B]">
-              Preço direto
+              Como funciona
             </div>
             <h2 className="mt-4 text-3xl font-black tracking-[-0.03em] md:text-4xl">
-              Pague apenas pelo que usar
+              Três passos para sair do zero e publicar rápido
+            </h2>
+            <p className="mt-3 text-base leading-7 text-[#625B71]">
+              Um processo mais simples reduz atrito e deixa sua plataforma mais fácil de entender.
+            </p>
+
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <Link href="/sites/new" className={primaryButton}>
+                Começar agora
+              </Link>
+              <a href="#preco" className={tonalButton}>
+                Ver preço
+              </a>
+            </div>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-3">
+            {steps.map((s) => (
+              <div key={s.n} className={`${softCard} p-6`}>
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#E8DEF8] text-sm font-black text-[#4F378B]">
+                  {s.n}
+                </div>
+                <h3 className="mt-5 text-lg font-bold text-[#1C1B1F]">{s.title}</h3>
+                <p className="mt-2 text-sm leading-6 text-[#625B71]">{s.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Preço */}
+      <section id="preco" className="mx-auto max-w-7xl px-4 py-14 md:px-6 md:py-20">
+        <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+          <div className={`${softCard} p-6 md:p-8`}>
+            <div className="inline-flex rounded-full bg-[#E8DEF8] px-3 py-1 text-xs font-semibold text-[#4F378B]">
+              Preço simples
+            </div>
+            <h2 className="mt-4 text-3xl font-black tracking-[-0.03em] md:text-4xl">
+              Modelo direto para vender melhor e operar com liberdade
             </h2>
             <p className="mt-3 max-w-2xl text-base leading-7 text-[#625B71]">
-              Um modelo simples para quem quer velocidade, previsibilidade e liberdade
-              para criar conforme a demanda.
+              Sem assinatura fixa. Você compra tokens e cria conforme sua necessidade, com
+              mais controle de custo e mais flexibilidade para escalar.
             </p>
 
             <div className="mt-8 grid gap-4 sm:grid-cols-2">
@@ -434,12 +487,12 @@ export default function HomePage() {
               </div>
 
               <div className="rounded-[28px] bg-[#EEF2FF] p-6">
-                <div className="text-sm font-semibold text-[#625B71]">Modelo</div>
+                <div className="text-sm font-semibold text-[#625B71]">Ideal para</div>
                 <div className="mt-2 text-xl font-bold text-[#1C1B1F]">
-                  Sem mensalidade fixa
+                  Escalar sem mensalidade
                 </div>
                 <div className="mt-3 text-sm text-[#625B71]">
-                  Mais flexibilidade para escalar no seu ritmo.
+                  Gere quantos sites quiser, no ritmo do seu fluxo.
                 </div>
               </div>
             </div>
@@ -450,11 +503,11 @@ export default function HomePage() {
               Comece agora
             </div>
             <h3 className="mt-4 text-3xl font-black tracking-[-0.03em]">
-              Plataforma pronta para uso
+              Faça sua home parecer um produto mais forte
             </h3>
             <p className="mt-3 text-sm leading-7 text-white/85">
-              Crie seu primeiro site agora mesmo e experimente uma página inicial
-              com visual mais comercial, mais convidativo e com cara de software moderno.
+              Uma landing mais clara e mais chamativa ajuda o usuário a entender
+              o valor do produto mais rápido e aumenta a sensação de confiança.
             </p>
 
             <div className="mt-6 flex flex-col gap-3">
@@ -473,49 +526,15 @@ export default function HomePage() {
             </div>
 
             <div className="mt-6 rounded-[24px] bg-white/10 p-4 text-sm text-white/85">
-              Sem burocracia. Um fluxo simples para vender melhor sua solução.
+              Sem mensalidade. Sem complexidade. Mais velocidade para criar e publicar.
             </div>
           </div>
         </div>
       </section>
 
-      <section id="como-funciona" className="mx-auto max-w-7xl px-4 py-14 md:px-6 md:py-20">
-        <div className="max-w-2xl">
-          <div className="inline-flex rounded-full bg-[#E8DEF8] px-3 py-1 text-xs font-semibold text-[#4F378B]">
-            Como funciona
-          </div>
-          <h2 className="mt-4 text-3xl font-black tracking-[-0.03em] md:text-4xl">
-            Um processo simples, visual e rápido de entender
-          </h2>
-          <p className="mt-3 text-base leading-7 text-[#625B71]">
-            Estruture a jornada do usuário com mais clareza e menos fricção.
-          </p>
-        </div>
-
-        <div className="mt-10 grid gap-4 md:grid-cols-3">
-          {steps.map((s) => (
-            <div key={s.n} className={`${materialCard} p-6`}>
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#E8DEF8] text-sm font-black text-[#4F378B]">
-                {s.n}
-              </div>
-              <h3 className="mt-5 text-lg font-bold text-[#1C1B1F]">{s.title}</h3>
-              <p className="mt-2 text-sm leading-6 text-[#625B71]">{s.desc}</p>
-            </div>
-          ))}
-        </div>
-
-        <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-          <Link href="/sites/new" className={materialButtonPrimary}>
-            Começar agora
-          </Link>
-          <a href="#preco" className={materialButtonTonal}>
-            Ver preço
-          </a>
-        </div>
-      </section>
-
+      {/* FAQ */}
       <section id="faq" className="mx-auto max-w-7xl px-4 py-14 md:px-6 md:py-20">
-        <div className={`${materialCard} p-6 md:p-8`}>
+        <div className={`${softCard} p-6 md:p-8`}>
           <div className="max-w-2xl">
             <div className="inline-flex rounded-full bg-[#E8DEF8] px-3 py-1 text-xs font-semibold text-[#4F378B]">
               FAQ
@@ -524,7 +543,7 @@ export default function HomePage() {
               Perguntas frequentes
             </h2>
             <p className="mt-3 text-base leading-7 text-[#625B71]">
-              Informações importantes apresentadas de forma mais limpa e confiável.
+              As principais respostas apresentadas de forma mais clara e profissional.
             </p>
           </div>
 
@@ -538,39 +557,39 @@ export default function HomePage() {
           </div>
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <Link href="/sites/new" className={materialButtonPrimary}>
+            <Link href="/sites/new" className={primaryButton}>
               Criar meu site agora
             </Link>
-            <Link href="/login" className={materialButtonOutlined}>
+            <Link href="/login" className={outlinedButton}>
               Entrar no painel
             </Link>
           </div>
         </div>
       </section>
 
+      {/* CTA final */}
       <section className="mx-auto max-w-7xl px-4 pb-14 md:px-6 md:pb-20">
         <div className="rounded-[36px] border border-[#E7E0EC] bg-[#F7F2FA] p-8 md:p-10">
           <div className="grid gap-6 lg:grid-cols-[1fr_auto] lg:items-center">
             <div>
               <h2 className="text-3xl font-black tracking-[-0.03em] text-[#1C1B1F] md:text-4xl">
-                Uma landing page mais clara, moderna e com percepção real de SaaS
+                Deixe sua página inicial mais chamativa, mais clara e mais vendedora
               </h2>
               <p className="mt-3 max-w-2xl text-sm leading-7 text-[#625B71] md:text-base">
-                Esta versão aproxima sua home da linguagem visual do Material 3,
-                com superfícies suaves, botões mais amigáveis, cards elevados e uma
-                experiência muito mais comercial.
+                Esta versão foi pensada para aumentar percepção de valor, parecer mais SaaS
+                e tornar o primeiro impacto visual mais convidativo para o usuário final.
               </p>
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row lg:flex-col">
-              <Link href="/sites/new" className={materialButtonPrimary}>
+              <Link href="/sites/new" className={primaryButton}>
                 Criar meu site
               </Link>
               <a
                 href={SUPPORT_LINK}
                 target="_blank"
                 rel="noopener noreferrer"
-                className={materialButtonOutlined}
+                className={outlinedButton}
               >
                 Entrar em contato
               </a>
@@ -579,6 +598,7 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Footer */}
       <footer className="border-t border-[#E7E0EC] bg-white/70">
         <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-8 md:flex-row md:items-center md:justify-between md:px-6">
           <div className="text-sm text-[#625B71]">
