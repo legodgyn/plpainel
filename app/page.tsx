@@ -15,19 +15,16 @@ export default function HomePage() {
       {/* Top bar */}
       <header className="sticky top-0 z-50 border-b border-white/10 bg-[#070712]/80 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
-          <div className="flex items-center gap-3">
-  <Image
-    src="/logo-icon.png"
-    alt="PL Painel"
-    width={40}
-    height={40}
-    className="h-10 w-10 rounded-xl object-cover"
-  />
-  <div className="leading-tight">
-    <div className="text-sm font-semibold">PL - Painel</div>
-    <div className="text-[11px] text-white/50">Sites rápidos • BM-safe</div>
-  </div>
-</div>
+          <div className="flex items-center">
+            <Image
+              src="/logo-icon.png"
+              alt="PL Painel"
+              width={160}
+              height={44}
+              className="h-10 w-auto object-contain"
+              priority
+            />
+          </div>
 
           <nav className="hidden items-center gap-6 md:flex">
             <a href="#como-funciona" className="text-sm text-white/70 hover:text-white">
@@ -45,7 +42,6 @@ export default function HomePage() {
           </nav>
 
           <div className="flex items-center gap-2">
-            {/* ✅ Novo botão: Entrar em contato (WhatsApp) */}
             <a
               href={SUPPORT_LINK}
               target="_blank"
