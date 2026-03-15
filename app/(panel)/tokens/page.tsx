@@ -304,12 +304,7 @@ export default function TokensPage() {
                 </span>
               </div>
             </div>
-
-            {tokens === 25 ? (
-              
-            ) : null}
-
-            <button
+           <button
               disabled={loading}
               onClick={() => handleBuyPix(tokens)}
               className="mt-6 w-full rounded-2xl bg-violet-600 px-5 py-4 font-semibold text-white transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-60"
