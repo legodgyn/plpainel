@@ -48,13 +48,8 @@ export default function TokensPage() {
   const baseUnitPriceCents = 400;
 
   const discountPercent = getDiscountPercent(Number(tokens || 0));
-
   const originalTotalCents = Math.max(0, Number(tokens || 0)) * baseUnitPriceCents;
-
-  const discountedTotalCents = Math.round(
-    originalTotalCents * (1 - discountPercent / 100)
-  );
-
+  const discountedTotalCents = Math.round(originalTotalCents * (1 - discountPercent / 100));
   const savedCents = Math.max(0, originalTotalCents - discountedTotalCents);
 
   const effectiveUnitPriceCents =
@@ -64,7 +59,7 @@ export default function TokensPage() {
 
   const packs = [
     { label: "10 tokens", qty: 10 },
-    { label: "25 tokens", qty: 25, popular: true },
+    { label: "25 tokens", qty: 25, popular: true, subtitle: "Melhor custo-benefício" },
     { label: "50 tokens", qty: 50 },
     { label: "100 tokens", qty: 100 },
   ];
@@ -73,14 +68,12 @@ export default function TokensPage() {
     setErr(null);
 
     const q = Number(qty);
-
     if (!Number.isFinite(q) || q < 5) {
       setErr("Compra mínima: 5 tokens.");
       return;
     }
 
     setLoading(true);
-
     try {
       const { data: userRes } = await sb.auth.getUser();
 
@@ -90,7 +83,6 @@ export default function TokensPage() {
       }
 
       const { data: sess } = await sb.auth.getSession();
-
       const token = sess.session?.access_token;
 
       if (!token) {
@@ -131,7 +123,12 @@ export default function TokensPage() {
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-10 text-white">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-3xl font-bold">Comprar Tokens</h1>
+        <div>
+          <h1 className="text-3xl font-bold">Comprar Tokens</h1>
+          <p className="mt-1 text-sm text-white/60">
+            Escolha a quantidade ideal para criar seus sites com rapidez.
+          </p>
+        </div>
 
         <Link
           href="/dashboard"
@@ -148,64 +145,75 @@ export default function TokensPage() {
       ) : null}
 
       <div className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-[0_20px_80px_rgba(0,0,0,.25)]">
-        <div className="text-sm text-white/70">
-          Pagamento disponível:{" "}
-          <span className="font-semibold text-white">PIX</span>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="text-sm text-white/70">
+            Pagamento disponível: <span className="font-semibold text-white">PIX</span>
+          </div>
+
+          <div className="rounded-full border border-emerald-400/20 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-200">
+            Mais páginas = mais chances de escalar
+          </div>
         </div>
 
         <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {packs.map((p) => {
             const packDiscount = getDiscountPercent(p.qty);
             const packOriginal = p.qty * baseUnitPriceCents;
-            const packFinal = Math.round(
-              packOriginal * (1 - packDiscount / 100)
-            );
-
+            const packFinal = Math.round(packOriginal * (1 - packDiscount / 100));
             const isPopular = (p as any).popular;
+            const isSelected = tokens === p.qty;
 
             return (
               <button
                 key={p.qty}
                 disabled={loading}
                 onClick={() => setTokens(p.qty)}
-                className={`relative rounded-2xl border px-5 py-5 text-left transition transform hover:scale-105 ${
+                className={`relative rounded-2xl border px-5 py-5 text-left transition duration-200 ${
                   isPopular
-                    ? "border-violet-400 bg-violet-500/20 shadow-xl shadow-violet-500/20 scale-105"
-                    : tokens === p.qty
-                    ? "border-violet-400/40 bg-violet-500/15"
+                    ? `scale-[1.03] ${
+                        isSelected
+                          ? "border-violet-300 bg-violet-500/20 shadow-[0_20px_50px_rgba(139,92,246,.22)]"
+                          : "border-violet-400/70 bg-violet-500/14 shadow-[0_14px_35px_rgba(139,92,246,.15)] hover:bg-violet-500/18"
+                      }`
+                    : isSelected
+                    ? "border-violet-400/40 bg-violet-500/15 shadow-[0_0_0_1px_rgba(167,139,250,.15)]"
                     : "border-white/10 bg-black/20 hover:bg-black/30"
                 }`}
               >
-                {isPopular && (
+                {isPopular ? (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <span className="bg-gradient-to-r from-purple-500 to-pink-500 px-3 py-1 text-xs font-bold text-white rounded-full">
+                    <span className="rounded-full bg-gradient-to-r from-violet-600 to-fuchsia-500 px-3 py-1 text-xs font-bold text-white shadow-lg">
                       MAIS VENDIDO
                     </span>
                   </div>
-                )}
+                ) : null}
 
-                {packDiscount > 0 && (
-                  <div className="absolute right-3 top-3 rounded-full bg-emerald-500/15 px-2 py-1 text-[10px] font-bold text-emerald-300 border border-emerald-500/20">
+                {packDiscount > 0 ? (
+                  <div className="absolute right-3 top-3 rounded-full border border-emerald-500/20 bg-emerald-500/15 px-2 py-1 text-[10px] font-bold text-emerald-300">
                     {packDiscount}% OFF
                   </div>
-                )}
+                ) : null}
 
                 <div className="text-base font-semibold">{p.label}</div>
 
+                {"subtitle" in p && p.subtitle ? (
+                  <div className="mt-1 text-xs text-emerald-300">{p.subtitle}</div>
+                ) : null}
+
                 {packDiscount > 0 ? (
-                  <div className="mt-2 space-y-1">
+                  <div className="mt-3 space-y-1">
                     <div className="text-xs text-white/40 line-through">
                       {money(packOriginal)}
                     </div>
-
                     <div className="text-lg font-bold text-white">
                       {money(packFinal)}
                     </div>
+                    <div className="text-xs text-emerald-300">
+                      Economiza {money(packOriginal - packFinal)}
+                    </div>
                   </div>
                 ) : (
-                  <div className="mt-1 text-sm text-white/60">
-                    {money(packOriginal)}
-                  </div>
+                  <div className="mt-3 text-sm text-white/60">{money(packOriginal)}</div>
                 )}
               </button>
             );
@@ -233,55 +241,85 @@ export default function TokensPage() {
 
             <div className="mt-6 rounded-2xl border border-white/5 bg-white/[0.02] p-4">
               <div className="text-sm text-white/70">
-                Cada token permite criar 1 site com publicação rápida no
-                subdomínio da plataforma.
+                Cada token permite criar 1 site com publicação rápida no subdomínio da plataforma.
+              </div>
+            </div>
+
+            <div className="mt-4 rounded-2xl border border-emerald-500/15 bg-emerald-500/10 p-4">
+              <div className="text-sm font-semibold text-emerald-200">
+                Dica para escalar mais rápido
+              </div>
+              <div className="mt-1 text-sm text-emerald-100/80">
+                Usuários que criam várias páginas conseguem testar campanhas com mais velocidade.
               </div>
             </div>
           </div>
 
           <div className="rounded-2xl border border-white/10 bg-black/20 p-5">
-            <div className="text-sm font-semibold">Resumo</div>
+            <div className="flex items-center justify-between gap-3">
+              <div className="text-sm font-semibold">Resumo</div>
+
+              {tokens === 25 ? (
+                <span className="rounded-full bg-violet-500/15 px-2.5 py-1 text-[10px] font-bold text-violet-200 border border-violet-400/20">
+                  ESCOLHA DA MAIORIA
+                </span>
+              ) : null}
+            </div>
 
             <div className="mt-4 space-y-3 text-sm text-white/80">
-              <div className="flex justify-between">
+              <div className="flex items-center justify-between">
                 <span>Tokens</span>
-                <span className="font-semibold text-white">
-                  {Number(tokens || 0)}
-                </span>
+                <span className="font-semibold text-white">{Number(tokens || 0)}</span>
               </div>
 
-              <div className="flex justify-between">
-                <span>Preço unitário</span>
-                <span className="font-semibold text-white">
-                  {money(baseUnitPriceCents)}
-                </span>
+              <div className="flex items-center justify-between">
+                <span>Preço unitário base</span>
+                <span className="font-semibold text-white">{money(baseUnitPriceCents)}</span>
               </div>
 
-              {discountPercent > 0 && (
+              {discountPercent > 0 ? (
                 <>
-                  <div className="flex justify-between">
+                  <div className="flex items-center justify-between">
                     <span>Desconto</span>
-                    <span className="text-emerald-300 font-semibold">
-                      {discountPercent}% OFF
+                    <span className="font-semibold text-emerald-300">{discountPercent}% OFF</span>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <span>Preço unitário com desconto</span>
+                    <span className="font-semibold text-white">
+                      {money(effectiveUnitPriceCents)}
                     </span>
                   </div>
 
-                  <div className="flex justify-between">
+                  <div className="flex items-center justify-between">
+                    <span>Valor original</span>
+                    <span className="font-semibold text-white/50 line-through">
+                      {money(originalTotalCents)}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between">
                     <span>Você economiza</span>
-                    <span className="text-emerald-300 font-semibold">
+                    <span className="font-semibold text-emerald-300">
                       {money(savedCents)}
                     </span>
                   </div>
                 </>
-              )}
+              ) : null}
 
-              <div className="flex justify-between border-t border-white/10 pt-3">
+              <div className="flex items-center justify-between border-t border-white/10 pt-3">
                 <span>Total</span>
                 <span className="text-3xl font-bold text-white">
                   {money(discountedTotalCents)}
                 </span>
               </div>
             </div>
+
+            {tokens === 25 ? (
+              <div className="mt-4 rounded-2xl border border-violet-400/15 bg-violet-500/10 px-4 py-3 text-sm text-violet-100/85">
+                Excelente escolha. Esse pack entrega o melhor equilíbrio entre custo e volume.
+              </div>
+            ) : null}
 
             <button
               disabled={loading}
