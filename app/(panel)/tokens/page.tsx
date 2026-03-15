@@ -41,7 +41,7 @@ export default function TokensPage() {
     );
   }, []);
 
-  const [tokens, setTokens] = useState<number>(10);
+  const [tokens, setTokens] = useState<number>(25);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
