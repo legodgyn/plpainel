@@ -179,7 +179,7 @@ export default function TokensPage() {
                 {isPopular && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                     <span className="bg-gradient-to-r from-purple-500 to-pink-500 px-3 py-1 text-xs font-bold text-white rounded-full">
-                      MAIS VENDIDO
+                      MAIS VENDIDO 🔥
                     </span>
                   </div>
                 )}
