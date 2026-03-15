@@ -151,7 +151,7 @@ export default function TokensPage() {
           </div>
 
           <div className="rounded-full border border-emerald-400/20 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-200">
-            Mais páginas = mais chances de escalar
+            Mais sites = Mais BM's Verificadas!
           </div>
         </div>
 
