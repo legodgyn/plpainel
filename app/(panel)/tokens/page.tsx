@@ -150,6 +150,11 @@ export default function TokensPage() {
             Pagamento disponível: <span className="font-semibold text-white">PIX</span>
           </div>
 
+          <div className="rounded-full border border-emerald-400/20 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-200">
+            Mais páginas = mais chances de escalar
+          </div>
+        </div>
+
         <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {packs.map((p) => {
             const packDiscount = getDiscountPercent(p.qty);
