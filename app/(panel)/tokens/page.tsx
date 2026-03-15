@@ -308,12 +308,6 @@ export default function TokensPage() {
               </div>
             </div>
 
-            {tokens === 25 ? (
-              <div className="mt-4 rounded-2xl border border-violet-400/15 bg-violet-500/10 px-4 py-3 text-sm text-violet-100/85">
-                Excelente escolha. Esse pack entrega o melhor equilíbrio entre custo e volume.
-              </div>
-            ) : null}
-
             <button
               disabled={loading}
               onClick={() => handleBuyPix(tokens)}
