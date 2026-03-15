@@ -3,7 +3,7 @@ function onlyDigits(v: string) {
 }
 
 export async function sendEvolutionText(phone: string, text: string) {
-  const baseUrl = process.env.EVOLUTION_API_URL;
+  const baseUrl = String(process.env.EVOLUTION_API_URL || "").replace(/\/+$/, "");
   const apiKey = process.env.EVOLUTION_API_KEY;
   const instance = process.env.EVOLUTION_INSTANCE;
 
@@ -11,26 +11,40 @@ export async function sendEvolutionText(phone: string, text: string) {
   if (!apiKey) throw new Error("Missing EVOLUTION_API_KEY");
   if (!instance) throw new Error("Missing EVOLUTION_INSTANCE");
 
-  const number = onlyDigits(phone);
-  if (!number) throw new Error("Número inválido.");
+  const digits = onlyDigits(phone);
+  if (!digits) throw new Error("Número inválido.");
 
-  const res = await fetch(`${baseUrl}/message/sendText/${instance}`, {
+  const number = digits.startsWith("55") ? digits : `55${digits}`;
+  const url = `${baseUrl}/message/sendText/${instance}`;
+
+  const res = await fetch(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       apikey: apiKey,
     },
     body: JSON.stringify({
-      number: number.startsWith("55") ? number : `55${number}`,
+      number,
       text,
     }),
     cache: "no-store",
   });
 
-  const json = await res.json().catch(() => ({}));
+  const raw = await res.text();
+  let json: any = {};
+  try {
+    json = raw ? JSON.parse(raw) : {};
+  } catch {
+    json = { raw };
+  }
 
   if (!res.ok) {
-    throw new Error(json?.message || json?.error || "Erro ao enviar WhatsApp.");
+    throw new Error(
+      json?.message ||
+        json?.error ||
+        json?.response?.message ||
+        `Erro ao enviar WhatsApp. Status ${res.status}`
+    );
   }
 
   return json;
