@@ -235,18 +235,12 @@ export default function TokensPage() {
               Compra mínima: 5 tokens
             </div>
 
-            <div className="mt-6 rounded-2xl border border-white/5 bg-white/[0.02] p-4">
-              <div className="text-sm text-white/70">
-                Cada token permite criar 1 site com publicação rápida no subdomínio da plataforma.
-              </div>
-            </div>
-
             <div className="mt-4 rounded-2xl border border-emerald-500/15 bg-emerald-500/10 p-4">
               <div className="text-sm font-semibold text-emerald-200">
-                Dica para escalar mais rápido
+                Informativo:
               </div>
               <div className="mt-1 text-sm text-emerald-100/80">
-                Usuários que criam várias páginas conseguem testar campanhas com mais velocidade.
+                Cada site criado consome 1 Token.
               </div>
             </div>
           </div>
