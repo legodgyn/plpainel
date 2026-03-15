@@ -150,6 +150,11 @@ export default function TokensPage() {
             Pagamento disponível: <span className="font-semibold text-white">PIX</span>
           </div>
 
+          <div className="rounded-full border border-emerald-400/20 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-200">
+            Mais páginas = mais chances de escalar
+          </div>
+        </div>
+
         <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {packs.map((p) => {
             const packDiscount = getDiscountPercent(p.qty);
@@ -233,7 +238,6 @@ export default function TokensPage() {
             <div className="mt-3 text-sm text-white/60">
               Compra mínima: 5 tokens
             </div>
-
             <div className="mt-4 rounded-2xl border border-emerald-500/15 bg-emerald-500/10 p-4">
               <div className="text-sm font-semibold text-emerald-200">
                 Informativo:
@@ -250,7 +254,7 @@ export default function TokensPage() {
 
               {tokens === 25 ? (
                 <span className="rounded-full bg-violet-500/15 px-2.5 py-1 text-[10px] font-bold text-violet-200 border border-violet-400/20">
-                  ESCOLHA PREFERIDA DOS USÚARIOS
+                  ESCOLHA DA MAIORIA
                 </span>
               ) : null}
             </div>
@@ -304,6 +308,12 @@ export default function TokensPage() {
               </div>
             </div>
 
+            {tokens === 25 ? (
+              <div className="mt-4 rounded-2xl border border-violet-400/15 bg-violet-500/10 px-4 py-3 text-sm text-violet-100/85">
+                Excelente escolha. Esse pack entrega o melhor equilíbrio entre custo e volume.
+              </div>
+            ) : null}
+
             <button
               disabled={loading}
               onClick={() => handleBuyPix(tokens)}
@@ -311,3 +321,9 @@ export default function TokensPage() {
             >
               {loading ? "Gerando PIX..." : "Comprar via PIX"}
             </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
