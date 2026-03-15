@@ -227,7 +227,7 @@ export default function TokensPage() {
             <div className="mt-3">
               <input
                 type="number"
-                min={5}
+                min={10}
                 step={1}
                 value={tokens}
                 onChange={(e) => setTokens(Number(e.target.value))}
@@ -236,7 +236,7 @@ export default function TokensPage() {
             </div>
 
             <div className="mt-3 text-sm text-white/60">
-              Compra mínima: 5 tokens
+              Compra mínima: 10 tokens
             </div>
             <div className="mt-4 rounded-2xl border border-emerald-500/15 bg-emerald-500/10 p-4">
               <div className="text-sm font-semibold text-emerald-200">
