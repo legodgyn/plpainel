@@ -144,6 +144,12 @@ export default function TokensPage() {
         </div>
       ) : null}
 
+      <div className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-[0_20px_80px_rgba(0,0,0,.25)]">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="text-sm text-white/70">
+            Pagamento disponível: <span className="font-semibold text-white">PIX</span>
+          </div>
+
         <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {packs.map((p) => {
             const packDiscount = getDiscountPercent(p.qty);
@@ -228,6 +234,12 @@ export default function TokensPage() {
               Compra mínima: 5 tokens
             </div>
 
+            <div className="mt-6 rounded-2xl border border-white/5 bg-white/[0.02] p-4">
+              <div className="text-sm text-white/70">
+                Cada token permite criar 1 site com publicação rápida no subdomínio da plataforma.
+              </div>
+            </div>
+
             <div className="mt-4 rounded-2xl border border-emerald-500/15 bg-emerald-500/10 p-4">
               <div className="text-sm font-semibold text-emerald-200">
                 Informativo:
@@ -244,7 +256,7 @@ export default function TokensPage() {
 
               {tokens === 25 ? (
                 <span className="rounded-full bg-violet-500/15 px-2.5 py-1 text-[10px] font-bold text-violet-200 border border-violet-400/20">
-                  ESCOLHA DA MAIORIA
+                  ESCOLHA PREFERIDA DOS USÚARIOS
                 </span>
               ) : null}
             </div>
@@ -297,7 +309,8 @@ export default function TokensPage() {
                 </span>
               </div>
             </div>
-           <button
+
+            <button
               disabled={loading}
               onClick={() => handleBuyPix(tokens)}
               className="mt-6 w-full rounded-2xl bg-violet-600 px-5 py-4 font-semibold text-white transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-60"
