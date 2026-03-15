@@ -10,7 +10,5 @@ export default function StorePage() {
           allow="payment *"
         />
       </div>
-
-    </main>
   );
 }
