@@ -222,7 +222,7 @@ export default function TokensPage() {
 
         <div className="mt-6 grid gap-4 xl:grid-cols-[1.1fr_.9fr]">
           <div className="rounded-2xl border border-white/10 bg-black/20 p-5">
-            <div className="text-sm font-semibold">Escolher quantidade</div>
+            <div className="text-sm font-semibold">Escolher Quantidade:</div>
 
             <div className="mt-3">
               <input
