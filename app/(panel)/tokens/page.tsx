@@ -311,6 +311,3 @@ export default function TokensPage() {
             >
               {loading ? "Gerando PIX..." : "Comprar via PIX"}
             </button>
-          </div>
-        </div>
-      </div>
