@@ -17,6 +17,12 @@ export async function sendEvolutionText(phone: string, text: string) {
   const number = digits.startsWith("55") ? digits : `55${digits}`;
   const url = `${baseUrl}/message/sendText/${instance}`;
 
+  console.log("[EVOLUTION] URL:", url);
+  console.log("[EVOLUTION] INSTANCE:", instance);
+  console.log("[EVOLUTION] PHONE RAW:", phone);
+  console.log("[EVOLUTION] PHONE CLEAN:", number);
+  console.log("[EVOLUTION] TEXT:", text);
+
   const res = await fetch(url, {
     method: "POST",
     headers: {
@@ -31,6 +37,9 @@ export async function sendEvolutionText(phone: string, text: string) {
   });
 
   const raw = await res.text();
+  console.log("[EVOLUTION] STATUS:", res.status);
+  console.log("[EVOLUTION] RESPONSE:", raw);
+
   let json: any = {};
   try {
     json = raw ? JSON.parse(raw) : {};
@@ -41,9 +50,9 @@ export async function sendEvolutionText(phone: string, text: string) {
   if (!res.ok) {
     throw new Error(
       json?.message ||
-        json?.error ||
-        json?.response?.message ||
-        `Erro ao enviar WhatsApp. Status ${res.status}`
+      json?.error ||
+      json?.response?.message ||
+      `Erro ao enviar WhatsApp. Status ${res.status}`
     );
   }
 
