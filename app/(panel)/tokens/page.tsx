@@ -144,13 +144,6 @@ export default function TokensPage() {
         </div>
       ) : null}
 
-      <div className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-[0_20px_80px_rgba(0,0,0,.25)]">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="text-sm text-white/70">
-            Pagamento disponível: <span className="font-semibold text-white">PIX</span>
-          </div>
-        </div>
-
         <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {packs.map((p) => {
             const packDiscount = getDiscountPercent(p.qty);
