@@ -314,6 +314,3 @@ export default function TokensPage() {
           </div>
         </div>
       </div>
-    </div>
-  );
-}
