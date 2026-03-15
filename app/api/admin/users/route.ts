@@ -42,7 +42,7 @@ function money(cents: number) {
 function waLink(phone?: string | null) {
   const digits = String(phone || "").replace(/\D/g, "");
   if (!digits) return null;
-  return `https://wa.me/55${digits.length <= 11 ? digits : digits}`;
+  return `https://wa.me/${digits.startsWith("55") ? digits : `55${digits}`}`;
 }
 
 export async function GET(req: Request) {
@@ -61,7 +61,6 @@ export async function GET(req: Request) {
       );
     }
 
-    // profiles
     const { data: profiles, error: profilesErr } = await supabaseAdmin
       .from("profiles")
       .select("user_id,name,whatsapp,created_at");
@@ -85,7 +84,6 @@ export async function GET(req: Request) {
       new Set(profileRows.map((p) => p.user_id).filter(Boolean))
     );
 
-    // emails do auth
     const emailByUser = new Map<string, string | null>();
     await Promise.all(
       userIds.map(async (uid) => {
@@ -94,7 +92,6 @@ export async function GET(req: Request) {
       })
     );
 
-    // afiliado
     const affiliateByUser = new Map<string, string | null>();
     if (userIds.length) {
       const { data: refs } = await supabaseAdmin
@@ -107,7 +104,6 @@ export async function GET(req: Request) {
       }
     }
 
-    // total gasto
     const spentByUser = new Map<string, number>();
     if (userIds.length) {
       const { data: orders } = await supabaseAdmin
@@ -124,9 +120,23 @@ export async function GET(req: Request) {
       }
     }
 
+    const tokensByUser = new Map<string, number>();
+    if (userIds.length) {
+      const { data: balances } = await supabaseAdmin
+        .from("user_token_balances")
+        .select("user_id,balance")
+        .in("user_id", userIds);
+
+      for (const b of balances || []) {
+        tokensByUser.set(b.user_id, Number(b.balance || 0));
+      }
+    }
+
     const out = profileRows
       .map((p) => {
         const spent = spentByUser.get(p.user_id) || 0;
+        const tokenBalance = tokensByUser.get(p.user_id) || 0;
+
         return {
           user_id: p.user_id,
           created_at: p.created_at,
@@ -137,6 +147,7 @@ export async function GET(req: Request) {
           affiliate_code: affiliateByUser.get(p.user_id) || null,
           total_spent_cents: spent,
           total_spent_label: money(spent),
+          token_balance: tokenBalance,
         };
       })
       .sort((a, b) => {
