@@ -67,7 +67,7 @@ export default function TemplateSimplePage() {
       .from("sites")
       .select("*")
       .eq("user_id", user.id)
-      .order("created_at", { ascending: false });
+      .order("slug", { ascending: true });
 
     if (error) {
       setMsg(error.message || "Erro ao carregar sites.");
