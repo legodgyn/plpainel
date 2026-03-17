@@ -86,7 +86,7 @@ export async function POST(req: Request) {
 
     if (sitesErr) {
       return NextResponse.json(
-        { ok: false, error: sitesErr.message },
+        { ok: false, error: `Erro ao buscar sites: ${sitesErr.message}` },
         { status: 400 }
       );
     }
@@ -103,30 +103,34 @@ export async function POST(req: Request) {
     const { error: updateErr } = await supabaseAdmin
       .from("sites")
       .update({ user_id: toUserId })
-      .in("id", validSiteIds)
-      .eq("user_id", fromUserId);
+      .in("id", validSiteIds);
 
     if (updateErr) {
       return NextResponse.json(
-        { ok: false, error: updateErr.message },
+        { ok: false, error: `Erro ao atualizar sites: ${updateErr.message}` },
         { status: 400 }
       );
     }
 
-    await supabaseAdmin.from("admin_audit_logs").insert(
-      sites.map((site: any) => ({
-        admin_user_id: guard.user.id,
-        action: "transfer_site",
-        entity_type: "site",
-        entity_id: site.id,
-        from_user_id: fromUserId,
-        to_user_id: toUserId,
-        payload: {
-          slug: site.slug,
-          company_name: site.company_name,
-        },
-      }))
-    );
+    // log não pode derrubar a transferência
+    try {
+      await supabaseAdmin.from("admin_audit_logs").insert(
+        sites.map((site: any) => ({
+          admin_user_id: guard.user.id,
+          action: "transfer_site",
+          entity_type: "site",
+          entity_id: site.id,
+          from_user_id: fromUserId,
+          to_user_id: toUserId,
+          payload: {
+            slug: site.slug,
+            company_name: site.company_name,
+          },
+        }))
+      );
+    } catch (logErr: any) {
+      console.error("Erro ao salvar log de auditoria:", logErr?.message || logErr);
+    }
 
     return NextResponse.json({
       ok: true,
