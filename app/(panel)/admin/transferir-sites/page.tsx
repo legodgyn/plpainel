@@ -161,74 +161,92 @@ export default function TransferirSitesAdminPage() {
   }
 
   async function handleTransfer() {
-    setMsg(null);
+  setMsg(null);
 
-    if (!fromUserId) {
-      setMsg("Selecione o usuário de origem.");
-      return;
-    }
-
-    if (!toUserId) {
-      setMsg("Selecione o usuário de destino.");
-      return;
-    }
-
-    if (fromUserId === toUserId) {
-      setMsg("Origem e destino não podem ser iguais.");
-      return;
-    }
-
-    if (!selectedSiteIds.length) {
-      setMsg("Selecione pelo menos 1 site.");
-      return;
-    }
-
-    const ok = confirm(
-      `Tem certeza que deseja transferir ${selectedSiteIds.length} site(s)?`
-    );
-    if (!ok) return;
-
-    setSaving(true);
-
-    try {
-      const { data: auth } = await supabase.auth.getSession();
-      const token = auth?.session?.access_token;
-
-      if (!token) {
-        setMsg("Você precisa estar logado.");
-        setSaving(false);
-        return;
-      }
-
-      const r = await fetch("/api/admin/transfer-site", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          from_user_id: fromUserId,
-          to_user_id: toUserId,
-          site_ids: selectedSiteIds,
-        }),
-      });
-
-      const j = await r.json().catch(() => ({}));
-
-      if (!r.ok || !j?.ok) {
-        setMsg(j?.error || "Erro ao transferir sites.");
-        setSaving(false);
-        return;
-      }
-
-      setMsg(`Transferência concluída com sucesso! ${j.transferred} site(s) transferido(s).`);
-      await loadSitesByUser(fromUserId);
-    } catch (e: any) {
-      setMsg(e?.message || "Erro ao transferir sites.");
-    } finally {
-      setSaving(false);
-    }
+  if (!fromUserId) {
+    setMsg("Selecione o usuário de origem.");
+    return;
   }
+
+  if (!toUserId) {
+    setMsg("Selecione o usuário de destino.");
+    return;
+  }
+
+  if (fromUserId === toUserId) {
+    setMsg("Origem e destino não podem ser iguais.");
+    return;
+  }
+
+  if (!selectedSiteIds.length) {
+    setMsg("Selecione pelo menos 1 site.");
+    return;
+  }
+
+  const ok = confirm(
+    `Tem certeza que deseja transferir ${selectedSiteIds.length} site(s)?`
+  );
+  if (!ok) return;
+
+  setSaving(true);
+
+  try {
+    const { data: auth } = await supabase.auth.getSession();
+    const token = auth?.session?.access_token;
+
+    if (!token) {
+      setMsg("Você precisa estar logado.");
+      setSaving(false);
+      return;
+    }
+
+    const r = await fetch("/api/admin/transfer-site", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        from_user_id: fromUserId,
+        to_user_id: toUserId,
+        site_ids: selectedSiteIds,
+      }),
+    });
+
+    const text = await r.text();
+    console.log("TRANSFER STATUS:", r.status);
+    console.log("TRANSFER RAW RESPONSE:", text);
+
+    let j: any = {};
+    try {
+      j = text ? JSON.parse(text) : {};
+    } catch {
+      j = { raw: text };
+    }
+
+    if (!r.ok || !j?.ok) {
+      setMsg(
+        j?.error ||
+          j?.message ||
+          j?.raw ||
+          `Erro ao transferir sites. Status ${r.status}`
+      );
+      setSaving(false);
+      return;
+    }
+
+    setMsg(
+      `Transferência concluída com sucesso! ${j.transferred} site(s) transferido(s).`
+    );
+
+    await loadSitesByUser(fromUserId);
+  } catch (e: any) {
+    console.error("TRANSFER CATCH:", e);
+    setMsg(e?.message || "Erro ao transferir sites.");
+  } finally {
+    setSaving(false);
+  }
+}
 
   return (
     <div className="space-y-6 text-white">
