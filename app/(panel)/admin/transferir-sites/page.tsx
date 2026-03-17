@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { supabase } from '@/lib/supabaseBrowser';
 
 type UserRow = {
@@ -17,11 +17,15 @@ type SiteRow = {
 };
 
 export default function AdminTransferSitesPage() {
+
   const [users, setUsers] = useState<UserRow[]>([]);
   const [sites, setSites] = useState<SiteRow[]>([]);
 
-  const [fromUser, setFromUser] = useState<string>('');
-  const [toUser, setToUser] = useState<string>('');
+  const [fromUser, setFromUser] = useState('');
+  const [toUser, setToUser] = useState('');
+
+  const [searchFrom, setSearchFrom] = useState('');
+  const [searchTo, setSearchTo] = useState('');
 
   const [selectedSites, setSelectedSites] = useState<string[]>([]);
 
@@ -36,6 +40,7 @@ export default function AdminTransferSitesPage() {
   }, []);
 
   async function loadUsers() {
+
     setLoadingUsers(true);
     setMsg(null);
 
@@ -69,6 +74,7 @@ export default function AdminTransferSitesPage() {
   }
 
   async function loadSites(userId: string) {
+
     setLoadingSites(true);
     setSites([]);
 
@@ -90,12 +96,16 @@ export default function AdminTransferSitesPage() {
   }
 
   function toggleSite(id: string) {
+
     setSelectedSites((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+      prev.includes(id)
+        ? prev.filter((x) => x !== id)
+        : [...prev, id]
     );
   }
 
   async function handleTransfer() {
+
     setMsg(null);
 
     if (!fromUser || !toUser) {
@@ -139,7 +149,28 @@ export default function AdminTransferSitesPage() {
     setSaving(false);
   }
 
+  const filteredFromUsers = useMemo(() => {
+
+    return users.filter((u) =>
+      `${u.email} ${u.name} ${u.whatsapp}`
+        .toLowerCase()
+        .includes(searchFrom.toLowerCase())
+    );
+
+  }, [users, searchFrom]);
+
+  const filteredToUsers = useMemo(() => {
+
+    return users.filter((u) =>
+      `${u.email} ${u.name} ${u.whatsapp}`
+        .toLowerCase()
+        .includes(searchTo.toLowerCase())
+    );
+
+  }, [users, searchTo]);
+
   return (
+
     <div className="space-y-6 text-white">
 
       <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
@@ -150,15 +181,27 @@ export default function AdminTransferSitesPage() {
       </div>
 
       {msg && (
-        <div className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm">
+        <div className="rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm">
           {msg}
         </div>
       )}
 
       <div className="grid md:grid-cols-2 gap-6">
 
+        {/* ORIGEM */}
+
         <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-          <div className="text-sm font-semibold mb-2">Usuário de origem</div>
+
+          <div className="text-sm font-semibold mb-2">
+            Usuário de origem
+          </div>
+
+          <input
+            placeholder="Buscar usuário..."
+            value={searchFrom}
+            onChange={(e) => setSearchFrom(e.target.value)}
+            className="w-full mb-3 rounded-xl bg-black/30 border border-white/10 px-4 py-3"
+          />
 
           <select
             value={fromUser}
@@ -166,11 +209,16 @@ export default function AdminTransferSitesPage() {
               setFromUser(e.target.value);
               loadSites(e.target.value);
             }}
-            className="w-full rounded-xl bg-black/30 border border-white/10 px-4 py-3"
+            className="w-full rounded-xl bg-black/40 border border-white/10 px-4 py-3 text-white"
           >
             <option value="">Selecione</option>
-            {users.map((u) => (
-              <option key={u.id} value={u.id}>
+
+            {filteredFromUsers.map((u) => (
+              <option
+                key={u.id}
+                value={u.id}
+                className="bg-[#0f172a] text-white"
+              >
                 {u.email}
               </option>
             ))}
@@ -183,39 +231,65 @@ export default function AdminTransferSitesPage() {
           <div className="space-y-2 max-h-80 overflow-y-auto">
 
             {loadingSites && (
-              <div className="text-white/60 text-sm">Carregando sites...</div>
+              <div className="text-white/60 text-sm">
+                Carregando sites...
+              </div>
             )}
 
             {!loadingSites &&
               sites.map((s) => (
+
                 <label
                   key={s.id}
-                  className="flex items-center gap-3 rounded-xl bg-black/30 px-3 py-2"
+                  className="flex items-center gap-3 rounded-xl bg-black/40 px-3 py-2 hover:bg-black/60"
                 >
+
                   <input
                     type="checkbox"
                     checked={selectedSites.includes(s.id)}
                     onChange={() => toggleSite(s.id)}
                   />
-                  <span className="text-sm">{s.slug}</span>
+
+                  <span className="text-sm">
+                    {s.slug}
+                  </span>
+
                 </label>
+
               ))}
 
           </div>
+
         </div>
+
+        {/* DESTINO */}
 
         <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
 
-          <div className="text-sm font-semibold mb-2">Usuário de destino</div>
+          <div className="text-sm font-semibold mb-2">
+            Usuário de destino
+          </div>
+
+          <input
+            placeholder="Buscar usuário..."
+            value={searchTo}
+            onChange={(e) => setSearchTo(e.target.value)}
+            className="w-full mb-3 rounded-xl bg-black/30 border border-white/10 px-4 py-3"
+          />
 
           <select
             value={toUser}
             onChange={(e) => setToUser(e.target.value)}
-            className="w-full rounded-xl bg-black/30 border border-white/10 px-4 py-3"
+            className="w-full rounded-xl bg-black/40 border border-white/10 px-4 py-3 text-white"
           >
             <option value="">Selecione</option>
-            {users.map((u) => (
-              <option key={u.id} value={u.id}>
+
+            {filteredToUsers.map((u) => (
+              <option
+                key={u.id}
+                value={u.id}
+                className="bg-[#0f172a] text-white"
+              >
                 {u.email}
               </option>
             ))}
