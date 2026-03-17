@@ -33,20 +33,28 @@ async function assertAdmin(req: Request, supabaseAdmin: any) {
 }
 
 export async function POST(req: Request) {
-  try {
-    const supabaseAdmin = createClient(
-      env("NEXT_PUBLIC_SUPABASE_URL"),
-      env("SUPABASE_SERVICE_ROLE_KEY"),
-      { auth: { persistSession: false } }
-    );
+  const { site_ids, target_user_id } = await req.json();
 
-    const guard = await assertAdmin(req, supabaseAdmin);
-    if (!guard.ok) {
-      return NextResponse.json(
-        { ok: false, error: guard.message },
-        { status: guard.status }
-      );
-    }
+  if (!site_ids?.length || !target_user_id) {
+    return NextResponse.json({ ok: false, error: "Dados inválidos" });
+  }
+
+  const supabaseAdmin = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+
+  const { error } = await supabaseAdmin
+    .from("sites")
+    .update({ user_id: target_user_id })
+    .in("id", site_ids);
+
+  if (error) {
+    return NextResponse.json({ ok: false, error: error.message });
+  }
+
+  return NextResponse.json({ ok: true });
+}
 
     const body = await req.json().catch(() => ({} as any));
 
