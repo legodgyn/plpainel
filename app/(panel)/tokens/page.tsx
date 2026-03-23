@@ -45,7 +45,7 @@ export default function TokensPage() {
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
-  const baseUnitPriceCents = 400;
+  const baseUnitPriceCents = 500;
 
   const discountPercent = getDiscountPercent(Number(tokens || 0));
   const originalTotalCents = Math.max(0, Number(tokens || 0)) * baseUnitPriceCents;
