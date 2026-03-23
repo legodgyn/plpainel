@@ -69,7 +69,6 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
       { href: "/sites/new", label: "Criar Site", icon: "➕" },
       { href: "/tokens", label: "Comprar Tokens", icon: "💳" },
       { href: "/billing", label: "Minhas Compras", icon: "🧾" },
-      { href: "/sites/template-simples", label: "Alterar Layout", icon: "🎨" },
       { href: "/affiliate", label: "Afiliados", icon: "🤝" },
       { href: "/tutorial", label: "Tutorial", icon: "📚" },
       { href: "/loja", label: "Loja", icon: "🛍️" },
@@ -80,6 +79,7 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
   const nav = useMemo(() => {
     const items = [...baseNav];
     if (isAdminMaster) {
+      items.push({ href: "/sites/template-simples", label: "Alterar Layout", icon: "🎨" });
       items.push({ href: "/admin", label: "Compras na Plataforma", icon: "🛒" });
       items.push({ href: "/admin/pagamentos-afiliados", label: "Pagamentos Afiliados", icon: "💸" });
       items.push({ href: "/users", label: "Usuários", icon: "👥" });
