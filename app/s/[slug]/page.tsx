@@ -1,10 +1,20 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { headers } from "next/headers";
 import { createClient } from "@supabase/supabase-js";
 
 type PageProps = {
   params: { slug: string } | Promise<{ slug: string }>;
 };
+
+const ROOT_DOMAINS = [
+  "plpainel.com",
+  "acmpainel.com.br",
+  "ehspainel.com.br",
+  "lcppainel.com.br",
+  "lcspainel.com.br",
+  "mapspainel.com.br",
+];
 
 function onlyDigits(v: string) {
   return String(v || "").replace(/\D/g, "");
@@ -29,20 +39,44 @@ function waWithText(waUrl: string | null, text: string) {
   return `${waUrl}?text=${encodeURIComponent(text)}`;
 }
 
+function getBaseDomainFromHost(host: string) {
+  const cleanHost = String(host || "").split(":")[0].toLowerCase();
+
+  for (const rootDomain of ROOT_DOMAINS) {
+    if (cleanHost === rootDomain || cleanHost === `www.${rootDomain}`) {
+      return rootDomain;
+    }
+
+    if (cleanHost.endsWith(`.${rootDomain}`)) {
+      return rootDomain;
+    }
+  }
+
+  return null;
+}
+
 export async function generateMetadata(props: PageProps): Promise<Metadata> {
   const { slug } = await Promise.resolve(props.params);
+  const headerList = await headers();
+  const host = headerList.get("host") || "";
+  const hostBaseDomain = getBaseDomainFromHost(host);
 
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
-  const { data } = await supabase
+  let query = supabase
     .from("sites")
     .select("company_name, base_domain")
     .eq("slug", slug)
-    .eq("is_public", true)
-    .single();
+    .eq("is_public", true);
+
+  if (hostBaseDomain) {
+    query = query.eq("base_domain", hostBaseDomain);
+  }
+
+  const { data } = await query.maybeSingle();
 
   return {
     title: data?.company_name || "Site público",
@@ -51,23 +85,30 @@ export async function generateMetadata(props: PageProps): Promise<Metadata> {
 
 export default async function PublicSitePage(props: PageProps) {
   const { slug } = await Promise.resolve(props.params);
+  const headerList = await headers();
+  const host = headerList.get("host") || "";
+  const hostBaseDomain = getBaseDomainFromHost(host);
 
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("sites")
     .select("*")
     .eq("slug", slug)
-    .eq("is_public", true)
-    .single();
+    .eq("is_public", true);
+
+  if (hostBaseDomain) {
+    query = query.eq("base_domain", hostBaseDomain);
+  }
+
+  const { data, error } = await query.maybeSingle();
 
   if (error || !data) return notFound();
 
-  const base_domain =
-    (data.base_domain as string | null) || "plpainel.com";
+  const base_domain = (data.base_domain as string | null) || hostBaseDomain || "plpainel.com";
 
   const company_name = data.company_name || "Empresa";
   const cnpj = data.cnpj || "—";
@@ -88,9 +129,6 @@ export default async function PublicSitePage(props: PageProps) {
   const waUrl = normalizeWhatsApp(whatsapp);
   const waCta = waWithText(waUrl, "Olá, gostaria de mais informações.");
 
-  // =========================
-  // TEMPLATE SIMPLES
-  // =========================
   if (template_type === "simple") {
     return (
       <main className="min-h-screen bg-black text-white">
@@ -121,9 +159,6 @@ export default async function PublicSitePage(props: PageProps) {
     );
   }
 
-  // =========================
-  // TEMPLATE PADRÃO
-  // =========================
   return (
     <main className="min-h-screen bg-[#F5F0FA] text-slate-900">
       <header className="bg-white border-b border-purple-200">
@@ -157,6 +192,7 @@ export default async function PublicSitePage(props: PageProps) {
               <a
                 href={waCta}
                 target="_blank"
+                rel="noreferrer"
                 className="bg-purple-800 text-white px-6 py-3 rounded-md"
               >
                 CONVERSAR
@@ -167,6 +203,7 @@ export default async function PublicSitePage(props: PageProps) {
               <a
                 href={igUrl}
                 target="_blank"
+                rel="noreferrer"
                 className="border px-6 py-3 rounded-md"
               >
                 INSTAGRAM
@@ -176,12 +213,34 @@ export default async function PublicSitePage(props: PageProps) {
         </div>
       </section>
 
+      {mission && (
+        <section className="mx-auto max-w-5xl px-4 mt-6">
+          <div className="rounded-2xl bg-white border p-6">
+            <h2 className="font-bold">NOSSA MISSÃO</h2>
+            <div className="mt-3 whitespace-pre-line">{mission}</div>
+          </div>
+        </section>
+      )}
+
       <section className="mx-auto max-w-5xl px-4 mt-10">
         <div className="rounded-2xl bg-white border p-6">
           <h2 className="font-bold">QUEM SOMOS?</h2>
           <div className="mt-3 whitespace-pre-line">{about}</div>
         </div>
       </section>
+
+      {(phone || email || whatsapp) && (
+        <section className="mx-auto max-w-5xl px-4 mt-6">
+          <div className="rounded-2xl bg-white border p-6">
+            <h2 className="font-bold">CONTATO</h2>
+            <div className="mt-3 space-y-2 text-sm">
+              {phone ? <div><b>Telefone:</b> {phone}</div> : null}
+              {email ? <div><b>E-mail:</b> {email}</div> : null}
+              {whatsapp ? <div><b>WhatsApp:</b> {whatsapp}</div> : null}
+            </div>
+          </div>
+        </section>
+      )}
 
       {privacy && (
         <section className="mx-auto max-w-5xl px-4 mt-6">
