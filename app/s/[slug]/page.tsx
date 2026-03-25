@@ -170,7 +170,7 @@ export default async function PublicSitePage(props: PageProps) {
             <div className="leading-tight">
               <div className="text-xs text-slate-500">Página pública</div>
               <div className="text-sm font-semibold text-slate-900">
-                {slug}.plpainel.com
+                {slug}.{base_domain}
               </div>
             </div>
           </div>
