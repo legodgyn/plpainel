@@ -39,6 +39,26 @@ function waWithText(waUrl: string | null, text: string) {
   return `${waUrl}?text=${encodeURIComponent(text)}`;
 }
 
+function extractMetaContent(input?: string | null) {
+  const raw = String(input || "").trim();
+  if (!raw) return null;
+
+  const m = raw.match(/content\s*=\s*["']([^"']+)["']/i);
+  if (m?.[1]) return m[1].trim();
+
+  return raw;
+}
+
+function extractMetaName(input?: string | null) {
+  const raw = String(input || "").trim();
+  if (!raw) return null;
+
+  const m = raw.match(/name\s*=\s*["']([^"']+)["']/i);
+  if (m?.[1]) return m[1].trim();
+
+  return raw;
+}
+
 function getBaseDomainFromHost(host: string) {
   const cleanHost = String(host || "").split(":")[0].toLowerCase();
 
@@ -68,7 +88,7 @@ export async function generateMetadata(props: PageProps): Promise<Metadata> {
 
   let query = supabase
     .from("sites")
-    .select("company_name, base_domain")
+    .select("company_name, base_domain, meta_verify_name, meta_verify_content")
     .eq("slug", slug)
     .eq("is_public", true);
 
@@ -78,9 +98,23 @@ export async function generateMetadata(props: PageProps): Promise<Metadata> {
 
   const { data } = await query.maybeSingle();
 
-  return {
-    title: data?.company_name || "Site público",
-  };
+  const title = (data?.company_name as string) || "Site público";
+
+  const name = extractMetaName((data?.meta_verify_name as string | null) ?? null);
+  const content = extractMetaContent(
+    (data?.meta_verify_content as string | null) ?? null
+  );
+
+  if (name && content) {
+    return {
+      title,
+      other: {
+        [name]: content,
+      },
+    };
+  }
+
+  return { title };
 }
 
 export default async function PublicSitePage(props: PageProps) {
@@ -108,22 +142,22 @@ export default async function PublicSitePage(props: PageProps) {
 
   if (error || !data) return notFound();
 
-  const base_domain = (data.base_domain as string | null) || hostBaseDomain || "plpainel.com";
-
-  const company_name = data.company_name || "Empresa";
-  const cnpj = data.cnpj || "—";
-  const mission = data.mission || "";
-  const phone = data.phone || "";
-  const email = data.email || "";
-  const instagram = data.instagram || null;
-  const whatsapp = data.whatsapp || "";
-  const about = data.about || "";
-  const about_simple = data.about_simple || "";
-  const logo_url = data.logo_url || "";
-  const template_type = data.template_type || "default";
-  const simple_title = data.simple_title || "";
-  const privacy = data.privacy || null;
-  const footer = data.footer || "—";
+  const company_name = (data.company_name as string | null) || "Empresa";
+  const cnpj = (data.cnpj as string | null) || "—";
+  const mission = (data.mission as string | null) || "";
+  const phone = (data.phone as string | null) || "";
+  const email = (data.email as string | null) || "";
+  const instagram = (data.instagram as string | null) || null;
+  const whatsapp = (data.whatsapp as string | null) || "";
+  const about = (data.about as string | null) || "";
+  const about_simple = (data.about_simple as string | null) || "";
+  const logo_url = (data.logo_url as string | null) || "";
+  const template_type = (data.template_type as string | null) || "default";
+  const simple_title = (data.simple_title as string | null) || "";
+  const privacy = (data.privacy as string | null) || null;
+  const footer = (data.footer as string | null) || "—";
+  const base_domain =
+    (data.base_domain as string | null) || hostBaseDomain || "plpainel.com";
 
   const igUrl = normalizeInstagram(instagram);
   const waUrl = normalizeWhatsApp(whatsapp);
@@ -132,28 +166,30 @@ export default async function PublicSitePage(props: PageProps) {
   if (template_type === "simple") {
     return (
       <main className="min-h-screen bg-black text-white">
-        <div className="mx-auto flex max-w-5xl flex-col items-center px-4 py-12">
-          {logo_url && (
+        <div className="mx-auto flex max-w-5xl flex-col items-center px-4 py-12 sm:py-16">
+          {logo_url ? (
             <img
               src={logo_url}
               alt={company_name}
-              className="w-[220px] object-contain"
+              className="w-[220px] max-w-full object-contain sm:w-[260px]"
             />
-          )}
+          ) : null}
 
-          <h1 className="mt-8 text-center text-2xl font-bold">
+          <h1 className="mt-8 text-center text-2xl font-bold sm:text-3xl">
             Quem é {simple_title || company_name}?
           </h1>
 
           <div className="mt-8 max-w-3xl text-center">
-            <p className="whitespace-pre-line text-sm text-gray-200">
+            <p className="whitespace-pre-line text-sm leading-7 text-gray-200 sm:text-base sm:leading-8">
               {about_simple || about || "—"}
             </p>
           </div>
         </div>
 
-        <footer className="mt-16 bg-blue-700 px-6 py-8 text-center text-sm text-white">
-          {footer}
+        <footer className="mt-16 w-full bg-blue-700 px-6 py-8 text-center text-sm text-white">
+          <div className="mx-auto max-w-5xl whitespace-pre-line leading-7">
+            {footer}
+          </div>
         </footer>
       </main>
     );
@@ -161,98 +197,216 @@ export default async function PublicSitePage(props: PageProps) {
 
   return (
     <main className="min-h-screen bg-[#F5F0FA] text-slate-900">
-      <header className="bg-white border-b border-purple-200">
+      <header className="bg-white/90 backdrop-blur border-b border-purple-200">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4">
-          <div>
-            <div className="text-xs text-slate-500">Página pública</div>
-            <div className="text-sm font-semibold">
-              {slug}.{base_domain}
+          <div className="flex items-center gap-3">
+            <div className="grid h-9 w-9 place-items-center rounded-full border border-purple-200 text-purple-900 bg-purple-50">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M14 9a3 3 0 10-6 0v1H6a2 2 0 00-2 2v8h16v-8a2 2 0 00-2-2h-2V9z"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </div>
+            <div className="leading-tight">
+              <div className="text-xs text-slate-500">Página pública</div>
+              <div className="text-sm font-semibold text-slate-900">
+                {slug}.{base_domain}
+              </div>
             </div>
           </div>
 
           <button
+            type="button"
             disabled
-            className="rounded-md bg-purple-800 px-4 py-2 text-sm text-white opacity-70"
+            className="cursor-not-allowed rounded-md bg-purple-800 px-4 py-2 text-sm font-semibold text-white opacity-70"
           >
             LOGIN
           </button>
         </div>
       </header>
 
-      <section className="mx-auto max-w-5xl px-4 pt-10">
-        <div className="rounded-2xl bg-white border border-purple-200 p-8 text-center">
-          <h1 className="text-3xl font-bold">{company_name}</h1>
+      <section className="mx-auto max-w-5xl px-4 pt-10 pb-8">
+        <div className="rounded-2xl bg-white border border-purple-200 shadow-sm">
+          <div className="p-7 sm:p-10">
+            <div className="flex flex-col items-center text-center">
+              <div className="grid h-[180px] w-[180px] place-items-center rounded-full bg-purple-800 text-white shadow-sm">
+                <span className="text-6xl font-extrabold">
+                  {(company_name?.[0] || "E").toUpperCase()}
+                </span>
+              </div>
 
-          <div className="mt-2 text-sm">
-            <b>CNPJ:</b> {cnpj}
-          </div>
+              <h1 className="mt-6 text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
+                {company_name}
+              </h1>
 
-          <div className="mt-6 flex justify-center gap-3">
-            {waCta && (
-              <a
-                href={waCta}
-                target="_blank"
-                rel="noreferrer"
-                className="bg-purple-800 text-white px-6 py-3 rounded-md"
-              >
-                CONVERSAR
-              </a>
-            )}
+              <div className="mt-2 text-sm sm:text-base text-slate-700">
+                <span className="font-semibold text-slate-900">CNPJ:</span> {cnpj}
+              </div>
 
-            {igUrl && (
-              <a
-                href={igUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="border px-6 py-3 rounded-md"
-              >
-                INSTAGRAM
-              </a>
-            )}
-          </div>
-        </div>
-      </section>
+              {mission ? (
+                <div className="mt-8 w-full max-w-3xl rounded-xl bg-white border border-purple-200 p-6 text-left">
+                  <div className="text-xs font-extrabold tracking-widest text-purple-700">
+                    NOSSA MISSÃO
+                  </div>
+                  <div className="mt-3 whitespace-pre-line text-sm sm:text-base font-semibold leading-relaxed text-slate-800">
+                    {mission}
+                  </div>
+                </div>
+              ) : null}
 
-      {mission && (
-        <section className="mx-auto max-w-5xl px-4 mt-6">
-          <div className="rounded-2xl bg-white border p-6">
-            <h2 className="font-bold">NOSSA MISSÃO</h2>
-            <div className="mt-3 whitespace-pre-line">{mission}</div>
-          </div>
-        </section>
-      )}
+              <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
+                {waCta ? (
+                  <a
+                    href={waCta}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="rounded-md bg-purple-800 px-6 py-3 text-sm font-extrabold text-white hover:bg-purple-900"
+                  >
+                    CONVERSAR AGORA
+                  </a>
+                ) : null}
 
-      <section className="mx-auto max-w-5xl px-4 mt-10">
-        <div className="rounded-2xl bg-white border p-6">
-          <h2 className="font-bold">QUEM SOMOS?</h2>
-          <div className="mt-3 whitespace-pre-line">{about}</div>
-        </div>
-      </section>
-
-      {(phone || email || whatsapp) && (
-        <section className="mx-auto max-w-5xl px-4 mt-6">
-          <div className="rounded-2xl bg-white border p-6">
-            <h2 className="font-bold">CONTATO</h2>
-            <div className="mt-3 space-y-2 text-sm">
-              {phone ? <div><b>Telefone:</b> {phone}</div> : null}
-              {email ? <div><b>E-mail:</b> {email}</div> : null}
-              {whatsapp ? <div><b>WhatsApp:</b> {whatsapp}</div> : null}
+                {igUrl ? (
+                  <a
+                    href={igUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="rounded-md border border-purple-300 bg-purple-50 px-6 py-3 text-sm font-extrabold text-purple-900 hover:bg-purple-100"
+                  >
+                    INSTAGRAM
+                  </a>
+                ) : null}
+              </div>
             </div>
           </div>
-        </section>
-      )}
+        </div>
+      </section>
 
-      {privacy && (
-        <section className="mx-auto max-w-5xl px-4 mt-6">
-          <div className="rounded-2xl bg-white border p-6">
-            <h2 className="font-bold">POLÍTICA DE PRIVACIDADE</h2>
-            <div className="mt-3 whitespace-pre-line">{privacy}</div>
+      <section className="mx-auto max-w-5xl px-4 pb-14">
+        <div className="grid gap-6 md:grid-cols-[1.4fr_.6fr]">
+          <div className="rounded-2xl bg-white border border-purple-200 shadow-sm p-6 sm:p-7">
+            <h2 className="text-lg font-extrabold text-slate-900">QUEM SOMOS?</h2>
+            <div className="mt-4 whitespace-pre-line leading-relaxed text-slate-800">
+              {about || "—"}
+            </div>
           </div>
-        </section>
-      )}
 
-      <footer className="mt-10 border-t bg-white p-6 text-sm text-center">
-        {footer}
+          <div className="space-y-6">
+            <div className="rounded-2xl bg-white border border-purple-200 shadow-sm p-6 sm:p-7">
+              <h3 className="text-sm font-extrabold tracking-widest text-purple-700">
+                CONTATO
+              </h3>
+
+              <div className="mt-4 space-y-2 text-sm text-slate-800">
+                {phone ? (
+                  <div className="flex items-start justify-between gap-3">
+                    <span className="text-slate-500">Telefone</span>
+                    <span className="font-semibold text-right">{phone}</span>
+                  </div>
+                ) : null}
+
+                {email ? (
+                  <div className="flex items-start justify-between gap-3">
+                    <span className="text-slate-500">E-mail</span>
+                    <span className="font-semibold text-right">{email}</span>
+                  </div>
+                ) : null}
+
+                {whatsapp ? (
+                  <div className="flex items-start justify-between gap-3">
+                    <span className="text-slate-500">WhatsApp</span>
+                    <span className="font-semibold text-right">{whatsapp}</span>
+                  </div>
+                ) : null}
+              </div>
+
+              {waCta ? (
+                <a
+                  href={waCta}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-5 block rounded-md bg-purple-800 px-5 py-3 text-center text-sm font-extrabold text-white hover:bg-purple-900"
+                >
+                  FALAR NO WHATSAPP
+                </a>
+              ) : null}
+            </div>
+
+            <div className="rounded-2xl bg-white border border-purple-200 shadow-sm p-6 sm:p-7 text-center">
+              <div className="mx-auto grid h-14 w-14 place-items-center rounded-full border border-purple-200 bg-purple-50 text-purple-900">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M7 2h10a5 5 0 015 5v10a5 5 0 01-5 5H7a5 5 0 01-5-5V7a5 5 0 015-5z"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                  />
+                  <path
+                    d="M12 16a4 4 0 100-8 4 4 0 000 8z"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                  />
+                  <path
+                    d="M17.5 6.5h.01"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </div>
+
+              <div className="mt-3 text-sm font-extrabold text-slate-900">
+                INSTAGRAM
+              </div>
+
+              <a
+                href={igUrl || "#"}
+                target="_blank"
+                rel="noreferrer"
+                className={`mt-4 inline-flex items-center justify-center rounded-md px-5 py-3 text-sm font-extrabold ${
+                  igUrl
+                    ? "bg-purple-50 border border-purple-300 text-purple-900 hover:bg-purple-100"
+                    : "pointer-events-none bg-slate-100 text-slate-400"
+                }`}
+              >
+                ACESSAR
+              </a>
+            </div>
+          </div>
+        </div>
+
+        {privacy ? (
+          <div className="mt-6">
+            <div className="rounded-2xl bg-white border border-purple-200 shadow-sm p-6 sm:p-7">
+              <div className="text-xs font-extrabold tracking-widest text-purple-700">
+                POLÍTICA DE PRIVACIDADE
+              </div>
+              <div className="mt-3 whitespace-pre-line text-sm sm:text-base font-semibold leading-relaxed text-slate-800">
+                {privacy}
+              </div>
+            </div>
+          </div>
+        ) : null}
+      </section>
+
+      <footer className="border-t border-purple-200 bg-white">
+        <div className="mx-auto max-w-5xl px-4 py-10">
+          <div className="whitespace-pre-line text-sm text-slate-700">{footer}</div>
+
+          <div className="mt-6">
+            <a
+              href="https://policies.google.com/privacy?hl=pt-BR"
+              target="_blank"
+              rel="noreferrer"
+              className="text-sm font-semibold underline underline-offset-4 text-purple-900"
+            >
+              Políticas de privacidade
+            </a>
+          </div>
+        </div>
       </footer>
     </main>
   );
