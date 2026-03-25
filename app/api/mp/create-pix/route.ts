@@ -47,7 +47,7 @@ export async function POST(req: Request) {
 
     const user = userRes.user;
 
-    const baseUnitPriceCents = 400;
+    const baseUnitPriceCents = 500;
     const discountPercent = getDiscountPercent(qty);
 
     const originalTotalCents = qty * baseUnitPriceCents;
