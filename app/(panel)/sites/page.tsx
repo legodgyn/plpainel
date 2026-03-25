@@ -11,6 +11,7 @@ type SiteRow = {
   created_at: string;
   is_public: boolean;
   user_id: string;
+  base_domain: string | null;
 };
 
 function fmtDate(iso: string) {
@@ -22,7 +23,7 @@ function fmtDate(iso: string) {
   }
 }
 
-function buildPublicUrl(slug: string) {
+function buildPublicUrl(slug: string, baseDomain?: string | null) {
   if (typeof window === "undefined") return `/s/${slug}`;
 
   const host = window.location.hostname;
@@ -37,7 +38,7 @@ function buildPublicUrl(slug: string) {
 
   if (isLocal || isIp) return `/s/${slug}`;
 
-  return `https://${slug}.plpainel.com`;
+  return `https://${slug}.${baseDomain || "plpainel.com"}`;
 }
 
 export default function SitesPage() {
@@ -66,7 +67,7 @@ export default function SitesPage() {
 
     const { data, error } = await supabase
       .from("sites")
-      .select("id, slug, company_name, created_at, is_public, user_id")
+      .select("id, slug, company_name, created_at, is_public, user_id, base_domain")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false });
 
@@ -123,7 +124,9 @@ export default function SitesPage() {
     const s = q.trim().toLowerCase();
     if (s) {
       list = list.filter((x) =>
-        `${x.slug} ${x.company_name || ""}`.toLowerCase().includes(s)
+        `${x.slug} ${x.company_name || ""} ${x.base_domain || ""}`
+          .toLowerCase()
+          .includes(s)
       );
     }
 
@@ -222,7 +225,7 @@ export default function SitesPage() {
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="Pesquisar por slug ou nome..."
+              placeholder="Pesquisar por slug, nome ou domínio..."
               className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-white outline-none transition focus:border-violet-400"
             />
           </div>
@@ -286,6 +289,7 @@ export default function SitesPage() {
                 <div className="h-5 w-3/4 rounded bg-white/10" />
                 <div className="mt-3 h-4 w-1/3 rounded bg-white/10" />
                 <div className="mt-4 h-4 w-2/3 rounded bg-white/10" />
+                <div className="mt-2 h-4 w-1/2 rounded bg-white/10" />
                 <div className="mt-5 flex gap-2">
                   <div className="h-9 w-16 rounded-lg bg-white/10" />
                   <div className="h-9 w-16 rounded-lg bg-white/10" />
@@ -300,7 +304,7 @@ export default function SitesPage() {
           </div>
         ) : (
           filtered.map((site) => {
-            const publicUrl = buildPublicUrl(site.slug);
+            const publicUrl = buildPublicUrl(site.slug, site.base_domain);
 
             return (
               <div
@@ -310,7 +314,7 @@ export default function SitesPage() {
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <div className="break-all text-base font-semibold text-violet-300">
-                      {site.slug}.plpainel.com
+                      {site.slug}.{site.base_domain || "plpainel.com"}
                     </div>
 
                     <div className="mt-1 text-xs text-white/50">
@@ -333,6 +337,10 @@ export default function SitesPage() {
                   >
                     {site.is_public ? "Ativo" : "Oculto"}
                   </span>
+                </div>
+
+                <div className="mt-3 text-xs text-white/45 break-all">
+                  {publicUrl}
                 </div>
 
                 <div className="mt-5 flex flex-wrap gap-2">
