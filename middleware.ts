@@ -17,7 +17,7 @@ function getSlugFromHost(host: string) {
     if (cleanHost === `www.${rootDomain}`) return null;
 
     if (cleanHost.endsWith(`.${rootDomain}`)) {
-      const slug = cleanHost.replace(`.${rootDomain}`, "");
+      const slug = cleanHost.slice(0, -(rootDomain.length + 1));
       if (slug && slug !== "www") return slug;
     }
   }
@@ -29,7 +29,6 @@ export function middleware(req: NextRequest) {
   const host = req.headers.get("host") || "";
   const { pathname } = req.nextUrl;
 
-  // ignora rotas internas / arquivos / api
   if (
     pathname.startsWith("/_next") ||
     pathname.startsWith("/api") ||
@@ -43,12 +42,10 @@ export function middleware(req: NextRequest) {
 
   const slug = getSlugFromHost(host);
 
-  // se for domínio principal, segue normal
   if (!slug) {
     return NextResponse.next();
   }
 
-  // evita loop
   if (pathname.startsWith("/s/")) {
     return NextResponse.next();
   }
