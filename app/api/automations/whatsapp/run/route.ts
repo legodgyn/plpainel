@@ -286,7 +286,7 @@ export async function GET(req: Request) {
         const text =
           `Olá ${profile.name || ""}! ⚠️\n\n` +
           `Seus tokens no *PL Painel* acabaram.\n\n` +
-          `Quando quiser continuar criando sites e usando a plataforma, é só recarregar ou, se tiver alguma dúvida, estamos prontos para ajudar você! 🚀\n\n` +
+          `Quando quiser continuar criando sites e usando a plataforma, é só recarregar, ou se tiver alguma dúvida, estamos prontos para ajudar você! 🚀\n\n` +
           `Entre no nosso grupo - https://chat.whatsapp.com/HscyWLc5vEPKL6w6Esopb9`;
 
         await sendEvolutionText(profile.whatsapp, text);
