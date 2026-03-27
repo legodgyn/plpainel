@@ -8,32 +8,50 @@ export default function SugestoesPage() {
   const [list, setList] = useState<any[]>([]);
 
   async function load() {
-    const token = (await (window as any).supabase.auth.getSession()).data.session.access_token;
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
 
-    const res = await fetch("/api/feature-requests/my", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+  if (!token) return;
 
-    const data = await res.json();
-    setList(data);
-  }
+  const res = await fetch("/api/feature-requests/my", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const dataRes = await res.json();
+  setList(dataRes);
+}
 
   async function send() {
-    const token = (await (window as any).supabase.auth.getSession()).data.session.access_token;
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
 
-    await fetch("/api/feature-requests/create", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ title, description }),
-    });
-
-    setTitle("");
-    setDescription("");
-    load();
+  if (!token) {
+    alert("Usuário não autenticado");
+    return;
   }
+
+  const res = await fetch("/api/feature-requests/create", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ title, description }),
+  });
+
+  const json = await res.json();
+
+  if (!res.ok) {
+    alert(json.error || "Erro ao enviar");
+    return;
+  }
+
+  setTitle("");
+  setDescription("");
+  load();
+}
 
   useEffect(() => {
     load();
