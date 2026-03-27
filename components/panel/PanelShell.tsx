@@ -88,7 +88,7 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
       items.push({ href: "/admin/transferir-sites", label: "Transferências", icon: "🔄" });
       items.push({ href: "https://bm.plpainel.com/dashboard.html", label: "Controle de BM's", icon: "📈" });
       items.push({ href: "/admin/updates", label: "Atualizações", icon: "🛠️" });
-      items.push({ href: "/admin/sugestoes", label: "Sugestões e Melhorias", icon: "💡" });
+      items.push({ href: "/admin/sugestoes", label: "Sugestões", icon: "💡" });
     }
     return items;
   }, [baseNav, isAdminMaster]);
