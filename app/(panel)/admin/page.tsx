@@ -209,39 +209,6 @@ export default function AdminDashboard() {
     };
   }, [filteredRows]);
 
-  return (
-    <div className="space-y-6 text-white">
-      <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-        <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-          <div>
-            <h1 className="text-xl font-semibold">Compras</h1>
-            <p className="mt-1 text-sm text-white/60">
-              Visualize todas as compras realizadas na plataforma.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm">
-              <div className="text-white/60">Total geral recebido</div>
-              <div className="text-lg font-bold">{total}</div>
-            </div>
-
-            <button
-              onClick={load}
-              className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold hover:bg-white/10"
-            >
-              Atualizar
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {msg ? (
-        <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-200">
-          {msg}
-        </div>
-      ) : null}
-
       <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
         <div className="grid gap-3 lg:grid-cols-6">
           <div className="lg:col-span-2">
