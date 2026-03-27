@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "PL Painel",
+  title: "PL Painel - Sites Inteligentes",
   icons: {
     icon: [
       { url: "/favicon.png", sizes: "16x16", type: "image/png" },
