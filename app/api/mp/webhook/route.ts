@@ -13,12 +13,6 @@ function optEnv(name: string) {
   return (process.env[name] || "").trim();
 }
 
-/**
- * Mercado Pago manda vários formatos:
- * - { data: { id } }
- * - { id }
- * - { resource: "https://api.mercadopago.com/v1/payments/123" }
- */
 function extractPaymentId(body: any) {
   const a = String(body?.data?.id ?? "").trim();
   if (a) return a;
@@ -63,13 +57,20 @@ async function fetchPayment(paymentId: string) {
 }
 
 async function triggerOrderPaidWhatsapp(orderId: string) {
-  const siteUrl = optEnv("NEXT_PUBLIC_APP_URL");
+  const siteUrl = optEnv("APP_URL") || optEnv("NEXT_PUBLIC_APP_URL");
   const internalToken = optEnv("INTERNAL_AUTOMATION_TOKEN");
 
-  if (!siteUrl || !internalToken || !orderId) return;
+  if (!siteUrl || !internalToken || !orderId) {
+    console.log("triggerOrderPaidWhatsapp skipped:", {
+      hasSiteUrl: !!siteUrl,
+      hasInternalToken: !!internalToken,
+      orderId,
+    });
+    return;
+  }
 
   try {
-    await fetch(`${siteUrl}/api/automations/whatsapp/order-paid`, {
+    const res = await fetch(`${siteUrl}/api/automations/whatsapp/order-paid`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -80,8 +81,11 @@ async function triggerOrderPaidWhatsapp(orderId: string) {
       }),
       cache: "no-store",
     });
-  } catch {
-    // não quebra o webhook se a automação falhar
+
+    const text = await res.text();
+    console.log("triggerOrderPaidWhatsapp response:", res.status, text);
+  } catch (err) {
+    console.error("triggerOrderPaidWhatsapp error:", err);
   }
 }
 
@@ -90,7 +94,6 @@ export async function POST(req: Request) {
     const body = await req.json().catch(() => ({} as any));
     const paymentId = extractPaymentId(body);
 
-    // sempre responde 200 pro MP não ficar re-tentando infinito
     if (!paymentId) {
       return NextResponse.json({ ok: true, ignored: "no_payment_id" });
     }
@@ -110,7 +113,6 @@ export async function POST(req: Request) {
     const mpStatus = String(payment?.status ?? "").trim().toLowerCase();
     const mpPaymentId = String(payment?.id ?? paymentId).trim();
 
-    // external_reference = id da token_orders
     const orderId = String(payment?.external_reference ?? "").trim();
     if (!orderId) {
       return NextResponse.json({
@@ -121,7 +123,6 @@ export async function POST(req: Request) {
       });
     }
 
-    // 1) atualiza sempre o status/id do MP na order
     await supabase
       .from("token_orders")
       .update({
@@ -130,12 +131,10 @@ export async function POST(req: Request) {
       })
       .eq("id", orderId);
 
-    // 2) se não aprovado, não marca como paid
     if (mpStatus !== "approved") {
       return NextResponse.json({ ok: true, orderId, mpStatus });
     }
 
-    // 3) busca a order atual
     const { data: order, error: orderErr } = await supabase
       .from("token_orders")
       .select("id,status")
@@ -148,7 +147,6 @@ export async function POST(req: Request) {
 
     const alreadyPaid = String(order.status || "").toLowerCase() === "paid";
 
-    // 4) se ainda não estava paid, marca como paid
     if (!alreadyPaid) {
       await supabase
         .from("token_orders")
@@ -160,7 +158,6 @@ export async function POST(req: Request) {
         })
         .eq("id", orderId);
 
-      // 5) dispara apenas a automação de compra aprovada
       await triggerOrderPaidWhatsapp(orderId);
     }
 
@@ -173,6 +170,7 @@ export async function POST(req: Request) {
       token_used: fetched.used,
     });
   } catch (e: any) {
+    console.error("MP webhook error:", e);
     return NextResponse.json({ ok: true, error: e?.message || "Erro" });
   }
 }
