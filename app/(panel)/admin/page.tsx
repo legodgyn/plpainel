@@ -39,6 +39,25 @@ function toDateInputValue(date: Date) {
   return `${y}-${m}-${d}`;
 }
 
+function parseMoneyLabelBRL(value: string) {
+  if (!value) return 0;
+
+  const cleaned = String(value)
+    .replace(/[^\d,.-]/g, "")
+    .replace(/\./g, "")
+    .replace(",", ".");
+
+  const n = Number(cleaned);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function formatBRL(value: number) {
+  return value.toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  });
+}
+
 export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState<Row[]>([]);
@@ -161,7 +180,34 @@ export default function AdminDashboard() {
     return result;
   }, [rows, search, statusFilter, affiliateFilter, dateFrom, dateTo, sortBy]);
 
-  const filteredCount = filteredRows.length;
+  const stats = useMemo(() => {
+    let paidCount = 0;
+    let pendingCount = 0;
+    let canceledCount = 0;
+    let paidAmount = 0;
+
+    for (const row of filteredRows) {
+      const status = String(row.status || "").toLowerCase();
+      const amount = parseMoneyLabelBRL(row.total_label);
+
+      if (status === "paid") {
+        paidCount++;
+        paidAmount += amount;
+      } else if (status === "pending") {
+        pendingCount++;
+      } else if (status === "failed" || status === "canceled" || status === "cancelled") {
+        canceledCount++;
+      }
+    }
+
+    return {
+      totalRows: filteredRows.length,
+      paidCount,
+      pendingCount,
+      canceledCount,
+      paidAmountLabel: formatBRL(paidAmount),
+    };
+  }, [filteredRows]);
 
   return (
     <div className="space-y-6 text-white">
@@ -176,13 +222,8 @@ export default function AdminDashboard() {
 
           <div className="flex flex-wrap items-center gap-3">
             <div className="rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm">
-              <div className="text-white/60">Total recebido</div>
+              <div className="text-white/60">Total geral recebido</div>
               <div className="text-lg font-bold">{total}</div>
-            </div>
-
-            <div className="rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm">
-              <div className="text-white/60">Resultados</div>
-              <div className="text-lg font-bold">{loading ? "—" : filteredCount}</div>
             </div>
 
             <button
@@ -309,6 +350,37 @@ export default function AdminDashboard() {
             >
               Limpar filtros
             </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-4">
+        <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+          <div className="text-xs text-white/50">Pedidos filtrados</div>
+          <div className="mt-2 text-2xl font-bold">{loading ? "—" : stats.totalRows}</div>
+        </div>
+
+        <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4">
+          <div className="text-xs text-emerald-200/70">Pagos</div>
+          <div className="mt-2 text-2xl font-bold text-emerald-200">
+            {loading ? "—" : stats.paidCount}
+          </div>
+          <div className="mt-1 text-sm text-emerald-100/80">
+            {loading ? "—" : stats.paidAmountLabel}
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4">
+          <div className="text-xs text-amber-200/70">Pendentes</div>
+          <div className="mt-2 text-2xl font-bold text-amber-200">
+            {loading ? "—" : stats.pendingCount}
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-4">
+          <div className="text-xs text-red-200/70">Cancelados / falhos</div>
+          <div className="mt-2 text-2xl font-bold text-red-200">
+            {loading ? "—" : stats.canceledCount}
           </div>
         </div>
       </div>
