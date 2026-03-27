@@ -63,7 +63,7 @@ async function fetchPayment(paymentId: string) {
 }
 
 async function triggerOrderPaidWhatsapp(orderId: string) {
-  const siteUrl = optEnv("NEXT_PUBLIC_SITE_URL");
+  const siteUrl = optEnv("NEXT_PUBLIC_APP_URL");
   const internalToken = optEnv("INTERNAL_AUTOMATION_TOKEN");
 
   if (!siteUrl || !internalToken || !orderId) return;
