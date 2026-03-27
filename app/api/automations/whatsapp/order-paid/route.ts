@@ -43,28 +43,10 @@ export async function POST(req: Request) {
     }
 
     if (String(order.status || "").toLowerCase() !== "paid") {
-      return NextResponse.json({
-        ok: false,
-        error: "Pedido ainda não está pago.",
-      }, { status: 400 });
-    }
-
-    const eventKey = `order_paid_${order.id}`;
-
-    // evita enviar duplicado
-    const { data: alreadySent } = await supabaseAdmin
-      .from("whatsapp_automation_logs")
-      .select("id")
-      .eq("user_id", order.user_id)
-      .eq("event_key", eventKey)
-      .limit(1);
-
-    if ((alreadySent || []).length > 0) {
-      return NextResponse.json({
-        ok: true,
-        skipped: "already_sent",
-        order_id: order.id,
-      });
+      return NextResponse.json(
+        { ok: false, error: "Pedido ainda não está pago." },
+        { status: 400 }
+      );
     }
 
     const { data: profile } = await supabaseAdmin
@@ -81,37 +63,81 @@ export async function POST(req: Request) {
       });
     }
 
-    const totalLabel = (Number(order.total_cents || 0) / 100).toLocaleString("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-    });
+    const eventKey = `order_paid_${order.id}`;
 
-    const text =
-      `Olá ${profile.name || ""}! ✅\n\n` +
-      `Seu pagamento no PL Painel foi confirmado com sucesso.\n\n` +
-      `Valor: ${totalLabel}\n\n` +
-      `Se precisar de ajuda para usar seus tokens, me chama aqui. 🚀\n\n` +
-      `Entre no nosso grupo - https://chat.whatsapp.com/HscyWLc5vEPKL6w6Esopb9`;
+    const { error: reserveErr } = await supabaseAdmin
+      .from("whatsapp_automation_logs")
+      .insert({
+        user_id: order.user_id,
+        event_key: eventKey,
+        sent_to: profile.whatsapp,
+        payload: {
+          automation: "order_paid",
+          order_id: order.id,
+          total_cents: order.total_cents,
+          status: "reserved",
+        },
+      });
 
-    const evolutionResponse = await sendEvolutionText(profile.whatsapp, text);
-
-    await supabaseAdmin.from("whatsapp_automation_logs").insert({
-      user_id: order.user_id,
-      event_key: eventKey,
-      sent_to: profile.whatsapp,
-      payload: {
-        automation: "order_paid",
+    if (reserveErr) {
+      return NextResponse.json({
+        ok: true,
+        skipped: "already_sent_or_reserved",
         order_id: order.id,
-        total_cents: order.total_cents,
-      },
-    });
+      });
+    }
 
-    return NextResponse.json({
-      ok: true,
-      order_id: order.id,
-      whatsapp: profile.whatsapp,
-      evolution: evolutionResponse,
-    });
+    try {
+      const totalLabel = (Number(order.total_cents || 0) / 100).toLocaleString("pt-BR", {
+        style: "currency",
+        currency: "BRL",
+      });
+
+      const text =
+        `Olá ${profile.name || ""}! ✅\n\n` +
+        `Seu pagamento no PL Painel foi confirmado com sucesso.\n\n` +
+        `Valor: ${totalLabel}\n\n` +
+        `Se precisar de ajuda para usar seus tokens, me chama aqui. 🚀\n\n` +
+        `Entre no nosso grupo - https://chat.whatsapp.com/HscyWLc5vEPKL6w6Esopb9`;
+
+      const evolutionResponse = await sendEvolutionText(profile.whatsapp, text);
+
+      await supabaseAdmin
+        .from("whatsapp_automation_logs")
+        .update({
+          payload: {
+            automation: "order_paid",
+            order_id: order.id,
+            total_cents: order.total_cents,
+            status: "sent",
+          },
+        })
+        .eq("user_id", order.user_id)
+        .eq("event_key", eventKey);
+
+      return NextResponse.json({
+        ok: true,
+        order_id: order.id,
+        whatsapp: profile.whatsapp,
+        evolution: evolutionResponse,
+      });
+    } catch (sendErr: any) {
+      await supabaseAdmin
+        .from("whatsapp_automation_logs")
+        .update({
+          payload: {
+            automation: "order_paid",
+            order_id: order.id,
+            total_cents: order.total_cents,
+            status: "failed",
+            error: sendErr?.message || "send_failed",
+          },
+        })
+        .eq("user_id", order.user_id)
+        .eq("event_key", eventKey);
+
+      throw sendErr;
+    }
   } catch (e: any) {
     return NextResponse.json(
       { ok: false, error: e?.message || "Erro interno." },
