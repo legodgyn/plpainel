@@ -30,20 +30,6 @@ export default function RootLayout({
           }}
         />
       </head>
-
-      <body>
-        {/* GTM (noscript) */}
-        <noscript>
-          <iframe
-            src={https://www.googletagmanager.com/ns.html?id=${GTM_ID}}
-            height="0"
-            width="0"
-            style={{ display: "none", visibility: "hidden" }}
-          />
-        </noscript>
-
-        {children}
-      </body>
     </html>
   );
 }
@@ -79,7 +65,17 @@ export default function RootLayout({
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+                {/* GTM (noscript) */}
+        <noscript>
+          <iframe
+            src={https://www.googletagmanager.com/ns.html?id=${GTM_ID}}
+            height="0"
+            width="0"
+            style={{ display: "none", visibility: "hidden" }}
+          />
+        </noscript>
       >
+        
         {children}
       </body>
     </html>
