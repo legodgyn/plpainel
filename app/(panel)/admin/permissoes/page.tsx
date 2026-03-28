@@ -310,44 +310,7 @@ export default function AdminPermissoesPage() {
                         }))
                       }
                     />
-                    <div>
-                      <div className="font-semibold">Ver compras</div>
-                      <div className="text-xs text-white/50">Libera acesso à página de compras.</div>
-                    </div>
-                  </label>
-
-                  <label className="flex items-center gap-3 rounded-xl border border-white/10 bg-black/20 p-4">
-                    <input
-                      type="checkbox"
-                      checked={permissions.can_manage_suggestions}
-                      onChange={(e) =>
-                        setPermissions((prev) => ({
-                          ...prev,
-                          can_manage_suggestions: e.target.checked,
-                        }))
-                      }
-                    />
-                    <div>
-                      <div className="font-semibold">Gerenciar sugestões</div>
-                      <div className="text-xs text-white/50">Libera acesso ao painel admin de sugestões.</div>
-                    </div>
-                  </label>
-
-                  <label className="flex items-center gap-3 rounded-xl border border-white/10 bg-black/20 p-4">
-                    <input
-                      type="checkbox"
-                      checked={permissions.can_use_custom_domain}
-                      onChange={(e) =>
-                        setPermissions((prev) => ({
-                          ...prev,
-                          can_use_custom_domain: e.target.checked,
-                        }))
-                      }
-                    />
-                    <div>
-                      <div className="font-semibold">Domínio próprio</div>
-                      <div className="text-xs text-white/50">Libera função de domínio próprio/custom domain.</div>
-                    </div>
+                
                   </label>
                 </div>
               </div>
