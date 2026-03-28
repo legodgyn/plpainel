@@ -60,7 +60,6 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
 
   const [loading, setLoading] = useState(true);
   const [email, setEmail] = useState<string>("");
-  const [tokens, setTokens] = useState<number>(0);
   const [extraPermissions, setExtraPermissions] =
     useState<ExtraPermissions>(emptyPermissions);
 
@@ -201,15 +200,6 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
       if (!alive) return;
       setEmail(user.email ?? "");
       setProfileName(String(user.user_metadata?.name || "").trim());
-
-      const { data: tokenRow } = await supabase
-        .from("user_tokens")
-        .select("balance")
-        .eq("user_id", user.id)
-        .maybeSingle<TokenRow>();
-
-      if (!alive) return;
-      setTokens(tokenRow?.balance ?? 0);
 
       const { data: permissionData } = await supabase
         .from("user_extra_permissions")
@@ -385,11 +375,6 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
                   Seja bem vindo!!
                 </div>
               </div>
-            </div>
-
-            <div className="mt-4 rounded-xl border border-white/10 bg-black/20 px-3 py-3">
-              <div className="text-xs text-white/50">Tokens</div>
-              <div className="mt-1 text-lg font-bold text-white">{tokens}</div>
             </div>
 
             <nav className="mt-5 space-y-1">
