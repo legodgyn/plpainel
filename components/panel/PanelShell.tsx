@@ -89,6 +89,7 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
       items.push({ href: "https://bm.plpainel.com/dashboard.html", label: "Controle de BM's", icon: "📈" });
       items.push({ href: "/admin/updates", label: "Atualizações", icon: "🛠️" });
       items.push({ href: "/admin/sugestoes", label: "Sugestões", icon: "💡" });
+      items.push({ href: "/admin/permissoes", label: "Permissões", icon: "💡" });
     }
     return items;
   }, [baseNav, isAdminMaster]);
