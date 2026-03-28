@@ -138,11 +138,28 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
         label: "Controle de BM's",
         icon: "📈",
       });
+
+          if (canTransferSites) {
+      items.push({
+        href: "/admin/transferir-sites",
+        label: "Transferências",
+        icon: "🔄",
+      });
+    }
       items.push({
         href: "/admin/updates",
         label: "Atualizações",
         icon: "🛠️",
       });
+
+          if (canManageSuggestions) {
+      items.push({
+        href: "/admin/sugestoes",
+        label: "Sugestões (Admin)",
+        icon: "💡",
+      });
+    }
+      
       items.push({
         href: "/admin/permissoes",
         label: "Permissões Extras",
@@ -150,21 +167,9 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
       });
     }
 
-    if (canTransferSites) {
-      items.push({
-        href: "/admin/transferir-sites",
-        label: "Transferências",
-        icon: "🔄",
-      });
-    }
 
-    if (canManageSuggestions) {
-      items.push({
-        href: "/admin/sugestoes",
-        label: "Sugestões (Admin)",
-        icon: "💡",
-      });
-    }
+
+
 
     return items;
   }, [
