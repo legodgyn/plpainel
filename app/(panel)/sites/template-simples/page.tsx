@@ -29,14 +29,13 @@ export default function TemplateSimplePage() {
   const [currentSite, setCurrentSite] = useState<SiteRow | null>(null);
 
   const [loading, setLoading] = useState(true);
-  const [checkingAccess, setCheckingAccess] = useState(true);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [uploadName, setUploadName] = useState("");
   const [aboutTouched, setAboutTouched] = useState(false);
 
   useEffect(() => {
-    checkAccessAndLoad();
+    loadSites();
   }, []);
 
   function buildAutoAbout(simpleName: string, companyName: string) {
@@ -52,8 +51,7 @@ export default function TemplateSimplePage() {
     return `A ${marca} é uma marca pertencente à ${empresaMae}. Criada dentro da empresa, ela faz parte do nosso ecossistema de soluções criativas, mantendo os mesmos valores de qualidade, profissionalismo e compromisso com cada cliente.`;
   }
 
-  async function checkAccessAndLoad() {
-    setCheckingAccess(true);
+  async function loadSites() {
     setLoading(true);
     setMsg(null);
 
@@ -65,51 +63,11 @@ export default function TemplateSimplePage() {
       return;
     }
 
-    const { data: permissionRow, error: permissionError } = await supabase
-      .from("user_extra_permissions")
-      .select("can_change_layout")
-      .eq("user_id", user.id)
-      .maybeSingle();
-
-    if (permissionError) {
-      setMsg(permissionError.message || "Erro ao validar permissão.");
-      setCheckingAccess(false);
-      setLoading(false);
-      return;
-    }
-
-    if (!permissionRow?.can_change_layout) {
-      router.push("/dashboard");
-      return;
-    }
-
-    await loadSites(user.id);
-    setCheckingAccess(false);
-  }
-
-  async function loadSites(userIdParam?: string) {
-    setLoading(true);
-    setMsg(null);
-
-    let userId = userIdParam;
-
-    if (!userId) {
-      const { data: auth } = await supabase.auth.getUser();
-      const user = auth?.user;
-
-      if (!user) {
-        router.push("/login");
-        return;
-      }
-
-      userId = user.id;
-    }
-
     const { data, error } = await supabase
       .from("sites")
       .select("*")
-      .eq("user_id", userId)
-      .order("slug", { ascending: true });
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false });
 
     if (error) {
       setMsg(error.message || "Erro ao carregar sites.");
@@ -132,14 +90,6 @@ export default function TemplateSimplePage() {
         first.about_simple || buildAutoAbout(initialTitle, first.company_name || "")
       );
       setLogoUrl(first.logo_url || null);
-      setUploadName("");
-      setAboutTouched(false);
-    } else {
-      setSiteId("");
-      setCurrentSite(null);
-      setSimpleTitle("");
-      setAboutSimple("");
-      setLogoUrl(null);
       setUploadName("");
       setAboutTouched(false);
     }
@@ -183,7 +133,6 @@ export default function TemplateSimplePage() {
     }
 
     setSaving(true);
-
     try {
       let uploadedLogo = logoUrl;
 
@@ -245,16 +194,6 @@ export default function TemplateSimplePage() {
   }
 
   const msgIsSuccess = msg?.toLowerCase().includes("sucesso");
-
-  if (checkingAccess) {
-    return (
-      <main className="mx-auto max-w-6xl px-4 py-8 text-white">
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-white/70">
-          Validando acesso...
-        </div>
-      </main>
-    );
-  }
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-8 text-white">
