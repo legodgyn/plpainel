@@ -8,6 +8,14 @@ import { supabase } from "@/lib/supabaseBrowser";
 
 type TokenRow = { balance: number } | null;
 
+type ExtraPermissions = {
+  can_change_layout: boolean;
+  can_transfer_sites: boolean;
+  can_view_orders: boolean;
+  can_manage_suggestions: boolean;
+  can_use_custom_domain: boolean;
+};
+
 function onlyDigits(v: string) {
   return String(v || "").replace(/\D/g, "");
 }
@@ -38,6 +46,14 @@ function formatBRPhone(input: string) {
   return `(${ddd}) ${p1}-${p2}`;
 }
 
+const emptyPermissions: ExtraPermissions = {
+  can_change_layout: false,
+  can_transfer_sites: false,
+  can_view_orders: false,
+  can_manage_suggestions: false,
+  can_use_custom_domain: false,
+};
+
 export default function PanelShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -45,6 +61,8 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
   const [loading, setLoading] = useState(true);
   const [email, setEmail] = useState<string>("");
   const [tokens, setTokens] = useState<number>(0);
+  const [extraPermissions, setExtraPermissions] =
+    useState<ExtraPermissions>(emptyPermissions);
 
   // modal whatsapp obrigatório
   const [needsWhatsapp, setNeedsWhatsapp] = useState(false);
@@ -54,13 +72,26 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
   const [whatsMsg, setWhatsMsg] = useState<string | null>(null);
 
   const ADMIN_MASTER_EMAIL = useMemo(() => {
-    const env = (process.env.NEXT_PUBLIC_ADMIN_MASTER_EMAIL || "").trim().toLowerCase();
+    const env = (process.env.NEXT_PUBLIC_ADMIN_MASTER_EMAIL || "")
+      .trim()
+      .toLowerCase();
     return env || "teste@teste.com";
   }, []);
 
   const isAdminMaster = useMemo(() => {
     return String(email || "").trim().toLowerCase() === ADMIN_MASTER_EMAIL;
   }, [email, ADMIN_MASTER_EMAIL]);
+
+  const canChangeLayout =
+    isAdminMaster || extraPermissions.can_change_layout;
+  const canTransferSites =
+    isAdminMaster || extraPermissions.can_transfer_sites;
+  const canViewOrders =
+    isAdminMaster || extraPermissions.can_view_orders;
+  const canManageSuggestions =
+    isAdminMaster || extraPermissions.can_manage_suggestions;
+  const canUseCustomDomain =
+    isAdminMaster || extraPermissions.can_use_custom_domain;
 
   const baseNav = useMemo(
     () => [
@@ -73,26 +104,79 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
       { href: "/affiliate", label: "Afiliados", icon: "🤝" },
       { href: "/tutorial", label: "Tutorial", icon: "📚" },
       { href: "/sugestoes", label: "Sugestões e Melhorias", icon: "💡" },
-
     ],
     []
   );
 
   const nav = useMemo(() => {
     const items = [...baseNav];
-    if (isAdminMaster) {
-      items.push({ href: "/sites/template-simples", label: "Alterar Layout", icon: "🎨" });
-      items.push({ href: "/admin", label: "Compras na Plataforma", icon: "🛒" });
-      items.push({ href: "/admin/pagamentos-afiliados", label: "Pagamentos Afiliados", icon: "💸" });
-      items.push({ href: "/users", label: "Usuários", icon: "👥" });
-      items.push({ href: "/admin/transferir-sites", label: "Transferências", icon: "🔄" });
-      items.push({ href: "https://bm.plpainel.com/dashboard.html", label: "Controle de BM's", icon: "📈" });
-      items.push({ href: "/admin/updates", label: "Atualizações", icon: "🛠️" });
-      items.push({ href: "/admin/sugestoes", label: "Sugestões", icon: "💡" });
-      items.push({ href: "/admin/permissoes", label: "Permissões", icon: "💡" });
+
+    if (canChangeLayout) {
+      items.push({
+        href: "/sites/template-simples",
+        label: "Alterar Layout",
+        icon: "🎨",
+      });
     }
+
+    if (canViewOrders) {
+      items.push({
+        href: "/admin",
+        label: "Compras na Plataforma",
+        icon: "🛒",
+      });
+    }
+
+    if (isAdminMaster) {
+      items.push({
+        href: "/admin/pagamentos-afiliados",
+        label: "Pagamentos Afiliados",
+        icon: "💸",
+      });
+      items.push({ href: "/users", label: "Usuários", icon: "👥" });
+      items.push({
+        href: "https://bm.plpainel.com/dashboard.html",
+        label: "Controle de BM's",
+        icon: "📈",
+      });
+      items.push({
+        href: "/admin/updates",
+        label: "Atualizações",
+        icon: "🛠️",
+      });
+      items.push({
+        href: "/admin/permissoes",
+        label: "Permissões Extras",
+        icon: "🔐",
+      });
+    }
+
+    if (canTransferSites) {
+      items.push({
+        href: "/admin/transferir-sites",
+        label: "Transferências",
+        icon: "🔄",
+      });
+    }
+
+    if (canManageSuggestions) {
+      items.push({
+        href: "/admin/sugestoes",
+        label: "Sugestões (Admin)",
+        icon: "💡",
+      });
+    }
+
     return items;
-  }, [baseNav, isAdminMaster]);
+  }, [
+    baseNav,
+    canChangeLayout,
+    canTransferSites,
+    canViewOrders,
+    canManageSuggestions,
+    canUseCustomDomain,
+    isAdminMaster,
+  ]);
 
   const supportLink = useMemo(() => {
     const phone = "5562999994162";
@@ -127,6 +211,23 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
       if (!alive) return;
       setTokens(tokenRow?.balance ?? 0);
 
+      const { data: permissionData } = await supabase
+        .from("user_extra_permissions")
+        .select(
+          "can_change_layout, can_transfer_sites, can_view_orders, can_manage_suggestions, can_use_custom_domain"
+        )
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (!alive) return;
+      setExtraPermissions({
+        can_change_layout: Boolean(permissionData?.can_change_layout),
+        can_transfer_sites: Boolean(permissionData?.can_transfer_sites),
+        can_view_orders: Boolean(permissionData?.can_view_orders),
+        can_manage_suggestions: Boolean(permissionData?.can_manage_suggestions),
+        can_use_custom_domain: Boolean(permissionData?.can_use_custom_domain),
+      });
+
       const { data: profileData, error: profileError } = await supabase
         .from("profiles")
         .select("name, whatsapp")
@@ -138,7 +239,9 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
       if (profileError) {
         setNeedsWhatsapp(true);
       } else {
-        const savedName = String(profileData?.name || user.user_metadata?.name || "").trim();
+        const savedName = String(
+          profileData?.name || user.user_metadata?.name || ""
+        ).trim();
         const savedWhatsapp = String(profileData?.whatsapp || "").trim();
 
         setProfileName(savedName);
@@ -216,18 +319,17 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
 
   return (
     <div className="min-h-screen bg-[#0b1220]">
-      {/* Top bar */}
       <div className="bg-gradient-to-r from-violet-600 via-fuchsia-600 to-violet-600">
         <div className="mx-auto max-w-[1600px] px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-  <Image
-    src="/logo1.png"
-    alt="PL Painel"
-    width={200}
-    height={80}
-    className="h-16 w-40"
-  />
-</div>
+            <Image
+              src="/logo1.png"
+              alt="PL Painel"
+              width={200}
+              height={80}
+              className="h-16 w-40"
+            />
+          </div>
 
           <a
             href={supportLink}
@@ -265,37 +367,60 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
       </div>
 
       <div className="mx-auto max-w-[1600px] px-4 py-8 flex gap-6">
-        {/* Sidebar */}
         <aside className="w-64 shrink-0">
           <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
             <div className="flex items-center gap-3">
-  <Image
-    src="/usuario.png"
-    alt="PL Painel"
-    width={40}
-    height={40}
-    className="h-10 w-10 rounded-xl object-cover"
-  />
-  <div className="min-w-0">
-    <div className="text-white font-semibold truncate">{email || "Conta"}</div>
-    <div className="text-white/60 text-xs truncate">Seja bem vindo!!</div>
-  </div>
-</div>
+              <Image
+                src="/usuario.png"
+                alt="PL Painel"
+                width={40}
+                height={40}
+                className="h-10 w-10 rounded-xl object-cover"
+              />
+              <div className="min-w-0">
+                <div className="text-white font-semibold truncate">
+                  {email || "Conta"}
+                </div>
+                <div className="text-white/60 text-xs truncate">
+                  Seja bem vindo!!
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 rounded-xl border border-white/10 bg-black/20 px-3 py-3">
+              <div className="text-xs text-white/50">Tokens</div>
+              <div className="mt-1 text-lg font-bold text-white">{tokens}</div>
+            </div>
 
             <nav className="mt-5 space-y-1">
               {nav.map((item) => {
                 const active = pathname === item.href;
+                const external = item.href.startsWith("http");
+
+                const className = [
+                  "flex items-center gap-3 rounded-xl px-3 py-2 text-sm",
+                  active
+                    ? "bg-violet-600/25 border border-violet-400/30 text-white"
+                    : "text-white/75 hover:bg-white/10 border border-transparent",
+                ].join(" ");
+
+                if (external) {
+                  return (
+                    <a
+                      key={item.href}
+                      href={item.href}
+                      target="_blank"
+                      rel="noreferrer"
+                      className={className}
+                    >
+                      <span className="w-6 text-center">{item.icon}</span>
+                      <span>{item.label}</span>
+                    </a>
+                  );
+                }
+
                 return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={[
-                      "flex items-center gap-3 rounded-xl px-3 py-2 text-sm",
-                      active
-                        ? "bg-violet-600/25 border border-violet-400/30 text-white"
-                        : "text-white/75 hover:bg-white/10 border border-transparent",
-                    ].join(" ")}
-                  >
+                  <Link key={item.href} href={item.href} className={className}>
                     <span className="w-6 text-center">{item.icon}</span>
                     <span>{item.label}</span>
                   </Link>
@@ -312,7 +437,6 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
           </div>
         </aside>
 
-        {/* Content */}
         <main className="min-w-0 flex-1">
           {loading ? (
             <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-white/70">
@@ -324,14 +448,15 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
         </main>
       </div>
 
-      {/* Modal obrigatório de WhatsApp */}
       {needsWhatsapp && (
         <div className="fixed inset-0 z-[999]">
           <div className="absolute inset-0 bg-black/75 backdrop-blur-[2px]" />
           <div className="absolute inset-0 flex items-center justify-center px-4">
             <div className="w-full max-w-md rounded-3xl border border-white/10 bg-[#0b1220] p-6 shadow-[0_30px_120px_rgba(0,0,0,.65)]">
               <div>
-                <div className="text-lg font-bold text-white">Complete seu cadastro</div>
+                <div className="text-lg font-bold text-white">
+                  Complete seu cadastro
+                </div>
                 <div className="mt-1 text-sm text-white/60">
                   Antes de continuar, preencha seu nome e WhatsApp.
                 </div>
