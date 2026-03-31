@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { useSearchParams, useRouter } from "next/navigation";
+import { trackPurchase } from "@/lib/ga";
 
 type TokenOrder = {
   id: string;
@@ -77,17 +78,14 @@ export default function BillingPage() {
   const search = useSearchParams();
   const router = useRouter();
 
-  // ✅ flags de UX
-  const AUTO_OPEN_MINUTES = 2; // se pendente criado nos últimos X minutos, abre modal
-  const PENDING_EXPIRE_UI_MINUTES = 30; // depois disso, não exibe QR no modal (manda gerar novo)
-  const FORCE_OPEN = search.get("pay") === "1"; // /billing?pay=1
+  const AUTO_OPEN_MINUTES = 2;
+  const PENDING_EXPIRE_UI_MINUTES = 30;
+  const FORCE_OPEN = search.get("pay") === "1";
 
   const [loading, setLoading] = useState(true);
   const [orders, setOrders] = useState<TokenOrder[]>([]);
   const [pending, setPending] = useState<TokenOrder | null>(null);
   const [err, setErr] = useState<string | null>(null);
-
-  // ✅ Modal
   const [payOpen, setPayOpen] = useState(false);
 
   async function load() {
@@ -126,7 +124,6 @@ export default function BillingPage() {
     const p = list.find((o) => isPending(o)) ?? null;
     setPending(p);
 
-    // ✅ auto-open premium
     if (p) {
       const mins = minutesSince(p.created_at);
       if (FORCE_OPEN || mins <= AUTO_OPEN_MINUTES) setPayOpen(true);
@@ -149,7 +146,6 @@ export default function BillingPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [supabase]);
 
-  // ✅ Enquanto existir pendente, faz polling para sumir quando pagar
   useEffect(() => {
     if (!pending) return;
     const t = setInterval(() => load(), 8000);
@@ -157,7 +153,6 @@ export default function BillingPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pending?.id]);
 
-  // ✅ ESC fecha modal
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") setPayOpen(false);
@@ -166,7 +161,40 @@ export default function BillingPage() {
     return () => window.removeEventListener("keydown", onKey);
   }, [payOpen]);
 
-  // ✅ se abriu via ?pay=1, ao fechar a gente limpa a query (fica mais clean)
+  // ✅ rastrear compra aprovada sem duplicar
+  useEffect(() => {
+    if (!orders || orders.length === 0) return;
+
+    const paidOrder = orders.find((o) => {
+      const status = String(o.mp_status ?? o.status ?? "").toLowerCase();
+      return status === "approved" || status === "paid";
+    });
+
+    if (!paidOrder) return;
+
+    const key = `purchase_tracked_${paidOrder.id}`;
+
+    if (typeof window !== "undefined" && localStorage.getItem(key)) return;
+
+    trackPurchase({
+      transaction_id: paidOrder.id,
+      value: paidOrder.total_cents / 100,
+      currency: "BRL",
+      items: [
+        {
+          item_id: paidOrder.id,
+          item_name: `${paidOrder.tokens} Tokens`,
+          price: paidOrder.total_cents / 100,
+          quantity: 1,
+        },
+      ],
+    });
+
+    if (typeof window !== "undefined") {
+      localStorage.setItem(key, "1");
+    }
+  }, [orders]);
+
   function closePay() {
     setPayOpen(false);
     if (FORCE_OPEN) router.replace("/billing");
@@ -182,7 +210,6 @@ export default function BillingPage() {
 
   return (
     <div className="space-y-6">
-      {/* HEADER */}
       <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
@@ -192,7 +219,6 @@ export default function BillingPage() {
             </p>
           </div>
 
-          {/* ✅ só um banner + botão (sem QR na tela) */}
           {!loading && pending ? (
             <div className="flex flex-wrap items-center gap-2">
               <span className="rounded-full border border-amber-400/30 bg-amber-500/15 px-3 py-1 text-xs font-medium text-amber-200">
@@ -215,16 +241,13 @@ export default function BillingPage() {
         </div>
       ) : null}
 
-      {/* MODAL PAGAMENTO */}
       {payOpen && pending ? (
         <div className="fixed inset-0 z-50">
-          {/* backdrop */}
           <div
             className="absolute inset-0 bg-black/70 backdrop-blur-sm"
             onClick={closePay}
           />
 
-          {/* modal */}
           <div className="absolute left-1/2 top-1/2 w-[92vw] max-w-2xl -translate-x-1/2 -translate-y-1/2">
             <div className="rounded-3xl border border-white/10 bg-[#0b1220]/95 shadow-2xl">
               <div className="flex items-start justify-between gap-4 border-b border-white/10 p-5">
@@ -314,7 +337,6 @@ export default function BillingPage() {
         </div>
       ) : null}
 
-      {/* HISTÓRICO */}
       <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
         <div className="text-base font-semibold text-white">Histórico de Compras</div>
 
