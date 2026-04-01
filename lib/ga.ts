@@ -17,6 +17,8 @@ type PurchasePayload = {
   transaction_id: string;
   value: number;
   currency?: string;
+  coupon?: string;
+  affiliation?: string;
   items: PurchaseItem[];
 };
 
@@ -43,6 +45,8 @@ export function trackPurchase(payload: PurchasePayload) {
     transaction_id: payload.transaction_id,
     value: payload.value,
     currency: payload.currency || "BRL",
+    coupon: payload.coupon,
+    affiliation: payload.affiliation,
     items: payload.items,
   });
 }
