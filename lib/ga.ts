@@ -6,14 +6,6 @@ declare global {
   }
 }
 
-export function pageview(url: string) {
-  if (!GA_ID || typeof window === "undefined" || !window.gtag) return;
-
-  window.gtag("config", GA_ID, {
-    page_path: url,
-  });
-}
-
 type PurchaseItem = {
   item_id?: string;
   item_name: string;
@@ -25,10 +17,24 @@ type PurchasePayload = {
   transaction_id: string;
   value: number;
   currency?: string;
-  coupon?: string;
-  affiliation?: string;
   items: PurchaseItem[];
 };
+
+type BeginCheckoutPayload = {
+  value: number;
+  currency?: string;
+  items: PurchaseItem[];
+};
+
+export function trackBeginCheckout(payload: BeginCheckoutPayload) {
+  if (!GA_ID || typeof window === "undefined" || !window.gtag) return;
+
+  window.gtag("event", "begin_checkout", {
+    value: payload.value,
+    currency: payload.currency || "BRL",
+    items: payload.items,
+  });
+}
 
 export function trackPurchase(payload: PurchasePayload) {
   if (!GA_ID || typeof window === "undefined" || !window.gtag) return;
@@ -37,8 +43,6 @@ export function trackPurchase(payload: PurchasePayload) {
     transaction_id: payload.transaction_id,
     value: payload.value,
     currency: payload.currency || "BRL",
-    coupon: payload.coupon,
-    affiliation: payload.affiliation,
     items: payload.items,
   });
 }
