@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
+import { trackBeginCheckout } from "@/lib/ga";
 
 type CreatePixResponse = {
   order_id: string;
@@ -111,6 +112,19 @@ export default function TokensPage() {
         console.log("MP error full:", json);
         return;
       }
+
+      trackBeginCheckout({
+        value: discountedTotalCents / 100,
+        currency: "BRL",
+        items: [
+          {
+            item_id: json.order_id,
+            item_name: `${q} Tokens`,
+            price: discountedTotalCents / 100,
+            quantity: 1,
+          },
+        ],
+      });
 
       router.push("/billing");
     } catch (e: any) {
@@ -220,100 +234,110 @@ export default function TokensPage() {
           })}
         </div>
 
-        <div className="mt-6 grid gap-4 xl:grid-cols-[1.1fr_.9fr]">
+        <div className="mt-8 grid gap-6 lg:grid-cols-[1.2fr_.8fr]">
           <div className="rounded-2xl border border-white/10 bg-black/20 p-5">
-            <div className="text-sm font-semibold">Escolher Quantidade:</div>
-
-            <div className="mt-3">
-              <input
-                type="number"
-                min={5}
-                step={1}
-                value={tokens}
-                onChange={(e) => setTokens(Number(e.target.value))}
-                className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none transition focus:border-violet-400/40"
-              />
+            <div className="text-sm font-semibold text-white/80">Escolha personalizada</div>
+            <div className="mt-1 text-sm text-white/55">
+              Selecione a quantidade ideal de tokens para o seu volume de sites.
             </div>
 
-            <div className="mt-3 text-sm text-white/60">
-              Compra mínima: 5 tokens
-            </div>
-            <div className="mt-4 rounded-2xl border border-emerald-500/15 bg-emerald-500/10 p-4">
-              <div className="text-sm font-semibold text-emerald-200">
-                Informativo:
+            <div className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-end">
+              <div className="w-full sm:max-w-[220px]">
+                <label className="text-xs text-white/60">Quantidade de tokens</label>
+                <input
+                  type="number"
+                  min={5}
+                  step={1}
+                  value={tokens}
+                  onChange={(e) => {
+                    const v = Number(e.target.value || 0);
+                    setTokens(v);
+                  }}
+                  className="mt-2 w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none focus:border-violet-400"
+                />
               </div>
-              <div className="mt-1 text-sm text-emerald-100/80">
-                Cada site criado consome 1 Token.
+
+              <button
+                disabled={loading}
+                onClick={() => handleBuyPix(tokens)}
+                className="inline-flex h-[50px] items-center justify-center rounded-2xl bg-emerald-600 px-6 text-sm font-bold text-white transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {loading ? "Gerando PIX..." : "Comprar com PIX"}
+              </button>
+            </div>
+
+            <div className="mt-5 rounded-2xl border border-white/10 bg-white/5 p-4">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <div className="text-xs text-white/50">Preço unitário base</div>
+                  <div className="mt-1 text-sm font-semibold text-white">
+                    {money(baseUnitPriceCents)}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="text-xs text-white/50">Preço unitário final</div>
+                  <div className="mt-1 text-sm font-semibold text-white">
+                    {money(effectiveUnitPriceCents)}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="text-xs text-white/50">Desconto aplicado</div>
+                  <div className="mt-1 text-sm font-semibold text-emerald-300">
+                    {discountPercent > 0 ? `${discountPercent}% OFF` : "Sem desconto"}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="text-xs text-white/50">Você economiza</div>
+                  <div className="mt-1 text-sm font-semibold text-emerald-300">
+                    {savedCents > 0 ? money(savedCents) : "—"}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
           <div className="rounded-2xl border border-white/10 bg-black/20 p-5">
-            <div className="flex items-center justify-between gap-3">
-              <div className="text-sm font-semibold">Resumo</div>
+            <div className="text-sm font-semibold text-white/80">Resumo do pedido</div>
 
-              {tokens === 25 ? (
-                <span className="rounded-full bg-violet-500/15 px-2.5 py-1 text-[10px] font-bold text-violet-200 border border-violet-400/20">
-                  ESCOLHA DA MAIORIA
-                </span>
-              ) : null}
-            </div>
-
-            <div className="mt-4 space-y-3 text-sm text-white/80">
-              <div className="flex items-center justify-between">
-                <span>Tokens</span>
-                <span className="font-semibold text-white">{Number(tokens || 0)}</span>
+            <div className="mt-5 space-y-3">
+              <div className="flex items-center justify-between text-sm text-white/70">
+                <span>Quantidade</span>
+                <span className="font-semibold text-white">{tokens} tokens</span>
               </div>
 
-              <div className="flex items-center justify-between">
-                <span>Preço unitário base</span>
-                <span className="font-semibold text-white">{money(baseUnitPriceCents)}</span>
+              <div className="flex items-center justify-between text-sm text-white/70">
+                <span>Subtotal</span>
+                <span className={discountPercent > 0 ? "line-through text-white/40" : "text-white"}>
+                  {money(originalTotalCents)}
+                </span>
               </div>
 
-              {discountPercent > 0 ? (
-                <>
-                  <div className="flex items-center justify-between">
-                    <span>Desconto</span>
-                    <span className="font-semibold text-emerald-300">{discountPercent}% OFF</span>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <span>Preço unitário com desconto</span>
-                    <span className="font-semibold text-white">
-                      {money(effectiveUnitPriceCents)}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <span>Valor original</span>
-                    <span className="font-semibold text-white/50 line-through">
-                      {money(originalTotalCents)}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <span>Você economiza</span>
-                    <span className="font-semibold text-emerald-300">
-                      {money(savedCents)}
-                    </span>
-                  </div>
-                </>
-              ) : null}
-
-              <div className="flex items-center justify-between border-t border-white/10 pt-3">
-                <span>Total</span>
-                <span className="text-3xl font-bold text-white">
-                  {money(discountedTotalCents)}
+              <div className="flex items-center justify-between text-sm text-white/70">
+                <span>Desconto</span>
+                <span className="font-semibold text-emerald-300">
+                  {discountPercent > 0 ? `-${money(savedCents)}` : "—"}
                 </span>
+              </div>
+
+              <div className="border-t border-white/10 pt-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-white/60">Total</span>
+                  <span className="text-2xl font-bold text-white">
+                    {money(discountedTotalCents)}
+                  </span>
+                </div>
               </div>
             </div>
 
             <button
               disabled={loading}
               onClick={() => handleBuyPix(tokens)}
-              className="mt-6 w-full rounded-2xl bg-violet-600 px-5 py-4 font-semibold text-white transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-60"
+              className="mt-6 inline-flex w-full items-center justify-center rounded-2xl bg-violet-600 px-6 py-3 text-sm font-bold text-white transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {loading ? "Gerando PIX..." : "Comprar via PIX"}
+              {loading ? "Gerando PIX..." : "Gerar PIX agora"}
             </button>
           </div>
         </div>
