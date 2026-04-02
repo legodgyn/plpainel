@@ -49,16 +49,18 @@ export default function EditSitePage() {
   const [about, setAbout] = useState("");
   const [privacy, setPrivacy] = useState("");
   const [footer, setFooter] = useState("");
+  const [baseDomain, setBaseDomain] = useState("");
 
   const [metaTag, setMetaTag] = useState("");
 
   useEffect(() => {
     async function load() {
       setLoading(true);
+
       const { data, error } = await supabase
         .from("sites")
         .select(
-          "id, slug, company_name, cnpj, mission, phone, email, instagram, whatsapp, about, privacy, footer, is_public, meta_verify_name, meta_verify_content"
+          "id, slug, base_domain, company_name, cnpj, mission, phone, email, instagram, whatsapp, about, privacy, footer, is_public, meta_verify_name, meta_verify_content"
         )
         .eq("id", id)
         .single();
@@ -72,6 +74,7 @@ export default function EditSitePage() {
       }
 
       setSlug(data.slug || "");
+      setBaseDomain(data.base_domain || "");
       setCompanyName(data.company_name || "");
       setCnpj(data.cnpj || "");
       setMission(data.mission || "");
@@ -85,7 +88,9 @@ export default function EditSitePage() {
       setIsPublic(data.is_public ?? true);
 
       if (data.meta_verify_name && data.meta_verify_content) {
-        setMetaTag(`<meta name="${data.meta_verify_name}" content="${data.meta_verify_content}" />`);
+        setMetaTag(
+          `<meta name="${data.meta_verify_name}" content="${data.meta_verify_content}" />`
+        );
       } else {
         setMetaTag("");
       }
@@ -95,42 +100,81 @@ export default function EditSitePage() {
   }, [id, router, supabase]);
 
   async function handleSave() {
-    // valida meta tag
     const parsedMeta = parseMetaTag(metaTag);
-    if (metaTag.trim().toLowerCase().includes("<meta") && (!parsedMeta.name || !parsedMeta.content)) {
+
+    if (
+      metaTag.trim().toLowerCase().includes("<meta") &&
+      (!parsedMeta.name || !parsedMeta.content)
+    ) {
       alert("Meta tag inválida. Cole a tag completa do Business Manager.");
       return;
     }
 
     setLoading(true);
 
-    const { error } = await supabase
-      .from("sites")
-      .update({
-        company_name: companyName.trim(),
-        cnpj: cnpj.trim(),
-        mission: mission.trim(),
-        phone: phone.trim(),
-        email: email.trim(),
-        instagram: instagram.trim() || null,
-        whatsapp: whatsapp.trim(),
-        about: about.trim(),
-        privacy: privacy.trim(),
-        footer: footer.trim(),
-        is_public: isPublic,
-        meta_verify_name: parsedMeta.name,
-        meta_verify_content: parsedMeta.content,
-      })
-      .eq("id", id);
+    try {
+      const { error } = await supabase
+        .from("sites")
+        .update({
+          company_name: companyName.trim(),
+          cnpj: cnpj.trim(),
+          mission: mission.trim(),
+          phone: phone.trim(),
+          email: email.trim(),
+          instagram: instagram.trim() || null,
+          whatsapp: whatsapp.trim(),
+          about: about.trim(),
+          privacy: privacy.trim(),
+          footer: footer.trim(),
+          is_public: isPublic,
+          meta_verify_name: parsedMeta.name,
+          meta_verify_content: parsedMeta.content,
+        })
+        .eq("id", id);
 
-    setLoading(false);
+      if (error) {
+        alert(error.message);
+        setLoading(false);
+        return;
+      }
 
-    if (error) {
-      alert(error.message);
-      return;
+      const txtValue =
+        parsedMeta.name === "facebook-domain-verification" && parsedMeta.content
+          ? `facebook-domain-verification=${parsedMeta.content}`
+          : null;
+
+      if (txtValue && slug && baseDomain) {
+        const domain = `${slug}.${baseDomain}`;
+
+        const cfRes = await fetch("/api/cloudflare/txt", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            domain,
+            txt: txtValue,
+          }),
+        });
+
+        const cfJson = await cfRes.json().catch(() => ({}));
+
+        if (!cfRes.ok) {
+          alert(
+            cfJson?.error ||
+              "Site salvo, mas não foi possível criar o TXT no Cloudflare."
+          );
+          setLoading(false);
+          return;
+        }
+      }
+
+      router.push("/dashboard");
+    } catch (err: any) {
+      alert(err?.message || "Erro ao salvar.");
+    } finally {
+      setLoading(false);
     }
-
-    router.push("/dashboard");
   }
 
   return (
@@ -146,6 +190,10 @@ export default function EditSitePage() {
         <div className="mb-5 rounded-2xl border border-white/10 bg-black/20 p-4">
           <div className="text-sm text-white/70">Slug</div>
           <div className="text-lg font-semibold">{slug}</div>
+
+          <div className="mt-2 text-sm text-white/70">Domínio base</div>
+          <div className="text-lg font-semibold">{baseDomain || "—"}</div>
+
           <div className="mt-2 text-xs text-white/60">
             Público:{" "}
             <span className={isPublic ? "text-emerald-300" : "text-red-300"}>
@@ -215,7 +263,7 @@ export default function EditSitePage() {
           <Field
             label="Meta tag de verificação"
             required={false}
-            hint='Cole a tag completa. Ex: <meta name="facebook-domain-verification" content="..." />'
+            hint='Cole a tag completa ou só o código. Ex: <meta name="facebook-domain-verification" content="..." />'
           >
             <input
               value={metaTag}
