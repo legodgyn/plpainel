@@ -43,8 +43,8 @@ function extractMetaContent(input?: string | null) {
   const raw = String(input || "").trim();
   if (!raw) return null;
 
-  const m = raw.match(/content\s*=\s*["']([^"']+)["']/i);
-  if (m?.[1]) return m[1].trim();
+  const match = raw.match(/content\s*=\s*["']([^"']+)["']/i);
+  if (match?.[1]) return match[1].trim();
 
   return raw;
 }
@@ -53,14 +53,18 @@ function extractMetaName(input?: string | null) {
   const raw = String(input || "").trim();
   if (!raw) return null;
 
-  const m = raw.match(/name\s*=\s*["']([^"']+)["']/i);
-  if (m?.[1]) return m[1].trim();
+  const match = raw.match(/name\s*=\s*["']([^"']+)["']/i);
+  if (match?.[1]) return match[1].trim();
 
   return raw;
 }
 
+function getCleanHost(host: string) {
+  return String(host || "").split(":")[0].trim().toLowerCase();
+}
+
 function getBaseDomainFromHost(host: string) {
-  const cleanHost = String(host || "").split(":")[0].toLowerCase();
+  const cleanHost = getCleanHost(host);
 
   for (const rootDomain of ROOT_DOMAINS) {
     if (cleanHost === rootDomain || cleanHost === `www.${rootDomain}`) {
@@ -75,13 +79,69 @@ function getBaseDomainFromHost(host: string) {
   return null;
 }
 
-async function findSiteBySlugAndHost(slug: string, hostBaseDomain: string | null) {
+function extractSlugFromHost(host: string, baseDomain: string | null) {
+  if (!baseDomain) return null;
+
+  const cleanHost = getCleanHost(host);
+
+  if (cleanHost === baseDomain || cleanHost === `www.${baseDomain}`) {
+    return null;
+  }
+
+  if (!cleanHost.endsWith(`.${baseDomain}`)) {
+    return null;
+  }
+
+  const withoutBase = cleanHost.slice(0, -(`.${baseDomain}`.length));
+
+  if (!withoutBase) return null;
+
+  const parts = withoutBase.split(".").filter(Boolean);
+
+  if (parts.length === 0) return null;
+
+  return parts[parts.length - 1] || null;
+}
+
+function isKnownRootDomainHost(host: string) {
+  const cleanHost = getCleanHost(host);
+  return ROOT_DOMAINS.some(
+    (d) => cleanHost === d || cleanHost === `www.${d}` || cleanHost.endsWith(`.${d}`)
+  );
+}
+
+async function resolveSiteContext(props: PageProps) {
+  const headerList = await headers();
+  const host = headerList.get("host") || "";
+  const hostBaseDomain = getBaseDomainFromHost(host);
+
+  const params = await Promise.resolve(props.params);
+  const routeSlug = String(params?.slug || "").trim() || null;
+  const hostSlug = extractSlugFromHost(host, hostBaseDomain);
+
+  const isKnownHost = isKnownRootDomainHost(host);
+
+  // Se o host for um dos domínios conhecidos e tiver subdomínio, prioriza o slug do host.
+  // Senão, cai no slug da rota.
+  const slug = hostSlug || routeSlug;
+
+  return {
+    host,
+    hostBaseDomain,
+    routeSlug,
+    hostSlug,
+    slug,
+    isKnownHost,
+  };
+}
+
+async function findSite(slug: string, hostBaseDomain: string | null) {
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
-  // 1) tenta achar pelo slug + domínio raiz do host
+  // 1) tenta slug + base_domain do host
   if (hostBaseDomain) {
     const { data } = await supabase
       .from("sites")
@@ -94,7 +154,7 @@ async function findSiteBySlugAndHost(slug: string, hostBaseDomain: string | null
     if (data) return data;
   }
 
-  // 2) fallback: tenta achar só pelo slug
+  // 2) fallback só por slug
   const { data } = await supabase
     .from("sites")
     .select("*")
@@ -106,26 +166,29 @@ async function findSiteBySlugAndHost(slug: string, hostBaseDomain: string | null
 }
 
 export async function generateMetadata(props: PageProps): Promise<Metadata> {
-  const { slug } = await Promise.resolve(props.params);
-  const headerList = await headers();
-  const host = headerList.get("host") || "";
-  const hostBaseDomain = getBaseDomainFromHost(host);
+  const { slug, hostBaseDomain } = await resolveSiteContext(props);
 
-  const data = await findSiteBySlugAndHost(slug, hostBaseDomain);
+  if (!slug) {
+    return {
+      title: "Site público",
+    };
+  }
 
-  const title = (data?.company_name as string) || "Site público";
+  const data = await findSite(slug, hostBaseDomain);
 
-  const name = extractMetaName((data?.meta_verify_name as string | null) ?? null);
-  const content = extractMetaContent(
+  const title = (data?.company_name as string | null) || "Site público";
+
+  const metaName = extractMetaName((data?.meta_verify_name as string | null) ?? null);
+  const metaContent = extractMetaContent(
     (data?.meta_verify_content as string | null) ?? null
   );
 
-  if (name && content) {
+  if (metaName && metaContent) {
     return {
       title,
       verification: {
         other: {
-          [name]: content,
+          [metaName]: metaContent,
         },
       },
     };
@@ -135,12 +198,11 @@ export async function generateMetadata(props: PageProps): Promise<Metadata> {
 }
 
 export default async function PublicSitePage(props: PageProps) {
-  const { slug } = await Promise.resolve(props.params);
-  const headerList = await headers();
-  const host = headerList.get("host") || "";
-  const hostBaseDomain = getBaseDomainFromHost(host);
+  const { slug, hostBaseDomain } = await resolveSiteContext(props);
 
-  const data = await findSiteBySlugAndHost(slug, hostBaseDomain);
+  if (!slug) return notFound();
+
+  const data = await findSite(slug, hostBaseDomain);
 
   if (!data) return notFound();
 
@@ -199,10 +261,10 @@ export default async function PublicSitePage(props: PageProps) {
 
   return (
     <main className="min-h-screen bg-[#F5F0FA] text-slate-900">
-      <header className="bg-white/90 backdrop-blur border-b border-purple-200">
+      <header className="border-b border-purple-200 bg-white/90 backdrop-blur">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4">
           <div className="flex items-center gap-3">
-            <div className="grid h-9 w-9 place-items-center rounded-full border border-purple-200 text-purple-900 bg-purple-50">
+            <div className="grid h-9 w-9 place-items-center rounded-full border border-purple-200 bg-purple-50 text-purple-900">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                 <path
                   d="M14 9a3 3 0 10-6 0v1H6a2 2 0 00-2 2v8h16v-8a2 2 0 00-2-2h-2V9z"
@@ -231,8 +293,8 @@ export default async function PublicSitePage(props: PageProps) {
         </div>
       </header>
 
-      <section className="mx-auto max-w-5xl px-4 pt-10 pb-8">
-        <div className="rounded-2xl bg-white border border-purple-200 shadow-sm">
+      <section className="mx-auto max-w-5xl px-4 pb-8 pt-10">
+        <div className="rounded-2xl border border-purple-200 bg-white shadow-sm">
           <div className="p-7 sm:p-10">
             <div className="flex flex-col items-center text-center">
               <div className="grid h-[180px] w-[180px] place-items-center rounded-full bg-purple-800 text-white shadow-sm">
@@ -241,20 +303,20 @@ export default async function PublicSitePage(props: PageProps) {
                 </span>
               </div>
 
-              <h1 className="mt-6 text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
+              <h1 className="mt-6 text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">
                 {company_name}
               </h1>
 
-              <div className="mt-2 text-sm sm:text-base text-slate-700">
+              <div className="mt-2 text-sm text-slate-700 sm:text-base">
                 <span className="font-semibold text-slate-900">CNPJ:</span> {cnpj}
               </div>
 
               {mission ? (
-                <div className="mt-8 w-full max-w-3xl rounded-xl bg-white border border-purple-200 p-6 text-left">
+                <div className="mt-8 w-full max-w-3xl rounded-xl border border-purple-200 bg-white p-6 text-left">
                   <div className="text-xs font-extrabold tracking-widest text-purple-700">
                     NOSSA MISSÃO
                   </div>
-                  <div className="mt-3 whitespace-pre-line text-sm sm:text-base font-semibold leading-relaxed text-slate-800">
+                  <div className="mt-3 whitespace-pre-line text-sm font-semibold leading-relaxed text-slate-800 sm:text-base">
                     {mission}
                   </div>
                 </div>
@@ -290,7 +352,7 @@ export default async function PublicSitePage(props: PageProps) {
 
       <section className="mx-auto max-w-5xl px-4 pb-14">
         <div className="grid gap-6 md:grid-cols-[1.4fr_.6fr]">
-          <div className="rounded-2xl bg-white border border-purple-200 shadow-sm p-6 sm:p-7">
+          <div className="rounded-2xl border border-purple-200 bg-white p-6 shadow-sm sm:p-7">
             <h2 className="text-lg font-extrabold text-slate-900">QUEM SOMOS?</h2>
             <div className="mt-4 whitespace-pre-line leading-relaxed text-slate-800">
               {about || "—"}
@@ -298,7 +360,7 @@ export default async function PublicSitePage(props: PageProps) {
           </div>
 
           <div className="space-y-6">
-            <div className="rounded-2xl bg-white border border-purple-200 shadow-sm p-6 sm:p-7">
+            <div className="rounded-2xl border border-purple-200 bg-white p-6 shadow-sm sm:p-7">
               <h3 className="text-sm font-extrabold tracking-widest text-purple-700">
                 CONTATO
               </h3>
@@ -307,21 +369,21 @@ export default async function PublicSitePage(props: PageProps) {
                 {phone ? (
                   <div className="flex items-start justify-between gap-3">
                     <span className="text-slate-500">Telefone</span>
-                    <span className="font-semibold text-right">{phone}</span>
+                    <span className="text-right font-semibold">{phone}</span>
                   </div>
                 ) : null}
 
                 {email ? (
                   <div className="flex items-start justify-between gap-3">
                     <span className="text-slate-500">E-mail</span>
-                    <span className="font-semibold text-right">{email}</span>
+                    <span className="text-right font-semibold">{email}</span>
                   </div>
                 ) : null}
 
                 {whatsapp ? (
                   <div className="flex items-start justify-between gap-3">
                     <span className="text-slate-500">WhatsApp</span>
-                    <span className="font-semibold text-right">{whatsapp}</span>
+                    <span className="text-right font-semibold">{whatsapp}</span>
                   </div>
                 ) : null}
               </div>
@@ -338,7 +400,7 @@ export default async function PublicSitePage(props: PageProps) {
               ) : null}
             </div>
 
-            <div className="rounded-2xl bg-white border border-purple-200 shadow-sm p-6 sm:p-7 text-center">
+            <div className="rounded-2xl border border-purple-200 bg-white p-6 text-center shadow-sm sm:p-7">
               <div className="mx-auto grid h-14 w-14 place-items-center rounded-full border border-purple-200 bg-purple-50 text-purple-900">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
                   <path
@@ -370,7 +432,7 @@ export default async function PublicSitePage(props: PageProps) {
                 rel="noreferrer"
                 className={`mt-4 inline-flex items-center justify-center rounded-md px-5 py-3 text-sm font-extrabold ${
                   igUrl
-                    ? "bg-purple-50 border border-purple-300 text-purple-900 hover:bg-purple-100"
+                    ? "border border-purple-300 bg-purple-50 text-purple-900 hover:bg-purple-100"
                     : "pointer-events-none bg-slate-100 text-slate-400"
                 }`}
               >
@@ -382,11 +444,11 @@ export default async function PublicSitePage(props: PageProps) {
 
         {privacy ? (
           <div className="mt-6">
-            <div className="rounded-2xl bg-white border border-purple-200 shadow-sm p-6 sm:p-7">
+            <div className="rounded-2xl border border-purple-200 bg-white p-6 shadow-sm sm:p-7">
               <div className="text-xs font-extrabold tracking-widest text-purple-700">
                 POLÍTICA DE PRIVACIDADE
               </div>
-              <div className="mt-3 whitespace-pre-line text-sm sm:text-base font-semibold leading-relaxed text-slate-800">
+              <div className="mt-3 whitespace-pre-line text-sm font-semibold leading-relaxed text-slate-800 sm:text-base">
                 {privacy}
               </div>
             </div>
@@ -403,7 +465,7 @@ export default async function PublicSitePage(props: PageProps) {
               href="https://policies.google.com/privacy?hl=pt-BR"
               target="_blank"
               rel="noreferrer"
-              className="text-sm font-semibold underline underline-offset-4 text-purple-900"
+              className="text-sm font-semibold text-purple-900 underline underline-offset-4"
             >
               Políticas de privacidade
             </a>
