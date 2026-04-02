@@ -1,34 +1,223 @@
-export async function createTxtRecord({
-  zoneId,
-  name,
-  content,
-}: {
-  zoneId: string;
+const ROOT_DOMAINS = [
+  "plpainel.com",
+  "acmpainel.com.br",
+  "ehspainel.com.br",
+  "lcppainel.com.br",
+  "lcspainel.com.br",
+  "mapspainel.com.br",
+] as const;
+
+type RootDomain = (typeof ROOT_DOMAINS)[number];
+
+type CloudflareApiResponse<T> = {
+  success: boolean;
+  errors?: Array<{ message?: string }>;
+  messages?: Array<{ message?: string }>;
+  result?: T;
+};
+
+type CloudflareDnsRecord = {
+  id: string;
+  type: string;
   name: string;
   content: string;
+};
+
+function env(name: string) {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(`Missing env: ${name}`);
+  }
+  return value;
+}
+
+function getCleanHost(host: string) {
+  return String(host || "").trim().toLowerCase();
+}
+
+export function getBaseDomain(domain: string): RootDomain {
+  const clean = getCleanHost(domain);
+
+  for (const root of ROOT_DOMAINS) {
+    if (clean === root || clean.endsWith(`.${root}`)) {
+      return root;
+    }
+  }
+
+  throw new Error(`Base domain não encontrada para: ${domain}`);
+}
+
+export function getSubdomainLabel(domain: string): string {
+  const baseDomain = getBaseDomain(domain);
+  const clean = getCleanHost(domain);
+
+  if (clean === baseDomain) {
+    return "@";
+  }
+
+  const suffix = `.${baseDomain}`;
+  if (!clean.endsWith(suffix)) {
+    throw new Error(`Domínio inválido para base ${baseDomain}: ${domain}`);
+  }
+
+  const sub = clean.slice(0, -suffix.length).trim();
+
+  if (!sub) return "@";
+
+  return sub;
+}
+
+export function getZoneIdByBaseDomain(baseDomain: string): string {
+  switch (baseDomain) {
+    case "plpainel.com":
+      return env("CLOUDFLARE_ZONE_ID_PLPAINEL");
+    case "acmpainel.com.br":
+      return env("CLOUDFLARE_ZONE_ID_ACMPAINEL");
+    case "ehspainel.com.br":
+      return env("CLOUDFLARE_ZONE_ID_EHSPAINEL");
+    case "lcppainel.com.br":
+      return env("CLOUDFLARE_ZONE_ID_LCPPAINEL");
+    case "lcspainel.com.br":
+      return env("CLOUDFLARE_ZONE_ID_LCSPAINEL");
+    case "mapspainel.com.br":
+      return env("CLOUDFLARE_ZONE_ID_MAPSPAINEL");
+    default:
+      throw new Error(`Domínio sem zone configurada: ${baseDomain}`);
+  }
+}
+
+async function cloudflareFetch<T>(
+  path: string,
+  init?: RequestInit
+): Promise<T> {
+  const token = env("CLOUDFLARE_API_TOKEN");
+
+  const res = await fetch(`https://api.cloudflare.com/client/v4${path}`, {
+    ...init,
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+      ...(init?.headers || {}),
+    },
+  });
+
+  const data = (await res.json()) as CloudflareApiResponse<T>;
+
+  if (!res.ok || !data.success) {
+    const message =
+      data?.errors?.map((e) => e.message).filter(Boolean).join(" | ") ||
+      `Cloudflare error: ${res.status}`;
+    throw new Error(message);
+  }
+
+  return data.result as T;
+}
+
+export async function listDnsRecords(params: {
+  domain: string;
+  type?: string;
+}): Promise<CloudflareDnsRecord[]> {
+  const baseDomain = getBaseDomain(params.domain);
+  const zoneId = getZoneIdByBaseDomain(baseDomain);
+
+  const query = new URLSearchParams();
+  query.set("name", getCleanHost(params.domain));
+
+  if (params.type) {
+    query.set("type", params.type);
+  }
+
+  return cloudflareFetch<CloudflareDnsRecord[]>(
+    `/zones/${zoneId}/dns_records?${query.toString()}`
+  );
+}
+
+export async function createTxtRecord(params: {
+  domain: string;
+  content: string;
+  ttl?: number;
 }) {
-  const res = await fetch(
-    `https://api.cloudflare.com/client/v4/zones/${zoneId}/dns_records`,
+  const baseDomain = getBaseDomain(params.domain);
+  const zoneId = getZoneIdByBaseDomain(baseDomain);
+  const name = getSubdomainLabel(params.domain);
+
+  return cloudflareFetch<CloudflareDnsRecord>(
+    `/zones/${zoneId}/dns_records`,
     {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}`,
-        "Content-Type": "application/json",
-      },
       body: JSON.stringify({
         type: "TXT",
         name,
-        content,
-        ttl: 120,
+        content: params.content,
+        ttl: params.ttl ?? 120,
       }),
     }
   );
+}
 
-  const data = await res.json();
+export async function updateDnsRecord(params: {
+  domain: string;
+  recordId: string;
+  content: string;
+  ttl?: number;
+}) {
+  const baseDomain = getBaseDomain(params.domain);
+  const zoneId = getZoneIdByBaseDomain(baseDomain);
+  const name = getSubdomainLabel(params.domain);
 
-  if (!data.success) {
-    throw new Error(JSON.stringify(data.errors));
+  return cloudflareFetch<CloudflareDnsRecord>(
+    `/zones/${zoneId}/dns_records/${params.recordId}`,
+    {
+      method: "PUT",
+      body: JSON.stringify({
+        type: "TXT",
+        name,
+        content: params.content,
+        ttl: params.ttl ?? 120,
+      }),
+    }
+  );
+}
+
+export async function upsertTxtRecord(params: {
+  domain: string;
+  content: string;
+  ttl?: number;
+}) {
+  const existing = await listDnsRecords({
+    domain: params.domain,
+    type: "TXT",
+  });
+
+  const exact = existing.find(
+    (r) =>
+      r.type === "TXT" &&
+      getCleanHost(r.name) === getCleanHost(params.domain)
+  );
+
+  if (exact) {
+    return updateDnsRecord({
+      domain: params.domain,
+      recordId: exact.id,
+      content: params.content,
+      ttl: params.ttl,
+    });
   }
 
-  return data;
+  return createTxtRecord(params);
+}
+
+export async function deleteDnsRecord(params: {
+  domain: string;
+  recordId: string;
+}) {
+  const baseDomain = getBaseDomain(params.domain);
+  const zoneId = getZoneIdByBaseDomain(baseDomain);
+
+  return cloudflareFetch<{ id: string }>(
+    `/zones/${zoneId}/dns_records/${params.recordId}`,
+    {
+      method: "DELETE",
+    }
+  );
 }
