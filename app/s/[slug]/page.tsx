@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
 import { headers } from "next/headers";
 import { createClient } from "@supabase/supabase-js";
+
+export const dynamic = "force-dynamic";
 
 type PageProps = {
   params: { slug: string } | Promise<{ slug: string }>;
@@ -93,21 +94,12 @@ function extractSlugFromHost(host: string, baseDomain: string | null) {
   }
 
   const withoutBase = cleanHost.slice(0, -(`.${baseDomain}`.length));
-
   if (!withoutBase) return null;
 
   const parts = withoutBase.split(".").filter(Boolean);
-
   if (parts.length === 0) return null;
 
   return parts[parts.length - 1] || null;
-}
-
-function isKnownRootDomainHost(host: string) {
-  const cleanHost = getCleanHost(host);
-  return ROOT_DOMAINS.some(
-    (d) => cleanHost === d || cleanHost === `www.${d}` || cleanHost.endsWith(`.${d}`)
-  );
 }
 
 async function resolveSiteContext(props: PageProps) {
@@ -119,10 +111,6 @@ async function resolveSiteContext(props: PageProps) {
   const routeSlug = String(params?.slug || "").trim() || null;
   const hostSlug = extractSlugFromHost(host, hostBaseDomain);
 
-  const isKnownHost = isKnownRootDomainHost(host);
-
-  // Se o host for um dos domínios conhecidos e tiver subdomínio, prioriza o slug do host.
-  // Senão, cai no slug da rota.
   const slug = hostSlug || routeSlug;
 
   return {
@@ -131,7 +119,7 @@ async function resolveSiteContext(props: PageProps) {
     routeSlug,
     hostSlug,
     slug,
-    isKnownHost,
+    isSubdomainAccess: Boolean(hostSlug),
   };
 }
 
@@ -141,7 +129,6 @@ async function findSite(slug: string, hostBaseDomain: string | null) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
-  // 1) tenta slug + base_domain do host
   if (hostBaseDomain) {
     const { data } = await supabase
       .from("sites")
@@ -154,7 +141,6 @@ async function findSite(slug: string, hostBaseDomain: string | null) {
     if (data) return data;
   }
 
-  // 2) fallback só por slug
   const { data } = await supabase
     .from("sites")
     .select("*")
@@ -165,6 +151,21 @@ async function findSite(slug: string, hostBaseDomain: string | null) {
   return data ?? null;
 }
 
+function FallbackPage() {
+  return (
+    <main className="min-h-screen bg-[#F5F0FA] text-slate-900">
+      <div className="mx-auto max-w-3xl px-4 py-20">
+        <div className="rounded-2xl border border-purple-200 bg-white p-8 shadow-sm">
+          <h1 className="text-2xl font-bold">Site em configuração</h1>
+          <p className="mt-3 text-sm text-slate-600">
+            Esta página ainda está sendo configurada. Tente novamente em alguns minutos.
+          </p>
+        </div>
+      </div>
+    </main>
+  );
+}
+
 export async function generateMetadata(props: PageProps): Promise<Metadata> {
   const { slug, hostBaseDomain } = await resolveSiteContext(props);
 
@@ -173,8 +174,8 @@ export async function generateMetadata(props: PageProps): Promise<Metadata> {
       title: "Site público",
     };
   }
-  const data = await findSite(slug, hostBaseDomain);
 
+  const data = await findSite(slug, hostBaseDomain);
   const title = (data?.company_name as string | null) || "Site público";
 
   const metaName = extractMetaName((data?.meta_verify_name as string | null) ?? null);
@@ -199,17 +200,15 @@ export async function generateMetadata(props: PageProps): Promise<Metadata> {
 export default async function PublicSitePage(props: PageProps) {
   const { slug, hostBaseDomain } = await resolveSiteContext(props);
 
-  if (!slug) return notFound();
+  if (!slug) {
+    return <FallbackPage />;
+  }
 
   const data = await findSite(slug, hostBaseDomain);
 
   if (!data) {
-  return (
-    <main style={{ padding: 40 }}>
-      <h1>Site em configuração</h1>
-    </main>
-  );
-}
+    return <FallbackPage />;
+  }
 
   const company_name = (data.company_name as string | null) || "Empresa";
   const cnpj = (data.cnpj as string | null) || "—";
