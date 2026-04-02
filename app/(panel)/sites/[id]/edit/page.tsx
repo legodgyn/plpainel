@@ -303,7 +303,7 @@ export default function EditSitePage() {
           </Field>
 
           <Field
-            label="TXT de verificação (Cloudflare)"
+            label="TXT de verificação"
             required={false}
             hint='Cole o TXT completo ou só o token. Ex: facebook-domain-verification=...'
           >
