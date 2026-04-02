@@ -19,7 +19,7 @@ export default function TutorialPage() {
               title="Tutorial da Plataforma"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
               allowFullScreen
-            />
+            /><br></br>
             <iframe
               className="h-full w-full"
               src="https://www.youtube.com/embed/ISmcbsGXl_o?si=G5x03ryDsHtTSHST"
