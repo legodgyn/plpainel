@@ -75,28 +75,43 @@ function getBaseDomainFromHost(host: string) {
   return null;
 }
 
+async function findSiteBySlugAndHost(slug: string, hostBaseDomain: string | null) {
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+
+  // 1) tenta achar pelo slug + domínio raiz do host
+  if (hostBaseDomain) {
+    const { data } = await supabase
+      .from("sites")
+      .select("*")
+      .eq("slug", slug)
+      .eq("is_public", true)
+      .eq("base_domain", hostBaseDomain)
+      .maybeSingle();
+
+    if (data) return data;
+  }
+
+  // 2) fallback: tenta achar só pelo slug
+  const { data } = await supabase
+    .from("sites")
+    .select("*")
+    .eq("slug", slug)
+    .eq("is_public", true)
+    .maybeSingle();
+
+  return data ?? null;
+}
+
 export async function generateMetadata(props: PageProps): Promise<Metadata> {
   const { slug } = await Promise.resolve(props.params);
   const headerList = await headers();
   const host = headerList.get("host") || "";
   const hostBaseDomain = getBaseDomainFromHost(host);
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
-
-  let query = supabase
-    .from("sites")
-    .select("company_name, base_domain, meta_verify_name, meta_verify_content")
-    .eq("slug", slug)
-    .eq("is_public", true);
-
-  if (hostBaseDomain) {
-    query = query.eq("base_domain", hostBaseDomain);
-  }
-
-  const { data } = await query.maybeSingle();
+  const data = await findSiteBySlugAndHost(slug, hostBaseDomain);
 
   const title = (data?.company_name as string) || "Site público";
 
@@ -108,8 +123,10 @@ export async function generateMetadata(props: PageProps): Promise<Metadata> {
   if (name && content) {
     return {
       title,
-      other: {
-        [name]: content,
+      verification: {
+        other: {
+          [name]: content,
+        },
       },
     };
   }
@@ -123,24 +140,9 @@ export default async function PublicSitePage(props: PageProps) {
   const host = headerList.get("host") || "";
   const hostBaseDomain = getBaseDomainFromHost(host);
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+  const data = await findSiteBySlugAndHost(slug, hostBaseDomain);
 
-  let query = supabase
-    .from("sites")
-    .select("*")
-    .eq("slug", slug)
-    .eq("is_public", true);
-
-  if (hostBaseDomain) {
-    query = query.eq("base_domain", hostBaseDomain);
-  }
-
-  const { data, error } = await query.maybeSingle();
-
-  if (error || !data) return notFound();
+  if (!data) return notFound();
 
   const company_name = (data.company_name as string | null) || "Empresa";
   const cnpj = (data.cnpj as string | null) || "—";
