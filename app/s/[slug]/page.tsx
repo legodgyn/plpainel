@@ -173,25 +173,6 @@ export async function generateMetadata(props: PageProps): Promise<Metadata> {
       title: "Site público",
     };
   }
-const data = await findSite(slug, hostBaseDomain);
-
-// 🔥 fallback extra
-if (!data) {
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
-
-  const { data: fallback } = await supabase
-    .from("sites")
-    .select("*")
-    .eq("slug", slug)
-    .maybeSingle();
-
-  if (fallback) {
-    data = fallback;
-  }
-}
   const data = await findSite(slug, hostBaseDomain);
 
   const title = (data?.company_name as string | null) || "Site público";
