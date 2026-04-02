@@ -7,7 +7,7 @@ import { createClient } from "@supabase/supabase-js";
 
 function parseMetaTag(input: string) {
   const raw = String(input || "").trim();
-  if (!raw) return { name: null, content: null };
+  if (!raw) return { name: null as string | null, content: null as string | null };
 
   if (!raw.toLowerCase().includes("<meta")) {
     return { name: "facebook-domain-verification", content: raw };
@@ -22,25 +22,30 @@ function parseMetaTag(input: string) {
   };
 }
 
-// 🔥 limpa TXT corretamente
 function normalizeTxt(input: string) {
-  let txt = input.trim();
+  let raw = String(input || "").trim();
+  if (!raw) return "";
 
-  // remove aspas se vier
-  txt = txt.replace(/^"+|"+$/g, "");
+  // se colou meta tag por engano no campo TXT, extrai o content
+  if (raw.toLowerCase().includes("<meta")) {
+    const contentMatch = raw.match(/content\s*=\s*["']([^"']+)["']/i);
+    raw = String(contentMatch?.[1] || "").trim();
+  }
 
-  // remove duplicação
-  txt = txt.replace(
-    /^facebook-domain-verification=facebook-domain-verification=/,
+  // remove aspas extras nas pontas
+  raw = raw.replace(/^"+|"+$/g, "");
+
+  // evita duplicação
+  raw = raw.replace(
+    /^facebook-domain-verification=facebook-domain-verification=/i,
     "facebook-domain-verification="
   );
 
-  // se vier só o token
-  if (!txt.includes("facebook-domain-verification=")) {
-    txt = `facebook-domain-verification=${txt}`;
+  if (!/^facebook-domain-verification=/i.test(raw)) {
+    raw = `facebook-domain-verification=${raw}`;
   }
 
-  return txt;
+  return raw;
 }
 
 export default function EditSitePage() {
@@ -57,8 +62,10 @@ export default function EditSitePage() {
   );
 
   const [loading, setLoading] = useState(false);
+  const [isPublic, setIsPublic] = useState(true);
 
   const [slug, setSlug] = useState("");
+  const [baseDomain, setBaseDomain] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [cnpj, setCnpj] = useState("");
   const [mission, setMission] = useState("");
@@ -76,18 +83,24 @@ export default function EditSitePage() {
   useEffect(() => {
     async function load() {
       setLoading(true);
-
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("sites")
-        .select("*")
+        .select(
+          "id, slug, base_domain, company_name, cnpj, mission, phone, email, instagram, whatsapp, about, privacy, footer, is_public, meta_verify_name, meta_verify_content, meta_txt"
+        )
         .eq("id", id)
         .single();
 
       setLoading(false);
 
-      if (!data) return;
+      if (error || !data) {
+        alert(error?.message || "Erro ao carregar site");
+        router.push("/dashboard");
+        return;
+      }
 
       setSlug(data.slug || "");
+      setBaseDomain(data.base_domain || "");
       setCompanyName(data.company_name || "");
       setCnpj(data.cnpj || "");
       setMission(data.mission || "");
@@ -98,97 +111,275 @@ export default function EditSitePage() {
       setAbout(data.about || "");
       setPrivacy(data.privacy || "");
       setFooter(data.footer || "");
+      setIsPublic(data.is_public ?? true);
 
       if (data.meta_verify_name && data.meta_verify_content) {
         setMetaTag(
           `<meta name="${data.meta_verify_name}" content="${data.meta_verify_content}" />`
         );
+      } else {
+        setMetaTag("");
       }
 
-      if (data.meta_txt) {
-        setMetaTxt(data.meta_txt);
-      }
+      setMetaTxt(data.meta_txt || "");
     }
 
     load();
-  }, [id]);
+  }, [id, router, supabase]);
 
   async function handleSave() {
-    setLoading(true);
-
     const parsedMeta = parseMetaTag(metaTag);
     const cleanTxt = normalizeTxt(metaTxt);
 
-    // 🔥 salva no banco
-    await supabase
-      .from("sites")
-      .update({
-        company_name: companyName,
-        cnpj,
-        mission,
-        phone,
-        email,
-        instagram,
-        whatsapp,
-        about,
-        privacy,
-        footer,
-        meta_verify_name: parsedMeta.name,
-        meta_verify_content: parsedMeta.content,
-        meta_txt: cleanTxt,
-      })
-      .eq("id", id);
-
-    // 🔥 envia pro cloudflare
-    try {
-      await fetch("/api/cloudflare/txt", {
-        method: "POST",
-        body: JSON.stringify({
-          domain: `${slug}.ehspainel.com.br`,
-          txt: cleanTxt,
-        }),
-      });
-    } catch (e) {
-      console.log("Erro ao enviar TXT", e);
+    if (
+      metaTag.trim().toLowerCase().includes("<meta") &&
+      (!parsedMeta.name || !parsedMeta.content)
+    ) {
+      alert("Meta tag inválida. Cole a tag completa do Business Manager.");
+      return;
     }
 
-    setLoading(false);
-    router.push("/dashboard");
+    if (metaTxt.trim() && !cleanTxt.includes("facebook-domain-verification=")) {
+      alert("TXT inválido.");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const { error } = await supabase
+        .from("sites")
+        .update({
+          company_name: companyName.trim(),
+          cnpj: cnpj.trim(),
+          mission: mission.trim(),
+          phone: phone.trim(),
+          email: email.trim(),
+          instagram: instagram.trim() || null,
+          whatsapp: whatsapp.trim(),
+          about: about.trim(),
+          privacy: privacy.trim(),
+          footer: footer.trim(),
+          is_public: isPublic,
+          meta_verify_name: parsedMeta.name,
+          meta_verify_content: parsedMeta.content,
+          meta_txt: cleanTxt || null,
+        })
+        .eq("id", id);
+
+      if (error) {
+        alert(error.message);
+        setLoading(false);
+        return;
+      }
+
+      if (cleanTxt && slug && baseDomain) {
+        const domain = `${slug}.${baseDomain}`;
+
+        const cfRes = await fetch("/api/cloudflare/txt", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            domain,
+            txt: cleanTxt,
+          }),
+        });
+
+        const cfJson = await cfRes.json().catch(() => ({}));
+
+        if (!cfRes.ok) {
+          alert(
+            cfJson?.error ||
+              "Site salvo, mas não foi possível criar o TXT no Cloudflare."
+          );
+          setLoading(false);
+          return;
+        }
+      }
+
+      router.push("/dashboard");
+    } catch (err: any) {
+      alert(err?.message || "Erro ao salvar.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10 text-white">
-      <h1 className="text-2xl font-bold mb-6">Editar Site</h1>
+      <div className="mb-6 flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Editar Site</h1>
+        <Link href="/dashboard" className="text-sm text-white/70 hover:text-white">
+          ← Voltar para o Dashboard
+        </Link>
+      </div>
 
-      <div className="space-y-5">
+      <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
+        <div className="mb-5 rounded-2xl border border-white/10 bg-black/20 p-4">
+          <div className="text-sm text-white/70">Slug</div>
+          <div className="text-lg font-semibold">{slug}</div>
+          <div className="mt-2 text-sm text-white/70">Domínio base</div>
+          <div className="text-lg font-semibold">{baseDomain || "—"}</div>
 
-        <input value={companyName} onChange={(e)=>setCompanyName(e.target.value)} placeholder="Empresa" />
-        
-        {/* META TAG */}
-        <div>
-          <div className="text-sm">Meta Tag</div>
-          <input
-            value={metaTag}
-            onChange={(e) => setMetaTag(e.target.value)}
-            className="w-full"
-          />
+          <div className="mt-2 text-xs text-white/60">
+            Público:{" "}
+            <span className={isPublic ? "text-emerald-300" : "text-red-300"}>
+              {isPublic ? "Sim" : "Não"}
+            </span>
+          </div>
+
+          <label className="mt-3 inline-flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={isPublic}
+              onChange={(e) => setIsPublic(e.target.checked)}
+            />
+            Deixar site público
+          </label>
         </div>
 
-        {/* TXT */}
-        <div>
-          <div className="text-sm">Verificação via TXT (Cloudflare)</div>
-          <input
-            value={metaTxt}
-            onChange={(e) => setMetaTxt(e.target.value)}
-            placeholder="facebook-domain-verification=..."
-            className="w-full"
-          />
+        <div className="grid gap-5 md:grid-cols-2">
+          <Field label="Nome da Empresa" required>
+            <input
+              value={companyName}
+              onChange={(e) => setCompanyName(e.target.value)}
+              className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 outline-none focus:border-violet-400/40"
+            />
+          </Field>
+
+          <Field label="CNPJ" required>
+            <input
+              value={cnpj}
+              onChange={(e) => setCnpj(e.target.value)}
+              className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 outline-none focus:border-violet-400/40"
+            />
+          </Field>
+
+          <Field label="Telefone" required>
+            <input
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 outline-none focus:border-violet-400/40"
+            />
+          </Field>
+
+          <Field label="E-mail" required>
+            <input
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 outline-none focus:border-violet-400/40"
+            />
+          </Field>
+
+          <Field label="WhatsApp" required>
+            <input
+              value={whatsapp}
+              onChange={(e) => setWhatsapp(e.target.value)}
+              className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 outline-none focus:border-violet-400/40"
+            />
+          </Field>
+
+          <Field label="Instagram" required={false} hint="Opcional">
+            <input
+              value={instagram}
+              onChange={(e) => setInstagram(e.target.value)}
+              className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 outline-none focus:border-violet-400/40"
+            />
+          </Field>
+
+          <Field
+            label="Meta tag de verificação"
+            required={false}
+            hint='Cole a tag completa. Ex: <meta name="facebook-domain-verification" content="..." />'
+          >
+            <input
+              value={metaTag}
+              onChange={(e) => setMetaTag(e.target.value)}
+              className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 outline-none focus:border-violet-400/40"
+              placeholder='<meta name="facebook-domain-verification" content="..." />'
+            />
+          </Field>
+
+          <Field
+            label="TXT de verificação (Cloudflare)"
+            required={false}
+            hint='Cole o TXT completo ou só o token. Ex: facebook-domain-verification=...'
+          >
+            <input
+              value={metaTxt}
+              onChange={(e) => setMetaTxt(e.target.value)}
+              className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 outline-none focus:border-violet-400/40"
+              placeholder="facebook-domain-verification=..."
+            />
+          </Field>
         </div>
 
-        <button onClick={handleSave}>
-          {loading ? "Salvando..." : "Salvar"}
+        <div className="mt-6 grid gap-5">
+          <Field label="Nossa missão" required>
+            <textarea
+              value={mission}
+              onChange={(e) => setMission(e.target.value)}
+              className="min-h-[90px] w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 outline-none focus:border-violet-400/40"
+            />
+          </Field>
+
+          <Field label="Quem somos (About)" required>
+            <textarea
+              value={about}
+              onChange={(e) => setAbout(e.target.value)}
+              className="min-h-[140px] w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 outline-none focus:border-violet-400/40"
+            />
+          </Field>
+
+          <Field label="Política de Privacidade" required>
+            <textarea
+              value={privacy}
+              onChange={(e) => setPrivacy(e.target.value)}
+              className="min-h-[160px] w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 outline-none focus:border-violet-400/40"
+            />
+          </Field>
+
+          <Field label="Rodapé" required>
+            <textarea
+              value={footer}
+              onChange={(e) => setFooter(e.target.value)}
+              className="min-h-[90px] w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 outline-none focus:border-violet-400/40"
+            />
+          </Field>
+        </div>
+
+        <button
+          onClick={handleSave}
+          disabled={loading}
+          className="mt-6 w-full rounded-2xl bg-violet-600 px-5 py-4 font-semibold text-white hover:bg-violet-500 disabled:opacity-60"
+        >
+          {loading ? "Salvando..." : "Salvar alterações (não consome token)"}
         </button>
       </div>
+    </div>
+  );
+}
+
+function Field({
+  label,
+  hint,
+  required = true,
+  children,
+}: {
+  label: string;
+  hint?: string;
+  required?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="space-y-2">
+      <div className="text-sm font-medium text-white/85">
+        {label} {required ? <span className="text-red-300">*</span> : null}
+      </div>
+      {children}
+      {hint ? <div className="text-xs text-white/55">{hint}</div> : null}
     </div>
   );
 }
