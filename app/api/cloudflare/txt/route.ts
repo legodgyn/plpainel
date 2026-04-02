@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createTxtRecord } from "@/lib/cloudflare";
+import { upsertTxtRecord } from "@/lib/cloudflare";
 
 export async function POST(req: Request) {
   try {
@@ -19,18 +19,14 @@ export async function POST(req: Request) {
       );
     }
 
-    // pega slug (subdomínio)
-    const slug = domain.split(".")[0];
-
-    await createTxtRecord({
-      zoneId: process.env.CLOUDFLARE_ZONE_ID!,
-      name: slug,
+    await upsertTxtRecord({
+      domain,
       content: txt,
     });
 
     return NextResponse.json({
       success: true,
-      message: "Registro TXT criado com sucesso",
+      message: "TXT criado/atualizado com sucesso",
     });
   } catch (err: any) {
     return NextResponse.json(
