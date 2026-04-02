@@ -4,6 +4,9 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
 
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7181658169320041"
+     crossorigin="anonymous"></script>
+
 type SiteRow = {
   id: string;
   slug: string;
@@ -32,6 +35,8 @@ type MaintenanceSetting = {
   enabled?: boolean;
   message?: string;
 };
+
+
 
 export default function DashboardPage() {
   const supabase = useMemo(() => {
