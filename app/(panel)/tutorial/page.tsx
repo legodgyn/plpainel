@@ -13,6 +13,13 @@ export default function TutorialPage() {
       <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-6">
         <div className="overflow-hidden rounded-2xl border border-white/10 bg-black">
           <div className="aspect-video w-full">
+             <iframe
+              className="h-full w-full"
+              src="https://www.youtube.com/embed/K8z1U2n_XpQ?si=llQoHU6aslC5RLF1"
+              title="Tutorial da Plataforma"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowFullScreen
+            />
             <iframe
               className="h-full w-full"
               src="https://www.youtube.com/embed/ISmcbsGXl_o?si=G5x03ryDsHtTSHST"
