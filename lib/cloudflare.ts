@@ -148,7 +148,7 @@ export async function createTxtRecord(params: {
       body: JSON.stringify({
         type: "TXT",
         name,
-        content: `"${content}"`,
+        content: params.content,
         ttl: params.ttl ?? 120,
       }),
     }
