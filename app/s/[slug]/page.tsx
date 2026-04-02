@@ -158,7 +158,8 @@ function FallbackPage() {
         <div className="rounded-2xl border border-purple-200 bg-white p-8 shadow-sm">
           <h1 className="text-2xl font-bold">Site em configuração</h1>
           <p className="mt-3 text-sm text-slate-600">
-            Esta página ainda está sendo configurada. Tente novamente em alguns minutos.
+            Esta página ainda está sendo configurada. Tente novamente em alguns
+            minutos.
           </p>
         </div>
       </div>
@@ -167,34 +168,42 @@ function FallbackPage() {
 }
 
 export async function generateMetadata(props: PageProps): Promise<Metadata> {
-  const { slug, hostBaseDomain } = await resolveSiteContext(props);
+  const { slug, host, hostBaseDomain } = await resolveSiteContext(props);
 
   if (!slug) {
-    return {
-      title: "Site público",
-    };
+    return { title: "Site público" };
   }
 
   const data = await findSite(slug, hostBaseDomain);
   const title = (data?.company_name as string | null) || "Site público";
+
+  const cleanHost = getCleanHost(host);
+  const publicUrl = `https://${cleanHost}/`;
 
   const metaName = extractMetaName((data?.meta_verify_name as string | null) ?? null);
   const metaContent = extractMetaContent(
     (data?.meta_verify_content as string | null) ?? null
   );
 
-  if (metaName && metaContent) {
-    return {
+  return {
+    title,
+    alternates: {
+      canonical: publicUrl,
+    },
+    openGraph: {
+      url: publicUrl,
       title,
-      verification: {
-        other: {
-          [metaName]: metaContent,
-        },
-      },
-    };
-  }
-
-  return { title };
+      type: "website",
+    },
+    verification:
+      metaName && metaContent
+        ? {
+            other: {
+              [metaName]: metaContent,
+            },
+          }
+        : undefined,
+  };
 }
 
 export default async function PublicSitePage(props: PageProps) {
