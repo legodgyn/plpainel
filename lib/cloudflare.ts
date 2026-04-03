@@ -21,6 +21,8 @@ type CloudflareDnsRecord = {
   type: string;
   name: string;
   content: string;
+  ttl?: number;
+  proxied?: boolean;
 };
 
 function env(name: string) {
@@ -132,6 +134,31 @@ export async function listDnsRecords(params: {
   );
 }
 
+async function createARecord(params: {
+  domain: string;
+  content: string;
+  ttl?: number;
+  proxied?: boolean;
+}) {
+  const baseDomain = getBaseDomain(params.domain);
+  const zoneId = getZoneIdByBaseDomain(baseDomain);
+  const name = getSubdomainLabel(params.domain);
+
+  return cloudflareFetch<CloudflareDnsRecord>(
+    `/zones/${zoneId}/dns_records`,
+    {
+      method: "POST",
+      body: JSON.stringify({
+        type: "A",
+        name,
+        content: params.content,
+        ttl: params.ttl ?? 1,
+        proxied: params.proxied ?? true,
+      }),
+    }
+  );
+}
+
 export async function createTxtRecord(params: {
   domain: string;
   content: string;
@@ -179,11 +206,53 @@ export async function updateDnsRecord(params: {
   );
 }
 
+async function ensureExactWebRecordForSubdomain(domain: string) {
+  const cleanDomain = getCleanHost(domain);
+  const baseDomain = getBaseDomain(cleanDomain);
+
+  if (cleanDomain === baseDomain) {
+    return;
+  }
+
+  const [exactA, exactAAAA, exactCNAME, wildcardA] = await Promise.all([
+    listDnsRecords({ domain: cleanDomain, type: "A" }),
+    listDnsRecords({ domain: cleanDomain, type: "AAAA" }),
+    listDnsRecords({ domain: cleanDomain, type: "CNAME" }),
+    listDnsRecords({ domain: `*.${baseDomain}`, type: "A" }),
+  ]);
+
+  const hasExactWebRecord =
+    exactA.length > 0 || exactAAAA.length > 0 || exactCNAME.length > 0;
+
+  if (hasExactWebRecord) {
+    return;
+  }
+
+  const wildcard = wildcardA.find(
+    (r) =>
+      r.type === "A" &&
+      getCleanHost(r.name) === getCleanHost(`*.${baseDomain}`)
+  );
+
+  if (!wildcard) {
+    return;
+  }
+
+  await createARecord({
+    domain: cleanDomain,
+    content: wildcard.content,
+    ttl: wildcard.ttl,
+    proxied: wildcard.proxied ?? true,
+  });
+}
+
 export async function upsertTxtRecord(params: {
   domain: string;
   content: string;
   ttl?: number;
 }) {
+  await ensureExactWebRecordForSubdomain(params.domain);
+
   const existing = await listDnsRecords({
     domain: params.domain,
     type: "TXT",
