@@ -1,5 +1,3 @@
-
-
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -61,17 +59,27 @@ export default function LoginPage() {
   const [loadingRegister, setLoadingRegister] = useState(false);
   const [regMsg, setRegMsg] = useState<string | null>(null);
 
+  const [openForgot, setOpenForgot] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotMsg, setForgotMsg] = useState<string | null>(null);
+  const [loadingForgot, setLoadingForgot] = useState(false);
+
   const canSubmitLogin = useMemo(() => {
     return email.trim().length > 3 && password.trim().length >= 6 && !loadingLogin;
   }, [email, password, loadingLogin]);
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") setOpenRegister(false);
+      if (e.key === "Escape") {
+        setOpenRegister(false);
+        setOpenForgot(false);
+      }
     }
-    if (openRegister) window.addEventListener("keydown", onKeyDown);
+    if (openRegister || openForgot) {
+      window.addEventListener("keydown", onKeyDown);
+    }
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [openRegister]);
+  }, [openRegister, openForgot]);
 
   async function handleLogin(e?: React.FormEvent) {
     e?.preventDefault();
@@ -187,6 +195,49 @@ export default function LoginPage() {
     }
   }
 
+  async function handleOpenForgot() {
+    setForgotMsg(null);
+    setForgotEmail(email || "");
+    setOpenForgot(true);
+  }
+
+  async function handleForgotPassword(e?: React.FormEvent) {
+    e?.preventDefault();
+    setForgotMsg(null);
+
+    const e1 = forgotEmail.trim().toLowerCase();
+
+    if (!e1) {
+      setForgotMsg("Digite seu e-mail.");
+      return;
+    }
+
+    if (!isValidEmail(e1)) {
+      setForgotMsg("Digite um e-mail válido.");
+      return;
+    }
+
+    setLoadingForgot(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(e1, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+
+      if (error) {
+        setForgotMsg(error.message || "Não foi possível enviar o e-mail de recuperação.");
+        return;
+      }
+
+      setForgotMsg("Enviamos um link de recuperação para o seu e-mail.");
+      setMsgType("success");
+      setMsg("E-mail de recuperação enviado com sucesso.");
+    } catch (err: any) {
+      setForgotMsg(err?.message || "Erro ao solicitar recuperação de senha.");
+    } finally {
+      setLoadingForgot(false);
+    }
+  }
+
   const msgBoxClass =
     msgType === "success"
       ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-200"
@@ -267,7 +318,7 @@ export default function LoginPage() {
                 {loadingLogin ? "Entrando..." : "Entrar"}
               </button>
 
-              <div className="flex items-center justify-between pt-1">
+              <div className="flex items-center justify-between gap-3 pt-1">
                 <button
                   type="button"
                   onClick={handleOpenRegister}
@@ -276,7 +327,17 @@ export default function LoginPage() {
                   CRIAR CONTA
                 </button>
 
-                <div className="text-xs text-white/45">Use um e-mail válido 😉</div>
+                <button
+                  type="button"
+                  onClick={handleOpenForgot}
+                  className="text-sm font-semibold text-violet-300 transition hover:text-violet-200"
+                >
+                  Esqueci minha senha
+                </button>
+              </div>
+
+              <div className="text-center text-xs text-white/45">
+                Use um e-mail válido 😉
               </div>
             </form>
           </div>
@@ -388,6 +449,71 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => setOpenRegister(false)}
+                  className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-white/80 transition hover:bg-white/10"
+                >
+                  VOLTAR PRO LOGIN
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {openForgot && (
+        <div className="fixed inset-0 z-[999]">
+          <div
+            className="absolute inset-0 bg-black/65 backdrop-blur-[4px]"
+            onClick={() => setOpenForgot(false)}
+          />
+
+          <div className="absolute inset-0 flex items-center justify-center px-4 py-6">
+            <div className="w-full max-w-md rounded-[30px] border border-white/10 bg-[#0b1220]/95 p-6 shadow-[0_30px_120px_rgba(0,0,0,.7)] backdrop-blur-xl">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <div className="text-lg font-bold tracking-tight">RECUPERAR SENHA</div>
+                  <div className="mt-1 text-sm text-white/60">
+                    Digite seu e-mail para receber o link de redefinição.
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => setOpenForgot(false)}
+                  className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white/80 transition hover:bg-white/10"
+                  aria-label="Fechar"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {forgotMsg && (
+                <div className="mt-4 rounded-2xl border border-violet-500/20 bg-violet-500/10 px-4 py-3 text-sm text-violet-200">
+                  {forgotMsg}
+                </div>
+              )}
+
+              <form onSubmit={handleForgotPassword} className="mt-5 space-y-4">
+                <div>
+                  <label className="text-xs font-medium text-white/70">Email</label>
+                  <input
+                    value={forgotEmail}
+                    onChange={(e) => setForgotEmail(e.target.value)}
+                    placeholder="seu@email.com"
+                    className="mt-1 w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3 outline-none transition placeholder:text-white/35 focus:border-violet-400 focus:ring-2 focus:ring-violet-500/20"
+                    autoComplete="email"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loadingForgot}
+                  className="w-full rounded-2xl bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 px-4 py-3 text-sm font-bold text-white shadow-[0_12px_40px_rgba(139,92,246,.35)] transition hover:scale-[1.01] hover:opacity-95 disabled:opacity-60 disabled:hover:scale-100"
+                >
+                  {loadingForgot ? "Enviando..." : "ENVIAR LINK DE RECUPERAÇÃO"}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setOpenForgot(false)}
                   className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-white/80 transition hover:bg-white/10"
                 >
                   VOLTAR PRO LOGIN
