@@ -93,7 +93,7 @@ export default function HomePage() {
                 </div>
 
                 <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-500/10 px-3 py-1 text-xs text-emerald-200">
-                  <span className="font-bold">1 Token</span> = R$ 4,00{" "}
+                  <span className="font-bold">1 Token</span> = R$ 5,00{" "}
                   <span className="text-emerald-200/70">(por site)</span>
                 </div>
               </div>
