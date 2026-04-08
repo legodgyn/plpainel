@@ -203,7 +203,7 @@ export default function HomePage() {
           <div className="mt-6 grid gap-4 md:grid-cols-3">
             <div className="rounded-2xl border border-white/10 bg-black/20 p-6 md:col-span-2">
               <div className="text-sm font-semibold text-white/70">Regra</div>
-              <div className="mt-2 text-3xl font-black text-emerald-200">1 Token = R$ 4,00</div>
+              <div className="mt-2 text-3xl font-black text-emerald-200">1 Token = R$ 5,00</div>
               <div className="mt-2 text-sm text-white/65">Cada token cria 1 site.</div>
               <div className="mt-1 text-sm text-white/65">Sem plano, sem mensalidade. Você compra e usa quando quiser.</div>
             </div>
@@ -276,7 +276,7 @@ export default function HomePage() {
 
           <div className="mt-8 grid gap-4 md:grid-cols-2">
             {[
-              { q: "Quanto custa criar um site?", a: "1 token cria 1 site. Hoje: 1 Token = R$ 4,00." },
+              { q: "Quanto custa criar um site?", a: "1 token cria 1 site. Hoje: 1 Token = R$ 5,00." },
               { q: "O site fica online na hora?", a: "Sim. O subdomínio já aponta pro servidor e o conteúdo carrega pelo seu dominio criado." },
               { q: "Preciso de domínio, hospedagem e etc?", a: "Não. aqui você só paga o token e tudo e disponibilizado para você gratuitamente." },
               { q: "Posso editar depois?", a: "Sim. Você ajusta textos, contatos e verificação de domínio quando quiser." },
