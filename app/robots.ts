@@ -5,15 +5,15 @@ export default function robots(): MetadataRoute.Robots {
     rules: [
       {
         userAgent: "facebookexternalhit",
-        allow: "/",
+        Disallow:: "/",
       },
       {
         userAgent: "Facebot",
-        allow: "/",
+        Disallow:: "/",
       },
       {
         userAgent: "*",
-        allow: "/",
+        Disallow:: "/",
       },
     ],
     sitemap: "https://plpainel.com/sitemap.xml",
