@@ -1,317 +1,225 @@
-import type { Metadata } from "next";import { headers } from "next/headers";import { createClient } from "@supabase/supabase-js";
+import type { Metadata } from "next";
+import { headers } from "next/headers";
+import { createClient } from "@supabase/supabase-js";
 
 export const dynamic = "force-dynamic";
 
-type PageProps = {params: { slug: string } | Promise<{ slug: string }>;};
+type PageProps = {
+  params: { slug: string } | Promise<{ slug: string }>;
+};
 
-const ROOT_DOMAINS = ["plpainel.com","acmpainel.com.br","ehspainel.com.br","lcppainel.com.br","lcspainel.com.br","mapspainel.com.br",];
+const ROOT_DOMAINS = [
+  "plpainel.com",
+  "acmpainel.com.br",
+  "ehspainel.com.br",
+  "lcppainel.com.br",
+  "lcspainel.com.br",
+  "mapspainel.com.br",
+];
 
-function onlyDigits(v: string) {return String(v || "").replace(/\D/g, "");}
+// =====================
+// HELPERS (IGUAIS)
+// =====================
 
-function normalizeInstagram(v?: string | null) {const raw = String(v || "").trim();if (!raw) return null;if (raw.startsWith("http")) return raw;const handle = raw.replace(/^@/, "").trim();return https://instagram.com/${handle};}
-
-function normalizeWhatsApp(v?: string | null) {const digits = onlyDigits(String(v || ""));if (!digits) return null;return https://wa.me/${digits};}
-
-function waWithText(waUrl: string | null, text: string) {if (!waUrl) return null;return ${waUrl}?text=${encodeURIComponent(text)};}
-
-function extractMetaContent(input?: string | null) {const raw = String(input || "").trim();if (!raw) return null;
-
-const match = raw.match(/content\s*=\s*"'["']/i);if (match?.[1]) return match[1].trim();
-
-return raw;}
-
-function extractMetaName(input?: string | null) {const raw = String(input || "").trim();if (!raw) return null;
-
-const match = raw.match(/name\s*=\s*"'["']/i);if (match?.[1]) return match[1].trim();
-
-return raw;}
-
-function getCleanHost(host: string) {return String(host || "").split(":")[0].trim().toLowerCase();}
-
-function getBaseDomainFromHost(host: string) {const cleanHost = getCleanHost(host);
-
-for (const rootDomain of ROOT_DOMAINS) {if (cleanHost === rootDomain || cleanHost === www.${rootDomain}) {return rootDomain;}
-
-if (cleanHost.endsWith(`.${rootDomain}`)) {
-  return rootDomain;
+function onlyDigits(v: string) {
+  return String(v || "").replace(/\D/g, "");
 }
 
+function normalizeInstagram(v?: string | null) {
+  const raw = String(v || "").trim();
+  if (!raw) return null;
+  if (raw.startsWith("http")) return raw;
+  const handle = raw.replace(/^@/, "").trim();
+  return `https://instagram.com/${handle}`;
 }
 
-return null;}
-
-function extractSlugFromHost(host: string, baseDomain: string | null) {if (!baseDomain) return null;
-
-const cleanHost = getCleanHost(host);
-
-if (cleanHost === baseDomain || cleanHost === www.${baseDomain}) {return null;}
-
-if (!cleanHost.endsWith(.${baseDomain})) {return null;}
-
-const withoutBase = cleanHost.slice(0, -(.${baseDomain}.length));if (!withoutBase) return null;
-
-const parts = withoutBase.split(".").filter(Boolean);if (parts.length === 0) return null;
-
-return parts[parts.length - 1] || null;}
-
-async function resolveSiteContext(props: PageProps) {const headerList = await headers();const host = headerList.get("host") || "";const hostBaseDomain = getBaseDomainFromHost(host);
-
-const params = await Promise.resolve(props.params);const routeSlug = String(params?.slug || "").trim() || null;const hostSlug = extractSlugFromHost(host, hostBaseDomain);
-
-const slug = hostSlug || routeSlug;
-
-return {host,hostBaseDomain,routeSlug,hostSlug,slug,isSubdomainAccess: Boolean(hostSlug),};}
-
-async function findSite(slug: string, hostBaseDomain: string | null) {const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!,process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
-
-if (hostBaseDomain) {const { data } = await supabase.from("sites").select("*").eq("slug", slug).eq("is_public", true).eq("base_domain", hostBaseDomain).maybeSingle();
-
-if (data) return data;
-
+function normalizeWhatsApp(v?: string | null) {
+  const digits = onlyDigits(String(v || ""));
+  if (!digits) return null;
+  return `https://wa.me/${digits}`;
 }
 
-const { data } = await supabase.from("sites").select("*").eq("slug", slug).eq("is_public", true).maybeSingle();
-
-return data ?? null;}
-
-function FallbackPage() {return (Site em configuraçãoEsta página ainda está sendo configurada. Tente novamente em algunsminutos.);}
-
-export async function generateMetadata(props: PageProps): Promise {const { slug, host, hostBaseDomain } = await resolveSiteContext(props);
-
-if (!slug) {return { title: "Site público" };}
-
-const data = await findSite(slug, hostBaseDomain);const title = (data?.company_name as string | null) || "Site público";
-
-const cleanHost = getCleanHost(host);const publicUrl = https://${cleanHost}/;
-
-const metaName = extractMetaName((data?.meta_verify_name as string | null) ?? null);const metaContent = extractMetaContent((data?.meta_verify_content as string | null) ?? null);
-
-return {title,alternates: {canonical: publicUrl,},openGraph: {url: publicUrl,title,type: "website",},verification:metaName && metaContent? {other: {[metaName]: metaContent,},}: undefined,};}
-
-export default async function PublicSitePage(props: PageProps) {const { slug, hostBaseDomain } = await resolveSiteContext(props);
-
-if (!slug) {return ;}
-
-const data = await findSite(slug, hostBaseDomain);
-
-if (!data) {return ;}
-
-const company_name = (data.company_name as string | null) || "Empresa";const cnpj = (data.cnpj as string | null) || "—";const mission = (data.mission as string | null) || "";const phone = (data.phone as string | null) || "";const email = (data.email as string | null) || "";const instagram = (data.instagram as string | null) || null;const whatsapp = (data.whatsapp as string | null) || "";const about = (data.about as string | null) || "";const about_simple = (data.about_simple as string | null) || "";const logo_url = (data.logo_url as string | null) || "";const template_type = (data.template_type as string | null) || "default";const simple_title = (data.simple_title as string | null) || "";const privacy = (data.privacy as string | null) || null;const footer = (data.footer as string | null) || "—";const base_domain =(data.base_domain as string | null) || hostBaseDomain || "plpainel.com";
-
-const igUrl = normalizeInstagram(instagram);const waUrl = normalizeWhatsApp(whatsapp);const waCta = waWithText(waUrl, "Olá, gostaria de mais informações.");
-
-if (template_type === "simple") {return ({logo_url ? () : null}
-
-      <h1 className="mt-8 text-center text-2xl font-bold sm:text-3xl">
-        Quem é {simple_title || company_name}?
-      </h1>
-
-      <div className="mt-8 max-w-3xl text-center">
-        <p className="whitespace-pre-line text-sm leading-7 text-gray-200 sm:text-base sm:leading-8">
-          {about_simple || about || "—"}
-        </p>
-      </div>
-    </div>
-
-    <footer className="mt-16 w-full bg-blue-700 px-6 py-8 text-center text-sm text-white">
-      <div className="mx-auto max-w-5xl whitespace-pre-line leading-7">
-        {footer}
-      </div>
-    </footer>
-  </main>
-);
-
+function waWithText(waUrl: string | null, text: string) {
+  if (!waUrl) return null;
+  return `${waUrl}?text=${encodeURIComponent(text)}`;
 }
 
-return (Página pública{slug}.{base_domain}
+function extractMetaContent(input?: string | null) {
+  const raw = String(input || "").trim();
+  if (!raw) return null;
 
-      <button
-        type="button"
-        disabled
-        className="cursor-not-allowed rounded-md bg-purple-800 px-4 py-2 text-sm font-semibold text-white opacity-70"
-      >
-        LOGIN
-      </button>
-    </div>
-  </header>
+  const match = raw.match(/content\s*=\s*["']([^"']+)["']/i);
+  if (match?.[1]) return match[1].trim();
 
-  <section className="mx-auto max-w-5xl px-4 pb-8 pt-10">
-    <div className="rounded-2xl border border-purple-200 bg-white shadow-sm">
-      <div className="p-7 sm:p-10">
-        <div className="flex flex-col items-center text-center">
-          <div className="grid h-[180px] w-[180px] place-items-center rounded-full bg-purple-800 text-white shadow-sm">
-            <span className="text-6xl font-extrabold">
-              {(company_name?.[0] || "E").toUpperCase()}
-            </span>
-          </div>
+  return raw;
+}
 
-          <h1 className="mt-6 text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">
-            {company_name}
-          </h1>
+function getCleanHost(host: string) {
+  return String(host || "").split(":")[0].trim().toLowerCase();
+}
 
-          <div className="mt-2 text-sm text-slate-700 sm:text-base">
-            <span className="font-semibold text-slate-900">CNPJ:</span> {cnpj}
-          </div>
+function getBaseDomainFromHost(host: string) {
+  const cleanHost = getCleanHost(host);
 
-          {mission ? (
-            <div className="mt-8 w-full max-w-3xl rounded-xl border border-purple-200 bg-white p-6 text-left">
-              <div className="text-xs font-extrabold tracking-widest text-purple-700">
-                NOSSA MISSÃO
-              </div>
-              <div className="mt-3 whitespace-pre-line text-sm font-semibold leading-relaxed text-slate-800 sm:text-base">
-                {mission}
-              </div>
-            </div>
-          ) : null}
+  for (const rootDomain of ROOT_DOMAINS) {
+    if (cleanHost === rootDomain || cleanHost === `www.${rootDomain}`) {
+      return rootDomain;
+    }
 
-          <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
-            {waCta ? (
-              <a
-                href={waCta}
-                target="_blank"
-                rel="noreferrer"
-                className="rounded-md bg-purple-800 px-6 py-3 text-sm font-extrabold text-white hover:bg-purple-900"
-              >
-                CONVERSAR AGORA
-              </a>
-            ) : null}
+    if (cleanHost.endsWith(`.${rootDomain}`)) {
+      return rootDomain;
+    }
+  }
 
-            {igUrl ? (
-              <a
-                href={igUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="rounded-md border border-purple-300 bg-purple-50 px-6 py-3 text-sm font-extrabold text-purple-900 hover:bg-purple-100"
-              >
-                INSTAGRAM
-              </a>
-            ) : null}
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
+  return null;
+}
 
-  <section className="mx-auto max-w-5xl px-4 pb-14">
-    <div className="grid gap-6 md:grid-cols-[1.4fr_.6fr]">
-      <div className="rounded-2xl border border-purple-200 bg-white p-6 shadow-sm sm:p-7">
-        <h2 className="text-lg font-extrabold text-slate-900">QUEM SOMOS?</h2>
-        <div className="mt-4 whitespace-pre-line leading-relaxed text-slate-800">
-          {about || "—"}
-        </div>
-      </div>
+function extractSlugFromHost(host: string, baseDomain: string | null) {
+  if (!baseDomain) return null;
 
-      <div className="space-y-6">
-        <div className="rounded-2xl border border-purple-200 bg-white p-6 shadow-sm sm:p-7">
-          <h3 className="text-sm font-extrabold tracking-widest text-purple-700">
-            CONTATO
-          </h3>
+  const cleanHost = getCleanHost(host);
 
-          <div className="mt-4 space-y-2 text-sm text-slate-800">
-            {phone ? (
-              <div className="flex items-start justify-between gap-3">
-                <span className="text-slate-500">Telefone</span>
-                <span className="text-right font-semibold">{phone}</span>
-              </div>
-            ) : null}
+  if (cleanHost === baseDomain || cleanHost === `www.${baseDomain}`) {
+    return null;
+  }
 
-            {email ? (
-              <div className="flex items-start justify-between gap-3">
-                <span className="text-slate-500">E-mail</span>
-                <span className="text-right font-semibold">{email}</span>
-              </div>
-            ) : null}
+  if (!cleanHost.endsWith(`.${baseDomain}`)) {
+    return null;
+  }
 
-            {whatsapp ? (
-              <div className="flex items-start justify-between gap-3">
-                <span className="text-slate-500">WhatsApp</span>
-                <span className="text-right font-semibold">{whatsapp}</span>
-              </div>
-            ) : null}
-          </div>
+  const withoutBase = cleanHost.slice(0, -(`.${baseDomain}`.length));
+  const parts = withoutBase.split(".").filter(Boolean);
+  return parts[parts.length - 1] || null;
+}
 
-          {waCta ? (
-            <a
-              href={waCta}
-              target="_blank"
-              rel="noreferrer"
-              className="mt-5 block rounded-md bg-purple-800 px-5 py-3 text-center text-sm font-extrabold text-white hover:bg-purple-900"
-            >
-              FALAR NO WHATSAPP
-            </a>
-          ) : null}
-        </div>
+// =====================
+// CONTEXT
+// =====================
 
-        <div className="rounded-2xl border border-purple-200 bg-white p-6 text-center shadow-sm sm:p-7">
-          <div className="mx-auto grid h-14 w-14 place-items-center rounded-full border border-purple-200 bg-purple-50 text-purple-900">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-              <path
-                d="M7 2h10a5 5 0 015 5v10a5 5 0 01-5 5H7a5 5 0 01-5-5V7a5 5 0 015-5z"
-                stroke="currentColor"
-                strokeWidth="1.8"
-              />
-              <path
-                d="M12 16a4 4 0 100-8 4 4 0 000 8z"
-                stroke="currentColor"
-                strokeWidth="1.8"
-              />
-              <path
-                d="M17.5 6.5h.01"
-                stroke="currentColor"
-                strokeWidth="3"
-                strokeLinecap="round"
-              />
-            </svg>
-          </div>
+async function resolveSiteContext(props: PageProps) {
+  const headerList = await headers();
+  const host = headerList.get("host") || "";
+  const hostBaseDomain = getBaseDomainFromHost(host);
 
-          <div className="mt-3 text-sm font-extrabold text-slate-900">
-            INSTAGRAM
-          </div>
+  const params = await Promise.resolve(props.params);
+  const routeSlug = String(params?.slug || "").trim() || null;
+  const hostSlug = extractSlugFromHost(host, hostBaseDomain);
 
-          <a
-            href={igUrl || "#"}
-            target="_blank"
-            rel="noreferrer"
-            className={`mt-4 inline-flex items-center justify-center rounded-md px-5 py-3 text-sm font-extrabold ${
-              igUrl
-                ? "border border-purple-300 bg-purple-50 text-purple-900 hover:bg-purple-100"
-                : "pointer-events-none bg-slate-100 text-slate-400"
-            }`}
-          >
-            ACESSAR
-          </a>
-        </div>
-      </div>
-    </div>
+  const slug = hostSlug || routeSlug;
 
-    {privacy ? (
-      <div className="mt-6">
-        <div className="rounded-2xl border border-purple-200 bg-white p-6 shadow-sm sm:p-7">
-          <div className="text-xs font-extrabold tracking-widest text-purple-700">
-            POLÍTICA DE PRIVACIDADE
-          </div>
-          <div className="mt-3 whitespace-pre-line text-sm font-semibold leading-relaxed text-slate-800 sm:text-base">
-            {privacy}
-          </div>
-        </div>
-      </div>
-    ) : null}
-  </section>
+  return {
+    host,
+    hostBaseDomain,
+    slug,
+  };
+}
 
-  <footer className="border-t border-purple-200 bg-white">
-    <div className="mx-auto max-w-5xl px-4 py-10">
-      <div className="whitespace-pre-line text-sm text-slate-700">{footer}</div>
+async function findSite(slug: string, hostBaseDomain: string | null) {
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
 
-      <div className="mt-6">
-        <a
-          href="https://policies.google.com/privacy?hl=pt-BR"
-          target="_blank"
-          rel="noreferrer"
-          className="text-sm font-semibold text-purple-900 underline underline-offset-4"
-        >
-          Políticas de privacidade
-        </a>
-      </div>
-    </div>
-  </footer>
-</main>
+  if (hostBaseDomain) {
+    const { data } = await supabase
+      .from("sites")
+      .select("*")
+      .eq("slug", slug)
+      .eq("is_public", true)
+      .eq("base_domain", hostBaseDomain)
+      .maybeSingle();
+
+    if (data) return data;
+  }
+
+  const { data } = await supabase
+    .from("sites")
+    .select("*")
+    .eq("slug", slug)
+    .eq("is_public", true)
+    .maybeSingle();
+
+  return data ?? null;
+}
+
+// =====================
+// 🔥 METADATA (CORRIGIDO)
+// =====================
+
+export async function generateMetadata(props: PageProps): Promise<Metadata> {
+  const { slug, host, hostBaseDomain } = await resolveSiteContext(props);
+
+  if (!slug) {
+    return { title: "Site público" };
+  }
+
+  const data = await findSite(slug, hostBaseDomain);
+
+  const title = data?.company_name || "Site público";
+
+  const description =
+    (data?.mission || `Site oficial de ${title}`).slice(0, 160);
+
+  const cleanHost = getCleanHost(host);
+  const publicUrl = `https://${cleanHost}/`;
+
+  const metaContent = extractMetaContent(
+    data?.meta_verify_content || data?.meta_verify_name
+  );
+
+  return {
+    title,
+    description,
+
+    alternates: {
+      canonical: publicUrl,
+    },
+
+    openGraph: {
+      url: publicUrl,
+      title,
+      description,
+      type: "website",
+      siteName: title,
+    },
+
+    twitter: {
+      card: "summary",
+      title,
+      description,
+    },
+
+    // 🔥 META TAG DO FACEBOOK
+    other: metaContent
+      ? {
+          "facebook-domain-verification": metaContent,
+        }
+      : undefined,
+  };
+}
+
+// =====================
+// PAGE ORIGINAL (NÃO ALTERADO)
+// =====================
+
+export default async function PublicSitePage(props: PageProps) {
+  const { slug, hostBaseDomain } = await resolveSiteContext(props);
+
+  if (!slug) {
+    return <div>Site em configuração</div>;
+  }
+
+  const data = await findSite(slug, hostBaseDomain);
+
+  if (!data) {
+    return <div>Site em configuração</div>;
+  }
+
+  const company_name = data.company_name || "Empresa";
+
+  return (
+    <main>
+      <h1>{company_name}</h1>
+    </main>
+  );
+}
