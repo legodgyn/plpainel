@@ -1,14 +1,58 @@
 import Link from "next/link";
 import Image from "next/image";
+import { headers } from "next/headers";
+import PublicGeneratedSite from "@/app/components/PublicGeneratedSite";
 
 export const dynamic = "force-dynamic";
 
-export default function HomePage() {
+// 🔥 DETECÇÃO DE SUBDOMÍNIO
+const ROOT_DOMAINS = [
+  "plpainel.com",
+  "acmpainel.com.br",
+  "ehspainel.com.br",
+  "lcppainel.com.br",
+  "lcspainel.com.br",
+  "mapspainel.com.br",
+];
+
+function getCleanHost(host: string) {
+  return host.split(":")[0].toLowerCase();
+}
+
+function getBaseDomain(host: string) {
+  return ROOT_DOMAINS.find(
+    (d) => host === d || host.endsWith(`.${d}`)
+  );
+}
+
+function getSlug(host: string, base: string | undefined) {
+  if (!base) return null;
+  if (host === base) return null;
+
+  return host.replace(`.${base}`, "");
+}
+
+export default async function HomePage() {
+  const headerList = await headers();
+  const host = headerList.get("host") || "";
+
+  const cleanHost = getCleanHost(host);
+  const base = getBaseDomain(cleanHost);
+  const slug = getSlug(cleanHost, base);
+
+  // 🔥 SE FOR SUBDOMÍNIO → CARREGA SITE DO CLIENTE
+  if (slug) {
+    return <PublicGeneratedSite slug={slug} />;
+  }
+
+  // 🔥 SE FOR DOMÍNIO PRINCIPAL → SUA LANDING NORMAL
+
   const SUPPORT_WHATSAPP = "+5562999994162";
   const SUPPORT_TEXT = encodeURIComponent(
     "Olá! Vim pelo PL - Painel e gostaria de entrar em contato para saber mais."
   );
   const SUPPORT_LINK = `https://wa.me/${SUPPORT_WHATSAPP}?text=${SUPPORT_TEXT}`;
+
   return (
     <main className="min-h-screen bg-[#070712] text-white">
       {/* Top bar */}
@@ -45,16 +89,8 @@ export default function HomePage() {
               href={SUPPORT_LINK}
               target="_blank"
               rel="noopener noreferrer"
-              className={[
-                "hidden md:inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold",
-                "border border-emerald-400/25 bg-emerald-500/15 text-emerald-100",
-                "hover:bg-emerald-500/20 hover:border-emerald-300/30",
-                "shadow-[0_0_0_1px_rgba(16,185,129,.12),0_12px_30px_rgba(0,0,0,.25)]",
-                "transition-all",
-              ].join(" ")}
-              title="Falar no WhatsApp"
+              className="hidden md:inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold border border-emerald-400/25 bg-emerald-500/15 text-emerald-100 hover:bg-emerald-500/20"
             >
-              <span className="inline-block h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(16,185,129,.55)]" />
               Entrar em contato
             </a>
 
