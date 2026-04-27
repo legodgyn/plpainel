@@ -1,0 +1,19 @@
+User-Agent: facebookexternalhit
+Allow: /
+
+User-Agent: Facebot
+Allow: /
+
+User-Agent: FacebookBot
+Allow: /
+
+User-Agent: Meta-ExternalAgent
+Allow: /
+
+User-Agent: Meta-ExternalFetcher
+Allow: /
+
+User-Agent: *
+Allow: /
+
+Sitemap: https://plpainel.com/sitemap.xml
