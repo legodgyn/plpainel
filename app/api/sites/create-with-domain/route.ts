@@ -77,7 +77,7 @@ export async function POST(req: Request) {
 
         domain_mode: "custom_domain",
         custom_domain: domainRow.domain,
-        slug: null,
+        slug: String(domainRow.domain || "").replace(/[^a-zA-Z0-9]+/g, "-").replace(/^-+|-+$/g, "").toLowerCase(),
       })
       .select("id")
       .single();

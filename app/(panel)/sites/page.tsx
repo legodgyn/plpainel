@@ -6,12 +6,14 @@ import { supabase } from "@/lib/supabaseBrowser";
 
 type SiteRow = {
   id: string;
-  slug: string;
+  slug: string | null;
   company_name: string | null;
   created_at: string;
   is_public: boolean;
   user_id: string;
   base_domain: string | null;
+  domain_mode: string | null;
+  custom_domain: string | null;
 };
 
 function fmtDate(iso: string) {
@@ -23,7 +25,21 @@ function fmtDate(iso: string) {
   }
 }
 
-function buildPublicUrl(slug: string, baseDomain?: string | null) {
+function getSiteDisplayDomain(site: SiteRow) {
+  if (site.domain_mode === "custom_domain" && site.custom_domain) {
+    return site.custom_domain;
+  }
+
+  return `${site.slug || "site"}.${site.base_domain || "plpainel.com"}`;
+}
+
+function buildPublicUrl(site: SiteRow) {
+  if (site.domain_mode === "custom_domain" && site.custom_domain) {
+    return `https://${site.custom_domain}`;
+  }
+
+  const slug = site.slug || "site";
+
   if (typeof window === "undefined") return `/s/${slug}`;
 
   const host = window.location.hostname;
@@ -38,7 +54,7 @@ function buildPublicUrl(slug: string, baseDomain?: string | null) {
 
   if (isLocal || isIp) return `/s/${slug}`;
 
-  return `https://${slug}.${baseDomain || "plpainel.com"}`;
+  return `https://${slug}.${site.base_domain || "plpainel.com"}`;
 }
 
 export default function SitesPage() {
@@ -67,7 +83,7 @@ export default function SitesPage() {
 
     const { data, error } = await supabase
       .from("sites")
-      .select("id, slug, company_name, created_at, is_public, user_id, base_domain")
+      .select("id, slug, company_name, created_at, is_public, user_id, base_domain, domain_mode, custom_domain")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false });
 
@@ -124,7 +140,7 @@ export default function SitesPage() {
     const s = q.trim().toLowerCase();
     if (s) {
       list = list.filter((x) =>
-        `${x.slug} ${x.company_name || ""} ${x.base_domain || ""}`
+        `${x.slug || ""} ${x.company_name || ""} ${x.base_domain || ""} ${x.custom_domain || ""}`
           .toLowerCase()
           .includes(s)
       );
@@ -154,8 +170,8 @@ export default function SitesPage() {
 
     if (sortBy === "az") {
       list.sort((a, b) =>
-        String(a.company_name || a.slug).localeCompare(
-          String(b.company_name || b.slug),
+        String(a.company_name || a.slug || a.custom_domain || "").localeCompare(
+          String(b.company_name || b.slug || b.custom_domain || ""),
           "pt-BR",
           { sensitivity: "base" }
         )
@@ -164,8 +180,8 @@ export default function SitesPage() {
 
     if (sortBy === "za") {
       list.sort((a, b) =>
-        String(b.company_name || b.slug).localeCompare(
-          String(a.company_name || a.slug),
+        String(b.company_name || b.slug || b.custom_domain || "").localeCompare(
+          String(a.company_name || a.slug || a.custom_domain || ""),
           "pt-BR",
           { sensitivity: "base" }
         )
@@ -304,7 +320,8 @@ export default function SitesPage() {
           </div>
         ) : (
           filtered.map((site) => {
-            const publicUrl = buildPublicUrl(site.slug, site.base_domain);
+            const publicUrl = buildPublicUrl(site);
+            const displayDomain = getSiteDisplayDomain(site);
 
             return (
               <div
@@ -314,7 +331,7 @@ export default function SitesPage() {
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <div className="break-all text-base font-semibold text-violet-300">
-                      {site.slug}.{site.base_domain || "plpainel.com"}
+                      {displayDomain}
                     </div>
 
                     <div className="mt-1 text-xs text-white/50">

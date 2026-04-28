@@ -6,10 +6,12 @@ import { createClient } from "@supabase/supabase-js";
 
 type SiteRow = {
   id: string;
-  slug: string;
+  slug: string | null;
   company_name: string | null;
   created_at?: string | null;
   base_domain?: string | null;
+  domain_mode?: string | null;
+  custom_domain?: string | null;
 };
 
 type TokenRow = {
@@ -84,7 +86,7 @@ export default function DashboardPage() {
 
       const sitesPromise = supabase
         .from("sites")
-        .select("id, slug, company_name, created_at, base_domain")
+        .select("id, slug, company_name, created_at, base_domain, domain_mode, custom_domain")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false })
         .limit(10);
@@ -258,7 +260,7 @@ export default function DashboardPage() {
           <table className="w-full text-sm">
             <thead className="text-white/70">
               <tr className="border-b border-white/10">
-                <th className="py-3 text-left font-semibold">Slug</th>
+                <th className="py-3 text-left font-semibold">Site</th>
                 <th className="py-3 text-left font-semibold">Criado</th>
                 <th className="py-3 text-left font-semibold">Domínio</th>
                 <th className="py-3 text-right font-semibold">Ações</th>
@@ -281,20 +283,26 @@ export default function DashboardPage() {
               ) : (
                 sites.map((s) => {
                   const baseDomain = s.base_domain || ROOT_DOMAIN;
-                  const publicUrl =
-                    process.env.NODE_ENV === "development"
-                      ? `/s/${s.slug}`
-                      : `https://${s.slug}.${baseDomain}`;
+                  const isCustomDomain =
+                    s.domain_mode === "custom_domain" && Boolean(s.custom_domain);
+                  const displayDomain = isCustomDomain
+                    ? String(s.custom_domain)
+                    : `${s.slug || "site"}.${baseDomain}`;
+                  const publicUrl = isCustomDomain
+                    ? `https://${s.custom_domain}`
+                    : process.env.NODE_ENV === "development"
+                    ? `/s/${s.slug || "site"}`
+                    : `https://${s.slug || "site"}.${baseDomain}`;
 
                   return (
                     <tr key={s.id} className="hover:bg-white/5">
-                      <td className="py-3 font-semibold text-white">{s.slug}</td>
+                      <td className="py-3 font-semibold text-white">{isCustomDomain ? "Domínio próprio" : s.slug}</td>
 
                       <td className="py-3 text-white/70">
                         {s.created_at ? new Date(s.created_at).toLocaleString("pt-BR") : "—"}
                       </td>
 
-                      <td className="py-3 text-white/70">{`${s.slug}.${baseDomain}`}</td>
+                      <td className="py-3 text-white/70">{displayDomain}</td>
 
                       <td className="py-3 text-right">
                         <div className="flex justify-end gap-2">
