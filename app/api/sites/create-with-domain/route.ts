@@ -9,33 +9,38 @@ function getBearerToken(req: Request) {
 export async function POST(req: Request) {
   try {
     const token = getBearerToken(req);
-    const body = await req.json();
 
     if (!token) {
       return NextResponse.json({ ok: false, error: "Não autorizado." }, { status: 401 });
     }
 
+    const body = await req.json();
+
     const supabaseUser = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
-        global: { headers: { Authorization: `Bearer ${token}` } },
+        global: {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
       }
     );
 
-    const { data: authData } = await supabaseUser.auth.getUser();
-    const user = authData.user;
+    const { data: authData, error: authError } = await supabaseUser.auth.getUser();
 
-    if (!user) {
+    if (authError || !authData.user) {
       return NextResponse.json({ ok: false, error: "Usuário inválido." }, { status: 401 });
     }
+
+    const user = authData.user;
 
     const supabaseAdmin = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
 
-    // 🔍 pega domínio disponível do usuário
     const { data: domainRow } = await supabaseAdmin
       .from("available_domains")
       .select("*")
@@ -46,38 +51,41 @@ export async function POST(req: Request) {
       .maybeSingle();
 
     if (!domainRow) {
-      return NextResponse.json({ ok: false, error: "Domínio inválido ou já usado." }, { status: 400 });
+      return NextResponse.json(
+        { ok: false, error: "Domínio inválido ou já usado." },
+        { status: 400 }
+      );
     }
 
-    // 🔥 cria site
     const { data: site, error: siteError } = await supabaseAdmin
       .from("sites")
       .insert({
-        company_name: body.companyName,
+        user_id: user.id,
+        company_name: body.company_name,
         cnpj: body.cnpj,
         phone: body.phone,
         email: body.email,
-        whatsapp: body.whatsapp,
         instagram: body.instagram || null,
+        whatsapp: body.whatsapp,
         mission: body.mission,
         about: body.about,
         privacy: body.privacy,
         footer: body.footer,
+        meta_verify_name: body.meta_verify_name,
+        meta_verify_content: body.meta_verify_content,
+        is_public: body.is_public ?? true,
 
         domain_mode: "custom_domain",
         custom_domain: domainRow.domain,
         slug: null,
-
-        is_public: true,
       })
-      .select("*")
+      .select("id")
       .single();
 
     if (siteError) {
       return NextResponse.json({ ok: false, error: siteError.message }, { status: 500 });
     }
 
-    // 🔒 marca domínio como usado
     await supabaseAdmin
       .from("available_domains")
       .update({
