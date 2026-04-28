@@ -1,4 +1,4 @@
-"use client";
+ "use client";
 
 import Link from "next/link";
 import Image from "next/image";
@@ -167,8 +167,20 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
       });
     }
 
-
-
+          items.push({
+        href: "/domains/buy",
+        label: "Comprar Domínio",
+        icon: "🌍",
+      });
+    }
+                      
+      items.push({
+        href: "/domains/my",
+        label: "Meus Domínios",
+        icon: "🔐",
+      });
+    }
+                    
 
 
     return items;
