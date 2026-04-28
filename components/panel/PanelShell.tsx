@@ -166,21 +166,7 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
         icon: "🔐",
       });
     }
-
-          items.push({
-        href: "/domains/buy",
-        label: "Comprar Domínio",
-        icon: "🌍",
-      });
-    }
-                      
-      items.push({
-        href: "/domains/my",
-        label: "Meus Domínios",
-        icon: "🔐",
-      });
-    }
-                    
+                   
 
 
     return items;
