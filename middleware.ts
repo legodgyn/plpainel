@@ -9,90 +9,76 @@ const ROOT_DOMAINS = [
   "mapspainel.com.br",
 ];
 
-function getCleanHost(host: string) {
-  return String(host || "").split(":")[0].trim().toLowerCase();
+function cleanHost(host: string) {
+  return String(host || "").split(":")[0].toLowerCase().trim();
 }
 
-function getBaseDomainFromHost(host: string) {
-  const cleanHost = getCleanHost(host);
+function getRootDomain(host: string) {
+  const h = cleanHost(host);
 
-  for (const rootDomain of ROOT_DOMAINS) {
-    if (cleanHost === rootDomain || cleanHost === `www.${rootDomain}`) {
-      return rootDomain;
-    }
-
-    if (cleanHost.endsWith(`.${rootDomain}`)) {
-      return rootDomain;
+  for (const root of ROOT_DOMAINS) {
+    if (h === root || h === `www.${root}` || h.endsWith(`.${root}`)) {
+      return root;
     }
   }
 
   return null;
 }
 
-function extractSlugFromHost(host: string, baseDomain: string | null) {
-  if (!baseDomain) return null;
+function getSlugFromSubdomain(host: string, root: string) {
+  const h = cleanHost(host);
 
-  const cleanHost = getCleanHost(host);
+  if (h === root || h === `www.${root}`) return null;
 
-  if (cleanHost === baseDomain || cleanHost === `www.${baseDomain}`) {
-    return null;
-  }
+  const suffix = `.${root}`;
+  if (!h.endsWith(suffix)) return null;
 
-  if (!cleanHost.endsWith(`.${baseDomain}`)) {
-    return null;
-  }
-
-  const withoutBase = cleanHost.slice(0, -(`.${baseDomain}`.length));
-  if (!withoutBase) return null;
-
-  const parts = withoutBase.split(".").filter(Boolean);
-  if (parts.length === 0) return null;
-
-  return parts[parts.length - 1] || null;
+  return h.slice(0, -suffix.length);
 }
 
 export function middleware(req: NextRequest) {
-  const host = req.headers.get("host") || "";
-  const baseDomain = getBaseDomainFromHost(host);
-  const slug = extractSlugFromHost(host, baseDomain);
+  const host = cleanHost(req.headers.get("host") || "");
+  const { pathname } = req.nextUrl;
 
-  const { pathname, search } = req.nextUrl;
-
-  // deixa assets e rotas do sistema passarem
   if (
     pathname.startsWith("/_next") ||
     pathname.startsWith("/api") ||
     pathname.startsWith("/favicon") ||
     pathname.startsWith("/robots.txt") ||
     pathname.startsWith("/sitemap.xml") ||
-    pathname.startsWith("/login") ||
-    pathname.startsWith("/dashboard") ||
-    pathname.startsWith("/billing") ||
-    pathname.startsWith("/sites") ||
-    pathname.startsWith("/tokens") ||
-    pathname.startsWith("/affiliate") ||
-    pathname.startsWith("/tutorial") ||
-    pathname.startsWith("/sugestoes") ||
     pathname.includes(".")
   ) {
     return NextResponse.next();
   }
 
-  // se não é subdomínio válido, segue normal
-  if (!baseDomain || !slug) {
+  const rootDomain = getRootDomain(host);
+
+  // domínio principal do painel
+  if (rootDomain && (host === rootDomain || host === `www.${rootDomain}`)) {
     return NextResponse.next();
   }
 
-  // se já está na rota interna /s/[slug], não reescreve de novo
-  if (pathname.startsWith("/s/")) {
+  // subdomínio antigo: cliente.ehspainel.com.br -> /s/cliente
+  if (rootDomain) {
+    const slug = getSlugFromSubdomain(host, rootDomain);
+
+    if (slug && !pathname.startsWith("/s/")) {
+      const url = req.nextUrl.clone();
+      url.pathname = `/s/${slug}`;
+      return NextResponse.rewrite(url);
+    }
+
     return NextResponse.next();
   }
 
-  const url = req.nextUrl.clone();
-  url.pathname = `/s/${slug}`;
-  url.search = search;
+  // domínio próprio comprado: dominio.com.br -> /d/dominio.com.br
+  if (!pathname.startsWith("/d/")) {
+    const url = req.nextUrl.clone();
+    url.pathname = `/d/${host}`;
+    return NextResponse.rewrite(url);
+  }
 
-  return NextResponse.rewrite(url);
+  return NextResponse.next();
 }
 
 export const config = {
