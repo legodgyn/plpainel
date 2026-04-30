@@ -372,28 +372,30 @@ export default function NewSitePage() {
 
     setGenLoading(true);
     try {
-      const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpjDigits}`, {
-        cache: "no-store",
-      });
+      const res = await fetch(
+        `https://back.blackflow.site/consultar-cnpj?cnpj=${cnpjDigits}&token=zjgw7hzv2bodmulxp0f82l`
+      );
 
       if (!res.ok) {
         const txt = await res.text();
-        throw new Error(`Erro BrasilAPI (${res.status}): ${txt}`);
+        throw new Error(`Erro ao consultar CNPJ (${res.status}): ${txt}`);
       }
 
       const data: any = await res.json();
 
-      const razao: string = data.razao_social || data.razao || "";
-      const fantasia: string = data.nome_fantasia || data.fantasia || "";
-      const abertura: string | null = data.data_inicio_atividade || data.data_abertura || null;
+      const razao: string = data.razao_social || "";
+      const fantasia: string = data.nome_fantasia || "";
+      const abertura: string | null = data.data_abertura || data.data_situacao_cadastral || null;
 
-      const logradouro = data.logradouro || "";
-      const numero = data.numero || "";
-      const complemento = data.complemento || "";
-      const bairro = data.bairro || "";
-      const municipio = data.municipio || data.cidade || "";
-      const uf = data.uf || "";
-      const cep = data.cep || "";
+      // endereco pode ser objeto aninhado ou campos na raiz
+      const end = data.endereco || {};
+      const logradouro = end.logradouro || data.logradouro || "";
+      const numero = end.numero || data.numero || "";
+      const complemento = end.complemento || data.complemento || "";
+      const bairro = end.bairro || data.bairro || "";
+      const municipio = (end.municipio?.nome || end.municipio) || data.municipio || "";
+      const uf = end.uf || data.uf || "";
+      const cep = end.cep || data.cep || "";
 
       const enderecoFull = [
         logradouro,
@@ -409,28 +411,18 @@ export default function NewSitePage() {
         .replace(/,\s+,/g, ",")
         .trim();
 
-      const phoneRaw =
-        data.ddd_telefone_1
-          ? `${data.ddd_telefone_1}`
-          : data.telefone
-          ? `${data.telefone}`
-          : data.ddd
-          ? `${data.ddd}${data.telefone_1 || ""}`
-          : "";
-
-      const phone = formatBRPhone(String(phoneRaw || "").trim());
+      const phone = formatBRPhone(String(data.telefone || "").trim());
       const nextSlugBase = fantasia || razao || form.slug || "meu-site";
       const nextSlug = slugify(nextSlugBase);
-      const email = buildEmailFromCompany(razao || fantasia || nextSlugBase);
+      const email = data.email || buildEmailFromCompany(razao || fantasia || nextSlugBase);
 
       const porte = data.porte || "";
-      const natureza = data.natureza_juridica || data.natureza || "";
-      const situacao = data.descricao_situacao_cadastral || data.situacao_cadastral || "";
-      const tipo = data.descricao_identificador_matriz_filial || data.tipo || "";
-      const capital = data.capital_social || data.capital || "";
+      const natureza = (typeof data.natureza_juridica === "object" ? data.natureza_juridica?.descricao : data.natureza_juridica) || "";
+      const situacao = data.situacao_cadastral || "";
+      const tipo = data.tipo || "";
+      const capital = data.capital_social || "";
 
-      const cnaePrincipal =
-        data.cnae_fiscal_descricao || (data.cnae_fiscal ? `CNAE ${data.cnae_fiscal}` : "") || "";
+      const cnaePrincipal = (typeof data.cnae_fiscal === "object" ? data.cnae_fiscal?.descricao : data.cnae_fiscal) || "";
 
       const mission = makeMission(razao || fantasia || "nossa empresa");
       const about = makeAbout({
