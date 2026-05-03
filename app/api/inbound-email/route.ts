@@ -49,7 +49,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const domain = toEmail.split("@")[1];
+    const [slug, domain] = toEmail.split("@");
 
     const subject = getHeader(raw, "subject") || String(body.subject || "");
     const textBody = getBody(raw);
