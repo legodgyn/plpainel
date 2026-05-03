@@ -53,16 +53,28 @@ export default function EmailsPage() {
         ) : domains.length === 0 ? (
           <div className="text-white/60">Você ainda não possui domínios.</div>
         ) : (
-          domains.map((d) => (
-            <Link
-              key={d.id}
-              href={`/emails/${encodeURIComponent(d.domain)}`}
-              className="rounded-2xl border border-white/10 bg-white/5 p-5 transition hover:bg-white/10"
-            >
-              <div className="text-lg font-bold">{d.domain}</div>
-              <div className="mt-1 text-sm text-white/60">Abrir caixa de entrada →</div>
-            </Link>
-          ))
+          domains.map((d) => {
+            const email = `facebook@${d.domain}`;
+
+            return (
+              <Link
+                key={d.id}
+                href={`/emails/${encodeURIComponent(d.domain)}`}
+                className="rounded-2xl border border-white/10 bg-white/5 p-5 transition hover:bg-white/10"
+              >
+                <div className="text-lg font-bold">{d.domain}</div>
+
+                <div className="mt-3 rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-200">
+                  Use para verificação:{" "}
+                  <span className="font-bold">{email}</span>
+                </div>
+
+                <div className="mt-3 text-sm text-white/60">
+                  Abrir caixa de entrada →
+                </div>
+              </Link>
+            );
+          })
         )}
       </div>
     </main>
