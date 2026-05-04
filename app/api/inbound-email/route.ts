@@ -3,11 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 
 function env(name: string) {
   const value = process.env[name];
-
-  if (!value) {
-    throw new Error(`Missing env: ${name}`);
-  }
-
+  if (!value) throw new Error(`Missing env: ${name}`);
   return value;
 }
 
@@ -30,10 +26,7 @@ export async function POST(req: Request) {
     const secret = req.headers.get("x-inbound-secret");
 
     if (secret !== env("INBOUND_EMAIL_SECRET")) {
-      return NextResponse.json(
-        { ok: false, error: "Unauthorized" },
-        { status: 401 }
-      );
+      return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
     }
 
     const body = await req.json();
@@ -43,13 +36,10 @@ export async function POST(req: Request) {
     const raw = String(body.raw || "");
 
     if (!toEmail || !toEmail.includes("@")) {
-      return NextResponse.json(
-        { ok: false, error: "Invalid to email" },
-        { status: 400 }
-      );
+      return NextResponse.json({ ok: false, error: "Invalid to email" }, { status: 400 });
     }
 
-    const [slug, domain] = toEmail.split("@");
+    const [emailPrefix, domain] = toEmail.split("@");
 
     const subject = getHeader(raw, "subject") || String(body.subject || "");
     const textBody = getBody(raw);
@@ -62,16 +52,34 @@ export async function POST(req: Request) {
 
     const { data: domainRow } = await supabase
       .from("available_domains")
-      .select("assigned_user_id")
+      .select("assigned_user_id, is_global")
       .eq("domain", domain)
-      .in("status", ["sold", "used"])
       .maybeSingle();
 
-    const userId = domainRow?.assigned_user_id;
+    if (!domainRow) {
+      return NextResponse.json(
+        { ok: false, error: `Domain not found: ${domain}` },
+        { status: 404 }
+      );
+    }
+
+    let userId: string | null = null;
+
+    if (domainRow.is_global) {
+      const { data: site } = await supabase
+        .from("sites")
+        .select("user_id")
+        .eq("slug", emailPrefix)
+        .maybeSingle();
+
+      userId = site?.user_id || null;
+    } else {
+      userId = domainRow.assigned_user_id || null;
+    }
 
     if (!userId) {
       return NextResponse.json(
-        { ok: false, error: "Domain not assigned" },
+        { ok: false, error: `User not found for email: ${toEmail}` },
         { status: 404 }
       );
     }
@@ -88,10 +96,7 @@ export async function POST(req: Request) {
     });
 
     if (error) {
-      return NextResponse.json(
-        { ok: false, error: error.message },
-        { status: 500 }
-      );
+      return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
     }
 
     return NextResponse.json({ ok: true });
