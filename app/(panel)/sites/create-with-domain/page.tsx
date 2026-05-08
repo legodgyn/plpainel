@@ -1,37 +1,80 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseBrowser";
 
-function onlyDigits(v: string) {
-  return String(v || "").replace(/\D/g, "");
+const CUSTOM_DOMAIN_IP = "187.77.33.45";
+
+type BalanceRow = { balance: number | null };
+
+type FormState = {
+  domain: string;
+  cnpj: string;
+  company_name: string;
+  phone: string;
+  whatsapp: string;
+  email: string;
+  instagram: string;
+  facebook: string;
+  mission: string;
+  about: string;
+  privacy: string;
+  footer: string;
+};
+
+const steps = ["Tokens", "CNPJ", "Gerar Site", "Domínio + DNS", "Email", "Concluído"];
+
+const initialForm: FormState = {
+  domain: "",
+  cnpj: "",
+  company_name: "",
+  phone: "",
+  whatsapp: "",
+  email: "",
+  instagram: "https://instagram.com",
+  facebook: "https://facebook.com",
+  mission: "",
+  about: "",
+  privacy: "",
+  footer: "",
+};
+
+function onlyDigits(value: string) {
+  return String(value || "").replace(/\D/g, "");
+}
+
+function cleanDomain(input: string) {
+  return String(input || "")
+    .trim()
+    .toLowerCase()
+    .replace(/^https?:\/\//, "")
+    .replace(/^www\./, "")
+    .split("/")[0]
+    .split(":")[0];
+}
+
+function isValidDomain(domain: string) {
+  return /^(?!-)(?:[a-z0-9-]{1,63}\.)+[a-z]{2,63}$/.test(domain);
 }
 
 function formatCNPJ(input: string) {
   const digits = onlyDigits(input).slice(0, 14);
   if (!digits) return "";
 
-  const p1 = digits.slice(0, 2);
-  const p2 = digits.slice(2, 5);
-  const p3 = digits.slice(5, 8);
-  const p4 = digits.slice(8, 12);
-  const p5 = digits.slice(12, 14);
-
-  let out = p1;
-  if (digits.length >= 3) out += `.${p2}`;
-  if (digits.length >= 6) out += `.${p3}`;
-  if (digits.length >= 9) out += `/${p4}`;
-  if (digits.length >= 13) out += `-${p5}`;
+  let out = digits.slice(0, 2);
+  if (digits.length >= 3) out += `.${digits.slice(2, 5)}`;
+  if (digits.length >= 6) out += `.${digits.slice(5, 8)}`;
+  if (digits.length >= 9) out += `/${digits.slice(8, 12)}`;
+  if (digits.length >= 13) out += `-${digits.slice(12, 14)}`;
 
   return out;
 }
 
 function formatBRPhone(input: string) {
-  const digitsRaw = onlyDigits(input);
-  if (!digitsRaw) return "";
-
-  let digits = digitsRaw;
+  let digits = onlyDigits(input);
+  if (!digits) return "";
   if (digits.length > 11) digits = digits.slice(-11);
 
   const ddd = digits.slice(0, 2);
@@ -39,43 +82,14 @@ function formatBRPhone(input: string) {
 
   if (digits.length <= 2) return `(${digits}`;
   if (digits.length <= 6) return `(${ddd}) ${rest}`;
+  if (digits.length === 10) return `(${ddd}) ${rest.slice(0, 4)}-${rest.slice(4, 8)}`;
 
-  if (digits.length === 10) {
-    return `(${ddd}) ${rest.slice(0, 4)}-${rest.slice(4, 8)}`;
-  }
-
-  const r = digits.slice(2, 11);
-  return `(${ddd}) ${r.slice(0, 5)}-${r.slice(5, 9)}`;
+  const mobile = digits.slice(2, 11);
+  return `(${ddd}) ${mobile.slice(0, 5)}-${mobile.slice(5, 9)}`;
 }
 
-function buildEmailFromCompany(name: string) {
-  const cleaned = String(name || "")
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/\b(ltda|me|epp|s\/a|sa|eireli)\b/gi, "")
-    .replace(/[^a-z0-9 ]/g, "")
-    .trim()
-    .replace(/\s+/g, "");
-
-  return `contato@${cleaned || "empresa"}.com`;
-}
-
-function parseMetaTag(input: string) {
-  const raw = String(input || "").trim();
-  if (!raw) return { name: null as string | null, content: null as string | null };
-
-  if (!raw.toLowerCase().includes("<meta")) {
-    return { name: "facebook-domain-verification", content: raw };
-  }
-
-  const nameMatch = raw.match(/name\s*=\s*["']([^"']+)["']/i);
-  const contentMatch = raw.match(/content\s*=\s*["']([^"']+)["']/i);
-
-  return {
-    name: nameMatch?.[1] ?? "facebook-domain-verification",
-    content: contentMatch?.[1] ?? null,
-  };
+function buildEmail(domain: string) {
+  return domain ? `contato@${domain}` : "contato@seudominio.com.br";
 }
 
 function fmtDateBR(iso?: string | null) {
@@ -83,608 +97,636 @@ function fmtDateBR(iso?: string | null) {
   try {
     return new Date(iso).toLocaleDateString("pt-BR");
   } catch {
-    return iso;
+    return iso || "";
   }
 }
 
 function makeMission(company: string) {
-  return `A missão da ${company} é desenvolver e executar estratégias eficientes, orientadas a resultados, que fortaleçam a presença de marcas, ampliem oportunidades de negócio e impulsionem o crescimento sustentável de nossos clientes.
-
-Atuamos com foco em marketing direto, publicidade e consultoria estratégica, oferecendo soluções personalizadas, baseadas em análise, criatividade, ética e comprometimento. Nosso propósito é gerar valor real por meio de campanhas bem estruturadas, comunicação assertiva e gestão responsável, sempre alinhados às necessidades e objetivos de cada cliente.`;
+  return `A missão da ${company} é desenvolver estratégias eficientes, orientadas a resultados, que fortaleçam a presença da marca e ampliem oportunidades de negócio.`;
 }
 
-function makeAbout(opts: any) {
-  const { razao, fantasia, cnpj, abertura, cidade, uf, porte, natureza, cnae, endereco } = opts;
-
+function makeAbout(opts: {
+  company: string;
+  cnpj: string;
+  abertura?: string | null;
+  cidade?: string | null;
+  uf?: string | null;
+  endereco?: string | null;
+}) {
   return `QUEM SOMOS?
 
-A ${razao}, registrada sob o CNPJ ${cnpj}${abertura ? `, foi fundada em ${fmtDateBR(abertura)}` : ""}${
-    cidade || uf ? `, na cidade de ${cidade ?? "-"}${uf ? `, estado de ${uf}` : ""}` : ""
-  }. ${porte ? `Somos uma ${porte.toLowerCase()}` : "Somos uma empresa"}${
-    natureza ? `, com natureza jurídica ${natureza}` : ""
-  }, atuando com foco em eficiência, organização e suporte empresarial.
+A ${opts.company}, registrada sob o CNPJ ${opts.cnpj}${opts.abertura ? `, foi fundada em ${fmtDateBR(opts.abertura)}` : ""}${
+    opts.cidade || opts.uf ? `, na cidade de ${opts.cidade || "-"}${opts.uf ? `/${opts.uf}` : ""}` : ""
+  }.
 
-${
-  cnae
-    ? `Nossa atividade principal, conforme a Receita Federal, inclui ${cnae}, que representa a base operacional de nossas atividades.`
-    : `Nossa atuação é orientada por processos bem definidos e compromisso com resultados.`
+Atuamos com atendimento responsável, comunicação clara e foco em resultados. ${
+    opts.endereco ? `Nosso endereço cadastral é ${opts.endereco}.` : ""
+  }`;
 }
 
-${
-  endereco
-    ? `Localizada em ${endereco}, atuamos com atendimento próximo, responsável e alinhado às necessidades de cada cliente.`
-    : `Atuamos com atendimento próximo, responsável e alinhado às necessidades de cada cliente.`
-}
-
-${fantasia ? `Nome Fantasia: ${fantasia}` : ""}
-
-Na ${fantasia || razao}, acreditamos que resultados consistentes são alcançados por meio de organização, eficiência e relações transparentes. Nosso compromisso é atuar como uma extensão confiável da estrutura de nossos clientes.`;
-}
-
-function makePrivacy(opts: any) {
-  const { razao, cnpj, endereco, email, telefone } = opts;
-
+function makePrivacy(company: string, cnpj: string, email: string, phone?: string) {
   return `POLÍTICA DE PRIVACIDADE
 
-${razao}
-CNPJ: ${cnpj}${endereco ? `\nEndereço: ${endereco}` : ""}
+${company}
+CNPJ: ${cnpj}
 
-1. Finalidade
+Coletamos apenas dados necessários para atendimento, comunicação e execução dos serviços. Não comercializamos dados pessoais. O titular pode solicitar acesso, correção ou exclusão dos seus dados pelos canais oficiais.
 
-Esta Política de Privacidade descreve como a ${razao} coleta, utiliza, armazena e protege dados pessoais de clientes, parceiros, fornecedores e usuários que interagem conosco por meio de nossos canais de comunicação ou durante a contratação e execução de nossos serviços.
+Contato: ${email}${phone ? ` | ${phone}` : ""}
 
-2. Dados Coletados
-
-Coletamos apenas os dados necessários para as finalidades descritas nesta política, incluindo:
-- Nome, e-mail, telefone, dados profissionais e informações empresariais (CPF ou CNPJ), quando necessário;
-- Registros de comunicação, contratos, propostas e histórico de atendimento;
-- Dados de navegação (quando aplicável), conforme políticas das plataformas utilizadas.
-
-3. Uso dos Dados
-
-Os dados pessoais coletados são utilizados para:
-- Prestação e gestão dos serviços contratados;
-- Comunicação operacional, administrativa e contratual;
-- Cumprimento de obrigações legais e regulatórias;
-- Melhoria contínua dos serviços e processos internos.
-
-4. Compartilhamento de Dados
-
-Não comercializamos dados pessoais.
-
-5. Direitos do Titular (LGPD)
-
-Nos termos da LGPD, o titular pode solicitar acesso, correção, atualização, bloqueio ou eliminação de dados.
-
-6. Armazenamento e Segurança
-
-Adotamos medidas técnicas e administrativas adequadas para proteger os dados pessoais.
-
-7. Alterações
-
-Esta política pode ser atualizada periodicamente.
-
-8. Contato
-
-📧 E-mail: ${email}${telefone ? `\n📞 Telefone: ${telefone}` : ""}
-
-${razao}
-CNPJ ${cnpj}
-©️ ${new Date().getFullYear()} ${razao}. Todos os direitos reservados.`;
+${company} - Todos os direitos reservados.`;
 }
 
-function makeFooter(opts: any) {
-  const { razao, cnpj, abertura, porte, natureza, situacao, tipo, capital, endereco, cep, email, telefone } = opts;
-
-  return `${razao} CNPJ: ${cnpj} | Data de Abertura: ${abertura ? fmtDateBR(abertura) : "-"} | Porte: ${
-    porte || "-"
-  } | Natureza Jurídica: ${natureza || "-"} | Situação Cadastral: ${situacao || "-"} | Tipo: ${
-    tipo || "-"
-  } | Capital Social: ${capital || "-"} | Endereço: ${endereco || "-"} | CEP: ${cep || "-"} | Contato: 📧 ${
-    email || "-"
-  } 📞 ${telefone || "-"} | ©️ ${new Date().getFullYear()} ${razao}. Todos os direitos reservados.`;
+function makeFooter(company: string, cnpj: string, email: string, phone?: string) {
+  return `${company} | CNPJ: ${cnpj} | Contato: ${email}${phone ? ` | ${phone}` : ""} | ${new Date().getFullYear()} Todos os direitos reservados.`;
 }
 
-type DomainRow = {
-  id: string;
-  domain: string;
-};
+function Progress({ current }: { current: number }) {
+  return (
+    <div className="mt-8 grid grid-cols-6 gap-2">
+      {steps.map((label, index) => {
+        const n = index + 1;
+        const done = n < current;
+        const active = n === current;
 
-type BalanceRow = {
-  balance: number | null;
-};
+        return (
+          <div key={label} className="relative flex flex-col items-center gap-2">
+            {index > 0 ? (
+              <div
+                className={`absolute right-1/2 top-4 h-0.5 w-full ${
+                  done || active ? "bg-violet-500" : "bg-white/10"
+                }`}
+              />
+            ) : null}
+            <div
+              className={`relative z-10 grid h-9 w-9 place-items-center rounded-full text-sm font-bold ${
+                done
+                  ? "bg-emerald-500 text-white"
+                  : active
+                  ? "bg-violet-600 text-white"
+                  : "bg-white/10 text-white/70"
+              }`}
+            >
+              {done ? "✓" : n}
+            </div>
+            <div className={`text-center text-[11px] ${active ? "font-semibold text-white" : "text-white/45"}`}>
+              {label}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
-const initialForm = {
-  cnpj: "",
-  company_name: "",
-  fantasy_name: "",
-  phone: "",
-  whatsapp: "",
-  email: "",
-  instagram: "https://instagram.com",
-  facebook: "https://facebook.com",
-  meta_tag: "",
-  about: "",
-  mission: "",
-  privacy: "",
-  footer: "",
-  is_public: true,
-};
+function DnsRow({
+  type,
+  name,
+  value,
+  extra,
+}: {
+  type: string;
+  name: string;
+  value: string;
+  extra?: string;
+}) {
+  return (
+    <div className="grid gap-3 rounded-2xl bg-black/20 p-4 text-sm md:grid-cols-[.6fr_.8fr_1.6fr_.8fr]">
+      <div>
+        <div className="text-[10px] uppercase text-white/40">Tipo</div>
+        <div className="mt-1 font-bold text-violet-200">{type}</div>
+      </div>
+      <div>
+        <div className="text-[10px] uppercase text-white/40">Nome</div>
+        <div className="mt-1 font-semibold">{name}</div>
+      </div>
+      <div className="min-w-0">
+        <div className="text-[10px] uppercase text-white/40">Valor</div>
+        <div className="mt-1 break-all font-semibold text-emerald-200">{value}</div>
+      </div>
+      <div>
+        <div className="text-[10px] uppercase text-white/40">{extra ? "Obs." : "TTL"}</div>
+        <div className="mt-1 font-semibold text-white/70">{extra || "Auto"}</div>
+      </div>
+    </div>
+  );
+}
 
-export default function CreateSiteWithDomainPage() {
+export default function CustomDomainWizardPage() {
   const router = useRouter();
 
-  const [form, setForm] = useState(initialForm);
-  const [domains, setDomains] = useState<DomainRow[]>([]);
-  const [selectedDomainId, setSelectedDomainId] = useState("");
-  const [selectedDomain, setSelectedDomain] = useState("");
-
-  const [loading, setLoading] = useState(false);
-  const [genLoading, setGenLoading] = useState(false);
-  const [msg, setMsg] = useState<string | null>(null);
+  const [step, setStep] = useState(1);
   const [balance, setBalance] = useState<number | null>(null);
-  const [balanceLoading, setBalanceLoading] = useState(true);
+  const [loadingBalance, setLoadingBalance] = useState(true);
+  const [form, setForm] = useState<FormState>(initialForm);
+  const [msg, setMsg] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [siteId, setSiteId] = useState<string | null>(null);
+  const [dnsOk, setDnsOk] = useState(false);
+  const [emailOk, setEmailOk] = useState(false);
+  const [dnsDetails, setDnsDetails] = useState<string | null>(null);
+  const [emailDetails, setEmailDetails] = useState<string | null>(null);
+
+  const domain = useMemo(() => cleanDomain(form.domain), [form.domain]);
+  const contactEmail = useMemo(() => buildEmail(domain), [domain]);
 
   useEffect(() => {
-    async function load() {
-      setBalanceLoading(true);
+    let alive = true;
 
+    async function loadBalance() {
+      setLoadingBalance(true);
       const { data: auth } = await supabase.auth.getUser();
-      const user = auth.user;
 
-      if (!user) {
+      if (!auth.user) {
         router.push("/login");
         return;
       }
 
-      const { data: bal } = await supabase
-        .from("domain_coin_balances")
+      const { data } = await supabase
+        .from("user_token_balances")
         .select("balance")
-        .eq("user_id", user.id)
+        .eq("user_id", auth.user.id)
         .maybeSingle<BalanceRow>();
 
-      setBalance(bal?.balance ?? 0);
-
-      const { data: domainData, error } = await supabase
-        .from("available_domains")
-        .select("id, domain")
-        .eq("assigned_user_id", user.id)
-        .eq("status", "sold")
-        .is("assigned_site_id", null)
-        .order("assigned_at", { ascending: false });
-
-      if (error) {
-        setMsg(error.message);
-        setDomains([]);
-      } else {
-        setDomains(domainData || []);
-      }
-
-      setBalanceLoading(false);
+      if (!alive) return;
+      setBalance(data?.balance ?? 0);
+      setLoadingBalance(false);
     }
 
-    load();
+    loadBalance();
+
+    return () => {
+      alive = false;
+    };
   }, [router]);
 
-  async function generateFromCnpj() {
+  async function fetchCnpj() {
     setMsg(null);
+    const digits = onlyDigits(form.cnpj);
 
-    const cnpjDigits = onlyDigits(form.cnpj);
-    if (!cnpjDigits || cnpjDigits.length < 14) {
+    if (digits.length !== 14) {
       setMsg("Digite um CNPJ válido.");
       return;
     }
 
-    setGenLoading(true);
+    if (!isValidDomain(domain)) {
+      setMsg("Digite um domínio válido.");
+      return;
+    }
+
+    setLoading(true);
     try {
-      const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpjDigits}`, {
+      const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${digits}`, {
         cache: "no-store",
       });
 
-      if (!res.ok) {
-        const txt = await res.text();
-        throw new Error(`Erro BrasilAPI (${res.status}): ${txt}`);
-      }
+      if (!res.ok) throw new Error("Não foi possível buscar esse CNPJ.");
 
-      const data: any = await res.json();
-
-      const razao = data.razao_social || data.razao || "";
-      const fantasia = data.nome_fantasia || data.fantasia || "";
-      const abertura = data.data_inicio_atividade || data.data_abertura || null;
-
-      const logradouro = data.logradouro || "";
-      const numero = data.numero || "";
-      const complemento = data.complemento || "";
-      const bairro = data.bairro || "";
-      const municipio = data.municipio || data.cidade || "";
-      const uf = data.uf || "";
-      const cep = data.cep || "";
-
-      const enderecoFull = [
-        logradouro,
-        numero ? `, ${numero}` : "",
-        complemento ? `, ${complemento}` : "",
-        bairro ? ` - ${bairro}` : "",
-        municipio ? `, ${municipio}` : "",
-        uf ? ` - ${uf}` : "",
-        cep ? `, CEP ${cep}` : "",
+      const data = await res.json();
+      const company = data.razao_social || data.razao || data.nome_fantasia || "Empresa";
+      const phone = formatBRPhone(String(data.ddd_telefone_1 || data.telefone || ""));
+      const formattedCnpj = formatCNPJ(String(data.cnpj || digits));
+      const address = [
+        data.logradouro,
+        data.numero ? `, ${data.numero}` : "",
+        data.bairro ? ` - ${data.bairro}` : "",
+        data.municipio ? `, ${data.municipio}` : "",
+        data.uf ? `/${data.uf}` : "",
       ]
         .join("")
-        .replace(/\s+,/g, ",")
-        .replace(/,\s+,/g, ",")
         .trim();
-
-      const phoneRaw =
-        data.ddd_telefone_1
-          ? `${data.ddd_telefone_1}`
-          : data.telefone
-          ? `${data.telefone}`
-          : "";
-
-      const phone = formatBRPhone(String(phoneRaw || "").trim());
-      const email = buildEmailFromCompany(razao || fantasia || "empresa");
-
-      const porte = data.porte || "";
-      const natureza = data.natureza_juridica || data.natureza || "";
-      const situacao = data.descricao_situacao_cadastral || data.situacao_cadastral || "";
-      const tipo = data.descricao_identificador_matriz_filial || data.tipo || "";
-      const capital = data.capital_social || data.capital || "";
-      const cnaePrincipal =
-        data.cnae_fiscal_descricao || (data.cnae_fiscal ? `CNAE ${data.cnae_fiscal}` : "") || "";
-
-      const formattedCnpj = formatCNPJ(String(data.cnpj || cnpjDigits));
-      const company = razao || fantasia || "Empresa";
 
       setForm((prev) => ({
         ...prev,
         cnpj: formattedCnpj,
         company_name: company,
-        fantasy_name: fantasia || prev.fantasy_name,
-        phone: phone || prev.phone,
-        whatsapp: phone || prev.whatsapp,
-        email,
-        instagram: prev.instagram || "https://instagram.com",
-        facebook: prev.facebook || "https://facebook.com",
+        phone,
+        whatsapp: phone,
+        email: contactEmail,
         mission: makeMission(company),
         about: makeAbout({
-          razao: company,
-          fantasia: fantasia || null,
+          company,
           cnpj: formattedCnpj,
-          abertura,
-          cidade: municipio || null,
-          uf: uf || null,
-          porte: porte || null,
-          natureza: natureza || null,
-          cnae: cnaePrincipal || null,
-          endereco: enderecoFull || null,
+          abertura: data.data_inicio_atividade || data.data_abertura || null,
+          cidade: data.municipio || data.cidade || null,
+          uf: data.uf || null,
+          endereco: address || null,
         }),
-        privacy: makePrivacy({
-          razao: company,
-          cnpj: formattedCnpj,
-          endereco: enderecoFull || null,
-          email,
-          telefone: phone || null,
-        }),
-        footer: makeFooter({
-          razao: company,
-          cnpj: formattedCnpj,
-          abertura,
-          porte,
-          natureza,
-          situacao,
-          tipo,
-          capital,
-          endereco: enderecoFull,
-          cep,
-          email,
-          telefone: phone,
-        }),
+        privacy: makePrivacy(company, formattedCnpj, contactEmail, phone),
+        footer: makeFooter(company, formattedCnpj, contactEmail, phone),
       }));
-    } catch (e: any) {
-      setMsg(e?.message || "Erro ao gerar dados do CNPJ.");
+
+      setStep(3);
+    } catch (err) {
+      setMsg(err instanceof Error ? err.message : "Erro ao buscar CNPJ.");
     } finally {
-      setGenLoading(false);
+      setLoading(false);
     }
   }
 
-  async function handleCreate() {
+  async function createSite() {
     setMsg(null);
 
-    const { data: auth } = await supabase.auth.getSession();
-    const token = auth.session?.access_token;
-
-    if (!token) {
-      setMsg("Você precisa estar logado para criar um site.");
-      router.push("/login");
+    if (!isValidDomain(domain)) {
+      setMsg("Informe um domínio válido antes de criar o site.");
+      setStep(2);
       return;
     }
-
-    if (!selectedDomainId || !selectedDomain) {
-      setMsg("Selecione um domínio comprado.");
-      return;
-    }
-
-    const cnpjDigits = onlyDigits(form.cnpj);
-    if (!cnpjDigits || cnpjDigits.length < 14) return setMsg("Informe um CNPJ válido.");
-    if (!form.company_name.trim()) return setMsg("Razão Social é obrigatória.");
 
     setLoading(true);
-
     try {
-      const { name: meta_verify_name, content: meta_verify_content } = parseMetaTag(form.meta_tag);
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
 
-      const phoneFmt = formatBRPhone(form.phone);
-      const whatsappFmt = formatBRPhone(form.whatsapp);
+      if (!token) {
+        router.push("/login");
+        return;
+      }
 
-      const res = await fetch("/api/sites/create-with-domain", {
+      const res = await fetch("/api/sites/create-custom-domain", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          domainId: selectedDomainId,
-          domain: selectedDomain,
-          company_name: form.company_name.trim(),
-          cnpj: cnpjDigits,
-          phone: phoneFmt || null,
-          email: form.email.trim() || null,
-          instagram: form.instagram.trim() || null,
-          whatsapp: whatsappFmt || null,
-          mission: form.mission.trim() || null,
-          about: form.about.trim() || null,
-          privacy: form.privacy.trim() || null,
-          footer: form.footer.trim() || null,
-          meta_verify_name,
-          meta_verify_content,
-          is_public: form.is_public,
+          ...form,
+          domain,
+          email: form.email || contactEmail,
         }),
       });
 
       const json = await res.json().catch(() => ({}));
 
-      if (!res.ok || !json?.ok) {
-        setMsg(json?.error || "Erro ao criar site com domínio.");
+      if (!res.ok || !json.ok) {
+        setMsg(json.error || "Erro ao criar site.");
         return;
       }
 
-      router.push("/sites");
-    } catch (e: any) {
-      setMsg(e?.message || "Erro ao criar site.");
+      setSiteId(json.siteId);
+      setBalance((prev) => (typeof prev === "number" ? Math.max(0, prev - 1) : prev));
+      setStep(4);
+    } catch (err) {
+      setMsg(err instanceof Error ? err.message : "Erro ao criar site.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function checkARecord() {
+    setMsg(null);
+    setDnsDetails(null);
+    setLoading(true);
+
+    try {
+      const res = await fetch("/api/dns/check-a", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ domain }),
+      });
+      const json = await res.json().catch(() => ({}));
+
+      setDnsOk(Boolean(json.ok));
+      setDnsDetails(
+        json.ok
+          ? "Domínio apontando corretamente."
+          : `Encontrado: ${(json.records || []).join(", ") || "nenhum registro A"}`
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function checkEmailRouting() {
+    setMsg(null);
+    setEmailDetails(null);
+    setLoading(true);
+
+    try {
+      const res = await fetch("/api/dns/check-cloudflare-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ domain }),
+      });
+      const json = await res.json().catch(() => ({}));
+
+      setEmailOk(Boolean(json.ok));
+      setEmailDetails(
+        json.ok
+          ? "Email Routing configurado corretamente."
+          : `Faltando MX: ${(json.missingMx || []).join(", ") || "nenhum"} | SPF: ${
+              json.hasCloudflareSpf ? "ok" : "pendente"
+            }`
+      );
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div className="max-w-5xl text-white">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold">Criar Site com Domínio</h1>
-          <p className="mt-1 text-sm text-white/60">
-            Escolha um domínio comprado e use <b>Gerar dados</b> para autopreencher via CNPJ.
-          </p>
+    <main className="mx-auto max-w-5xl text-white">
+      <div>
+        <div className="flex items-center gap-3">
+          <div className="grid h-9 w-9 place-items-center rounded-xl border border-violet-400/30 bg-violet-500/10 text-violet-200">
+            ◇
+          </div>
+          <div>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-black">Domínio Próprio Guiado</h1>
+              <span className="rounded-full border border-emerald-400/20 bg-emerald-500/10 px-2.5 py-1 text-xs font-bold text-emerald-200">
+                NOVO
+              </span>
+            </div>
+            <p className="mt-1 text-sm text-white/55">
+              Crie um site com domínio próprio, DNS e Cloudflare Email Routing.
+            </p>
+          </div>
         </div>
 
-        <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm">
-          <div className="text-white/70">Coins</div>
-          <div className="text-lg font-bold">{balanceLoading ? "—" : balance ?? 0}</div>
-        </div>
+        <Progress current={step} />
       </div>
 
-      {msg && (
-        <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+      {msg ? (
+        <div className="mt-5 rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-100">
           {msg}
         </div>
-      )}
+      ) : null}
 
-      <div className="mt-6 space-y-4">
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-          <div>
-            <label className="text-xs text-white/70">Domínio comprado *</label>
-            <select
-              value={selectedDomainId}
-              onChange={(e) => {
-                const id = e.target.value;
-                setSelectedDomainId(id);
-                const found = domains.find((d) => d.id === id);
-                setSelectedDomain(found?.domain || "");
-              }}
-              className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 text-white outline-none focus:border-violet-400"
-            >
-              <option className="bg-slate-900" value="">
-                Selecione um domínio
-              </option>
-              {domains.map((d) => (
-                <option className="bg-slate-900" key={d.id} value={d.id}>
-                  {d.domain}
-                </option>
-              ))}
-            </select>
+      <section className="mt-8 rounded-3xl border border-white/10 bg-white/[0.03] p-6 shadow-[0_20px_80px_rgba(0,0,0,.25)]">
+        {step === 1 ? (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-xl font-bold">Verificação de Tokens</h2>
+              <p className="mt-2 text-sm text-white/55">A geração de site com domínio próprio custa 1 token.</p>
+            </div>
 
-            {selectedDomain ? (
-              <div className="mt-1 text-[11px] text-white/50">
-                URL: https://<b>{selectedDomain}</b>
+            <div className="rounded-3xl border border-violet-500/15 bg-violet-500/10 p-8 text-center">
+              <div className="text-sm text-white/55">Seu saldo atual</div>
+              <div className="mt-2 text-5xl font-black text-violet-300">
+                {loadingBalance ? "..." : balance ?? 0}
               </div>
-            ) : null}
-          </div>
-
-          <div className="mt-5 grid gap-3 md:grid-cols-3 md:items-end">
-            <div className="md:col-span-2">
-              <label className="text-xs text-white/70">CNPJ *</label>
-              <input
-                value={form.cnpj}
-                onChange={(e) => setForm((p) => ({ ...p, cnpj: formatCNPJ(e.target.value) }))}
-                placeholder="00.000.000/0000-00"
-                inputMode="numeric"
-                className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 text-white outline-none focus:border-violet-400"
-              />
+              <div className="mt-1 text-sm text-white/50">tokens</div>
             </div>
 
             <button
-              onClick={generateFromCnpj}
-              disabled={genLoading}
-              className="rounded-xl bg-violet-600 px-4 py-2 text-sm font-semibold hover:bg-violet-500 disabled:opacity-60"
+              onClick={() => setStep(2)}
+              disabled={loadingBalance || !balance || balance < 1}
+              className="w-full rounded-xl bg-emerald-500 px-5 py-4 font-bold text-white hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {genLoading ? "Gerando..." : "Gerar dados"}
+              Começar
+            </button>
+
+            {!loadingBalance && (!balance || balance < 1) ? (
+              <Link
+                href="/tokens"
+                className="block rounded-xl border border-violet-400/30 bg-violet-500/10 px-4 py-3 text-center text-sm font-semibold text-violet-100"
+              >
+                Comprar tokens
+              </Link>
+            ) : null}
+          </div>
+        ) : null}
+
+        {step === 2 ? (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-xl font-bold">Buscar Empresa pelo CNPJ</h2>
+              <p className="mt-2 text-sm text-white/55">
+                Informe o CNPJ e o domínio que o cliente já comprou.
+              </p>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-[1fr_1fr_auto] md:items-end">
+              <label className="block">
+                <span className="text-xs text-white/50">CNPJ</span>
+                <input
+                  value={form.cnpj}
+                  onChange={(e) => setForm((prev) => ({ ...prev, cnpj: formatCNPJ(e.target.value) }))}
+                  placeholder="00.000.000/0000-00"
+                  className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 outline-none focus:border-violet-400"
+                />
+              </label>
+
+              <label className="block">
+                <span className="text-xs text-white/50">Domínio próprio</span>
+                <input
+                  value={form.domain}
+                  onChange={(e) => {
+                    const nextDomain = cleanDomain(e.target.value);
+                    setForm((prev) => ({
+                      ...prev,
+                      domain: nextDomain,
+                      email: prev.email && prev.email !== contactEmail ? prev.email : buildEmail(nextDomain),
+                    }));
+                  }}
+                  placeholder="seudominio.com.br"
+                  className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 outline-none focus:border-violet-400"
+                />
+              </label>
+
+              <button
+                onClick={fetchCnpj}
+                disabled={loading}
+                className="rounded-xl bg-violet-600 px-6 py-3 font-bold hover:bg-violet-500 disabled:opacity-60"
+              >
+                {loading ? "Buscando..." : "Buscar"}
+              </button>
+            </div>
+
+            <button onClick={() => setStep(1)} className="text-sm text-white/60 hover:text-white">
+              ← Voltar
             </button>
           </div>
+        ) : null}
 
-          <div className="mt-3 grid gap-3 md:grid-cols-2">
+        {step === 3 ? (
+          <div className="space-y-6">
             <div>
-              <label className="text-xs text-white/70">Razão Social *</label>
-              <input
-                value={form.company_name}
-                onChange={(e) => setForm((p) => ({ ...p, company_name: e.target.value }))}
-                className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 outline-none focus:border-violet-400"
-              />
+              <h2 className="text-xl font-bold">Gerar Site com IA</h2>
+              <p className="mt-2 text-sm text-white/55">
+                Revise os dados antes de criar o site. Depois você configura o DNS.
+              </p>
             </div>
 
-            <div>
-              <label className="text-xs text-white/70">Nome Fantasia</label>
-              <input
-                value={form.fantasy_name}
-                onChange={(e) => setForm((p) => ({ ...p, fantasy_name: e.target.value }))}
-                className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 outline-none focus:border-violet-400"
-              />
-            </div>
-          </div>
+            <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-5">
+              <div className="font-bold">{form.company_name || "Empresa"}</div>
+              <div className="mt-1 text-sm text-white/50">{domain || "seudominio.com.br"}</div>
 
-          <div className="mt-3 grid gap-3 md:grid-cols-3">
-            <div>
-              <label className="text-xs text-white/70">Telefone</label>
-              <input
-                value={form.phone}
-                onChange={(e) => {
-                  const v = formatBRPhone(e.target.value);
-                  setForm((p) => ({
-                    ...p,
-                    phone: v,
-                    whatsapp: p.whatsapp ? p.whatsapp : v,
-                  }));
-                }}
-                placeholder="(11) 99999-9999"
-                className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 outline-none focus:border-violet-400"
-              />
+              <div className="mt-5 grid gap-4 md:grid-cols-2">
+                <input
+                  value={form.phone}
+                  onChange={(e) => setForm((prev) => ({ ...prev, phone: formatBRPhone(e.target.value) }))}
+                  placeholder="Telefone"
+                  className="rounded-xl border border-white/10 bg-black/20 px-4 py-3 outline-none focus:border-violet-400"
+                />
+                <input
+                  value={form.whatsapp}
+                  onChange={(e) => setForm((prev) => ({ ...prev, whatsapp: formatBRPhone(e.target.value) }))}
+                  placeholder="WhatsApp"
+                  className="rounded-xl border border-white/10 bg-black/20 px-4 py-3 outline-none focus:border-violet-400"
+                />
+                <input
+                  value={form.email}
+                  onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))}
+                  placeholder={contactEmail}
+                  className="rounded-xl border border-white/10 bg-black/20 px-4 py-3 outline-none focus:border-violet-400 md:col-span-2"
+                />
+              </div>
             </div>
 
-            <div>
-              <label className="text-xs text-white/70">WhatsApp</label>
-              <input
-                value={form.whatsapp}
-                onChange={(e) => setForm((p) => ({ ...p, whatsapp: formatBRPhone(e.target.value) }))}
-                placeholder="(11) 99999-9999"
-                className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 outline-none focus:border-violet-400"
-              />
-            </div>
-
-            <div>
-              <label className="text-xs text-white/70">E-mail</label>
-              <input
-                value={form.email}
-                onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
-                placeholder="contato@empresa.com"
-                className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 outline-none focus:border-violet-400"
-              />
+            <div className="flex flex-col gap-3 md:flex-row">
+              <button
+                onClick={() => setStep(2)}
+                className="rounded-xl border border-white/10 bg-white/5 px-5 py-3 font-semibold text-white/75 hover:bg-white/10"
+              >
+                Voltar
+              </button>
+              <button
+                onClick={createSite}
+                disabled={loading}
+                className="flex-1 rounded-xl bg-violet-600 px-5 py-3 font-bold hover:bg-violet-500 disabled:opacity-60"
+              >
+                {loading ? "Criando..." : "Gerar e Criar Site (1 token)"}
+              </button>
             </div>
           </div>
+        ) : null}
 
-          <div className="mt-3 grid gap-3 md:grid-cols-2">
+        {step === 4 ? (
+          <div className="space-y-6">
             <div>
-              <label className="text-xs text-white/70">Instagram</label>
-              <input
-                value={form.instagram}
-                onChange={(e) => setForm((p) => ({ ...p, instagram: e.target.value }))}
-                className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 outline-none focus:border-violet-400"
-              />
+              <h2 className="text-xl font-bold">Conectar Domínio Próprio</h2>
+              <p className="mt-2 text-sm text-white/55">
+                No DNS do domínio, crie o registro abaixo apontando para o servidor.
+              </p>
             </div>
 
-            <div>
-              <label className="text-xs text-white/70">Facebook</label>
-              <input
-                value={form.facebook}
-                onChange={(e) => setForm((p) => ({ ...p, facebook: e.target.value }))}
-                className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 outline-none focus:border-violet-400"
-              />
+            <div className="rounded-3xl border border-violet-500/15 bg-violet-500/10 p-5">
+              <DnsRow type="A" name="@" value={CUSTOM_DOMAIN_IP} />
+              <div className="mt-4 rounded-2xl border border-amber-400/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+                Se usar Cloudflare, deixe o proxy desligado nesse registro enquanto verifica: nuvem cinza.
+              </div>
+            </div>
+
+            {dnsDetails ? (
+              <div className={`rounded-2xl px-4 py-3 text-sm ${dnsOk ? "bg-emerald-500/10 text-emerald-100" : "bg-amber-500/10 text-amber-100"}`}>
+                {dnsDetails}
+              </div>
+            ) : null}
+
+            <div className="flex flex-col gap-3 md:flex-row">
+              <button
+                onClick={checkARecord}
+                disabled={loading}
+                className="rounded-xl border border-violet-400/30 bg-violet-500/10 px-5 py-3 font-semibold text-violet-100 hover:bg-violet-500/15 disabled:opacity-60"
+              >
+                {loading ? "Verificando..." : "Verificar Agora"}
+              </button>
+              <button
+                onClick={() => setStep(5)}
+                className="rounded-xl bg-emerald-600 px-5 py-3 font-bold hover:bg-emerald-500"
+              >
+                Continuar para Email
+              </button>
             </div>
           </div>
+        ) : null}
 
-          <div className="mt-4 flex items-center gap-3">
-            <input
-              id="is_public"
-              type="checkbox"
-              checked={form.is_public}
-              onChange={(e) => setForm((p) => ({ ...p, is_public: e.target.checked }))}
-              className="h-4 w-4"
-            />
-            <label htmlFor="is_public" className="text-sm text-white/80">
-              Deixar site público
-            </label>
+        {step === 5 ? (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-xl font-bold">Configurar Email com Cloudflare</h2>
+              <p className="mt-2 text-sm text-white/55">
+                Ative o Email Routing na Cloudflare para receber emails como {contactEmail}.
+              </p>
+            </div>
+
+            <div className="rounded-3xl border border-violet-500/15 bg-violet-500/10 p-5">
+              <div className="mb-4 text-sm font-bold">Registros esperados pelo Cloudflare Email Routing</div>
+              <div className="space-y-3">
+                <DnsRow type="MX" name="@" value="route1.mx.cloudflare.net" extra="Cloudflare define" />
+                <DnsRow type="MX" name="@" value="route2.mx.cloudflare.net" extra="Cloudflare define" />
+                <DnsRow type="MX" name="@" value="route3.mx.cloudflare.net" extra="Cloudflare define" />
+                <DnsRow type="TXT" name="@" value="v=spf1 include:_spf.mx.cloudflare.net ~all" />
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-4 text-sm text-white/65">
+              Para cair no painel, crie uma rota no Cloudflare Email Routing apontando para um Email Worker que envie o email para <b>/api/inbound-email</b>.
+              O endereço sugerido para verificações é <b>{contactEmail}</b>.
+            </div>
+
+            {emailDetails ? (
+              <div className={`rounded-2xl px-4 py-3 text-sm ${emailOk ? "bg-emerald-500/10 text-emerald-100" : "bg-amber-500/10 text-amber-100"}`}>
+                {emailDetails}
+              </div>
+            ) : null}
+
+            <div className="flex flex-col gap-3 md:flex-row">
+              <button
+                onClick={checkEmailRouting}
+                disabled={loading}
+                className="rounded-xl border border-violet-400/30 bg-violet-500/10 px-5 py-3 font-semibold text-violet-100 hover:bg-violet-500/15 disabled:opacity-60"
+              >
+                {loading ? "Verificando..." : "Verificar Email Routing"}
+              </button>
+              <button
+                onClick={() => setStep(6)}
+                className="rounded-xl bg-emerald-600 px-5 py-3 font-bold hover:bg-emerald-500"
+              >
+                Concluir
+              </button>
+            </div>
           </div>
-        </div>
+        ) : null}
 
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-          <div className="text-sm font-semibold">Meta tag de verificação</div>
-          <div className="mt-1 text-xs text-white/60">
-            Cole aqui a <b>meta tag completa</b> após criar o domínio na BM.
+        {step === 6 ? (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-xl font-bold">Tudo pronto</h2>
+              <p className="mt-2 text-sm text-white/55">
+                Seu site foi criado. O domínio e o email podem levar alguns minutos para propagar.
+              </p>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <a
+                href={`https://${domain}`}
+                target="_blank"
+                rel="noreferrer"
+                className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-5 text-emerald-100 hover:bg-emerald-500/15"
+              >
+                <div className="text-sm text-emerald-100/70">Site</div>
+                <div className="mt-1 break-all font-bold">https://{domain}</div>
+              </a>
+              <Link
+                href={`/emails/${encodeURIComponent(domain)}`}
+                className="rounded-2xl border border-violet-500/20 bg-violet-500/10 p-5 text-violet-100 hover:bg-violet-500/15"
+              >
+                <div className="text-sm text-violet-100/70">Inbox</div>
+                <div className="mt-1 break-all font-bold">{contactEmail}</div>
+              </Link>
+            </div>
+
+            <div className="flex flex-col gap-3 md:flex-row">
+              <button
+                onClick={() => router.push("/sites")}
+                className="rounded-xl bg-violet-600 px-5 py-3 font-bold hover:bg-violet-500"
+              >
+                Ver meus sites
+              </button>
+              {siteId ? (
+                <button
+                  onClick={() => router.push(`/sites/${siteId}/edit`)}
+                  className="rounded-xl border border-white/10 bg-white/5 px-5 py-3 font-semibold hover:bg-white/10"
+                >
+                  Editar site
+                </button>
+              ) : null}
+            </div>
           </div>
-          <textarea
-            value={form.meta_tag}
-            onChange={(e) => setForm((p) => ({ ...p, meta_tag: e.target.value }))}
-            rows={3}
-            className="mt-3 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 text-white outline-none focus:border-violet-400"
-            placeholder='Ex: <meta name="facebook-domain-verification" content="xxxxx" /> ou apenas xxxxx'
-          />
-        </div>
-
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-          <div className="grid gap-4 md:grid-cols-2">
-            <TextAreaField title="Nossa missão" value={form.mission} onChange={(v) => setForm((p) => ({ ...p, mission: v }))} />
-            <TextAreaField title="Sobre nós" value={form.about} onChange={(v) => setForm((p) => ({ ...p, about: v }))} />
-            <TextAreaField title="Política de privacidade" value={form.privacy} onChange={(v) => setForm((p) => ({ ...p, privacy: v }))} />
-            <TextAreaField title="Rodapé" value={form.footer} onChange={(v) => setForm((p) => ({ ...p, footer: v }))} />
-          </div>
-        </div>
-
-        <div className="flex gap-3">
-          <button
-            onClick={() => router.push("/sites")}
-            className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold hover:bg-white/10"
-          >
-            Cancelar
-          </button>
-
-          <button
-            onClick={handleCreate}
-            disabled={loading}
-            className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold hover:bg-emerald-500 disabled:opacity-60"
-          >
-            {loading ? "Criando..." : "Criar site com domínio"}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function TextAreaField({
-  title,
-  value,
-  onChange,
-}: {
-  title: string;
-  value: string;
-  onChange: (v: string) => void;
-}) {
-  return (
-    <div>
-      <div className="text-sm font-semibold">{title}</div>
-      <textarea
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        rows={8}
-        className="mt-3 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 outline-none focus:border-violet-400"
-      />
-    </div>
+        ) : null}
+      </section>
+    </main>
   );
 }
