@@ -9,6 +9,7 @@ type DomainRow = {
   domain: string;
   status: string;
   is_global?: boolean | null;
+  source?: "available" | "custom";
 };
 
 export default function EmailsPage() {
@@ -45,7 +46,27 @@ export default function EmailsPage() {
         .or(`assigned_user_id.eq.${user.id},is_global.eq.true`)
         .order("domain", { ascending: true });
 
-      setDomains(data || []);
+      const { data: customSites } = await supabase
+        .from("sites")
+        .select("id, custom_domain")
+        .eq("user_id", user.id)
+        .eq("domain_mode", "custom_domain")
+        .not("custom_domain", "is", null)
+        .order("created_at", { ascending: false });
+
+      const customDomains: DomainRow[] = (customSites || []).map((site) => ({
+        id: `custom-${site.id}`,
+        domain: site.custom_domain as string,
+        status: "used",
+        is_global: false,
+        source: "custom",
+      }));
+
+      const merged = [...((data || []) as DomainRow[]), ...customDomains].filter(
+        (item, index, arr) => arr.findIndex((x) => x.domain === item.domain) === index
+      );
+
+      setDomains(merged);
       setLoading(false);
     }
 
@@ -85,7 +106,7 @@ export default function EmailsPage() {
                     <div className="text-lg font-bold">{d.domain}</div>
 
                     <div className="mt-1 text-xs text-white/50">
-                      {isGlobal ? "Domínio global" : "Domínio comprado"}
+                      {isGlobal ? "Domínio global" : d.source === "custom" ? "Domínio próprio" : "Domínio comprado"}
                     </div>
                   </div>
 
