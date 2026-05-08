@@ -343,13 +343,16 @@ export default function CustomDomainWizardPage() {
   useEffect(() => {
     const draft = readDraft();
     setSavedDraft(draft);
+    if (draft) {
+      restoreDraft(draft);
+    }
     setDraftChecked(true);
   }, []);
 
   useEffect(() => {
     if (!draftChecked || !draftActive) return;
 
-    writeDraft({
+    const nextDraft = {
       version: DRAFT_VERSION,
       step,
       form,
@@ -361,7 +364,10 @@ export default function CustomDomainWizardPage() {
       sslDetails,
       emailDetails,
       updatedAt: new Date().toISOString(),
-    });
+    } satisfies WizardDraft;
+
+    writeDraft(nextDraft);
+    setSavedDraft(nextDraft);
   }, [
     draftChecked,
     draftActive,
@@ -392,18 +398,16 @@ export default function CustomDomainWizardPage() {
     setEmailDetails(null);
   }
 
-  function continueDraft() {
-    if (!savedDraft) return;
-
-    setForm(savedDraft.form);
-    setStep(savedDraft.step);
-    setSiteId(savedDraft.siteId);
-    setDnsOk(savedDraft.dnsOk);
-    setSslOk(savedDraft.sslOk);
-    setEmailOk(savedDraft.emailOk);
-    setDnsDetails(savedDraft.dnsDetails);
-    setSslDetails(savedDraft.sslDetails);
-    setEmailDetails(savedDraft.emailDetails);
+  function restoreDraft(draft: WizardDraft) {
+    setForm(draft.form);
+    setStep(draft.step);
+    setSiteId(draft.siteId);
+    setDnsOk(draft.dnsOk);
+    setSslOk(draft.sslOk);
+    setEmailOk(draft.emailOk);
+    setDnsDetails(draft.dnsDetails);
+    setSslDetails(draft.sslDetails);
+    setEmailDetails(draft.emailDetails);
     setMsg(null);
     setDraftActive(true);
   }
@@ -641,43 +645,32 @@ export default function CustomDomainWizardPage() {
         </div>
       ) : null}
 
+      {draftActive ? (
+        <div className="mt-5 flex flex-col gap-3 rounded-2xl border border-violet-400/20 bg-violet-500/10 px-4 py-3 text-sm text-violet-100 md:flex-row md:items-center md:justify-between">
+          <div>
+            <b>Criação em andamento salva.</b>{" "}
+            {domain ? (
+              <span>
+                Retomamos o domínio <b>{domain}</b>
+              </span>
+            ) : (
+              <span>Retomamos de onde você parou.</span>
+            )}
+            {savedDraft?.updatedAt ? <span> | Salvo em {formatDraftDate(savedDraft.updatedAt)}</span> : null}
+          </div>
+          <button
+            type="button"
+            onClick={() => resetWizard(2)}
+            className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-white/80 hover:bg-white/10"
+          >
+            Criar novo
+          </button>
+        </div>
+      ) : null}
+
       <section className="mt-8 rounded-3xl border border-white/10 bg-white/[0.03] p-6 shadow-[0_20px_80px_rgba(0,0,0,.25)]">
         {step === 1 ? (
           <div className="space-y-6">
-            {savedDraft && !draftActive ? (
-              <div className="rounded-3xl border border-emerald-400/20 bg-emerald-500/10 p-5">
-                <div className="text-sm font-bold text-emerald-100">
-                  Voce tem uma criacao em andamento
-                </div>
-                <div className="mt-2 text-sm text-emerald-100/75">
-                  {savedDraft.form.domain ? (
-                    <>
-                      Dominio: <b>{cleanDomain(savedDraft.form.domain)}</b>
-                    </>
-                  ) : (
-                    "O rascunho ainda nao tem dominio preenchido."
-                  )}
-                  {formatDraftDate(savedDraft.updatedAt) ? (
-                    <span> | Salvo em {formatDraftDate(savedDraft.updatedAt)}</span>
-                  ) : null}
-                </div>
-                <div className="mt-4 grid gap-3 md:grid-cols-2">
-                  <button
-                    onClick={continueDraft}
-                    className="rounded-xl bg-emerald-500 px-5 py-3 font-bold text-white hover:bg-emerald-400"
-                  >
-                    Continuar de onde parei
-                  </button>
-                  <button
-                    onClick={() => resetWizard(2)}
-                    className="rounded-xl border border-white/10 bg-white/5 px-5 py-3 font-semibold text-white/80 hover:bg-white/10"
-                  >
-                    Criar novo
-                  </button>
-                </div>
-              </div>
-            ) : null}
-
             <div>
               <h2 className="text-xl font-bold">Verificação de Tokens</h2>
               <p className="mt-2 text-sm text-white/55">A geração de site com domínio próprio custa 1 token.</p>
