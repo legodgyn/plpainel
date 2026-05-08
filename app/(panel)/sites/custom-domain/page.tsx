@@ -852,6 +852,7 @@ export default function CustomDomainWizardPage() {
               <div className="text-sm font-bold text-emerald-100">Certificado SSL</div>
               <p className="mt-2 text-sm text-emerald-100/75">
                 Rode este comando no servidor somente depois que o teste do registro A mostrar que o domínio está apontando corretamente.
+                Ele instala o Certbot e o plugin do Nginx se ainda não existirem, cria a configuração do Nginx e emite o SSL.
               </p>
               <div className="mt-4 grid gap-3 text-sm text-emerald-100/80 md:grid-cols-3">
                 <div className="rounded-2xl border border-emerald-400/15 bg-black/20 px-4 py-3">
