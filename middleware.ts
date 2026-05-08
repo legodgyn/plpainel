@@ -36,63 +36,36 @@ function getSlugFromSubdomain(host: string, root: string) {
   return h.slice(0, -suffix.length);
 }
 
-function isLocalHost(host: string) {
-  const h = cleanHost(host);
-  return (
-    h === "localhost" ||
-    h === "127.0.0.1" ||
-    h === "::1" ||
-    h.endsWith(".localhost")
-  );
-}
-
-function isAssetPath(pathname: string) {
-  return (
-    pathname.startsWith("/_next") ||
-    pathname.startsWith("/api") ||
-    pathname === "/favicon.ico" ||
-    pathname === "/favicon.png" ||
-    pathname === "/robots.txt" ||
-    pathname === "/sitemap.xml" ||
-    pathname.startsWith("/images") ||
-    pathname.startsWith("/assets") ||
-    pathname.startsWith("/cdn-cgi")
-  );
-}
-
 export function middleware(req: NextRequest) {
   const host = cleanHost(req.headers.get("host") || "");
   const { pathname } = req.nextUrl;
 
-  if (isAssetPath(pathname)) {
+  if (
+    pathname.startsWith("/_next") ||
+    pathname.startsWith("/api") ||
+    pathname.startsWith("/favicon") ||
+    pathname === "/robots.txt" ||
+    pathname === "/sitemap.xml" ||
+    pathname.startsWith("/cdn-cgi")
+  ) {
     return NextResponse.next();
   }
 
   const rootDomain = getRootDomain(host);
 
-  if (isLocalHost(host)) {
+  if (!rootDomain) {
     return NextResponse.next();
   }
 
-  if (rootDomain && (host === rootDomain || host === `www.${rootDomain}`)) {
+  if (host === rootDomain || host === `www.${rootDomain}`) {
     return NextResponse.next();
   }
 
-  if (rootDomain) {
-    const slug = getSlugFromSubdomain(host, rootDomain);
+  const slug = getSlugFromSubdomain(host, rootDomain);
 
-    if (slug && !pathname.startsWith("/s/")) {
-      const url = req.nextUrl.clone();
-      url.pathname = `/s/${slug}`;
-      return NextResponse.rewrite(url);
-    }
-
-    return NextResponse.next();
-  }
-
-  if (!pathname.startsWith("/d/")) {
+  if (slug && !pathname.startsWith("/s/")) {
     const url = req.nextUrl.clone();
-    url.pathname = `/d/${encodeURIComponent(host)}`;
+    url.pathname = `/s/${slug}`;
     return NextResponse.rewrite(url);
   }
 
@@ -100,5 +73,5 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next|api|favicon.ico|favicon.png|robots.txt|sitemap.xml|cdn-cgi).*)"],
+  matcher: ["/:path*"],
 };
