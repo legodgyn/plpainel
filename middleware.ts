@@ -36,6 +36,16 @@ function getSlugFromSubdomain(host: string, root: string) {
   return h.slice(0, -suffix.length);
 }
 
+function isLocalHost(host: string) {
+  const h = cleanHost(host);
+  return (
+    h === "localhost" ||
+    h === "127.0.0.1" ||
+    h === "::1" ||
+    h.endsWith(".localhost")
+  );
+}
+
 export function middleware(req: NextRequest) {
   const host = cleanHost(req.headers.get("host") || "");
   const { pathname } = req.nextUrl;
@@ -52,6 +62,10 @@ export function middleware(req: NextRequest) {
   }
 
   const rootDomain = getRootDomain(host);
+
+  if (isLocalHost(host)) {
+    return NextResponse.next();
+  }
 
   // domínio principal do painel
   if (rootDomain && (host === rootDomain || host === `www.${rootDomain}`)) {
