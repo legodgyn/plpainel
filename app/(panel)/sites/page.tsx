@@ -207,21 +207,12 @@ export default function SitesPage() {
           </p>
         </div>
 
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <button
-            onClick={() => router.push("/sites/custom-domain")}
-            className="rounded-xl border border-emerald-400/25 bg-emerald-500/10 px-4 py-2 text-sm font-semibold text-emerald-100 hover:bg-emerald-500/15"
-          >
-            + Domínio Próprio
-          </button>
-
-          <button
-            onClick={() => router.push("/sites/new")}
-            className="rounded-xl bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-500"
-          >
-            + Criar Site
-          </button>
-        </div>
+        <button
+          onClick={() => router.push("/sites/new")}
+          className="rounded-xl bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-500"
+        >
+          + Criar Site
+        </button>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
