@@ -24,11 +24,6 @@ if [[ "$(id -u)" -ne 0 ]]; then
   exit 1
 fi
 
-if ! command -v nginx >/dev/null 2>&1; then
-  echo "Nginx nao encontrado. Instale o Nginx antes de continuar."
-  exit 1
-fi
-
 resolve_domain_ips() {
   if command -v getent >/dev/null 2>&1; then
     getent ahostsv4 "$DOMAIN" | awk '{print $1}' | sort -u
@@ -46,6 +41,25 @@ resolve_domain_ips() {
   fi
 }
 
+if ! command -v apt-get >/dev/null 2>&1; then
+  echo "apt-get nao encontrado. Instale certbot e python3-certbot-nginx manualmente antes de continuar."
+  exit 1
+fi
+
+if ! command -v certbot >/dev/null 2>&1; then
+  echo "Certbot nao encontrado. Instalando certbot e plugin do Nginx..."
+  apt-get update
+  apt-get install -y certbot python3-certbot-nginx
+else
+  echo "Certbot ja instalado."
+fi
+
+if ! command -v nginx >/dev/null 2>&1; then
+  echo "Nginx nao encontrado. Instale o Nginx antes de continuar."
+  exit 1
+fi
+
+echo "Verificando registro A de $DOMAIN..."
 RESOLVED_IPS="$(resolve_domain_ips || true)"
 if ! printf '%s\n' "$RESOLVED_IPS" | grep -qx "$EXPECTED_IP"; then
   echo "O registro A de $DOMAIN ainda nao aponta para $EXPECTED_IP."
@@ -54,10 +68,7 @@ if ! printf '%s\n' "$RESOLVED_IPS" | grep -qx "$EXPECTED_IP"; then
   exit 1
 fi
 
-if ! command -v certbot >/dev/null 2>&1; then
-  apt-get update
-  apt-get install -y certbot python3-certbot-nginx
-fi
+echo "Registro A confirmado em $EXPECTED_IP."
 
 SERVER_NAMES="$DOMAIN"
 if [[ "$INCLUDE_WWW" == "1" ]]; then
