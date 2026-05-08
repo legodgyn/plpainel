@@ -36,6 +36,16 @@ function getSlugFromSubdomain(host: string, root: string) {
   return h.slice(0, -suffix.length);
 }
 
+function isLocalHost(host: string) {
+  const h = cleanHost(host);
+  return (
+    h === "localhost" ||
+    h === "127.0.0.1" ||
+    h === "::1" ||
+    h.endsWith(".localhost")
+  );
+}
+
 function isAssetPath(pathname: string) {
   return (
     pathname.startsWith("/_next") ||
@@ -59,6 +69,10 @@ export function middleware(req: NextRequest) {
   }
 
   const rootDomain = getRootDomain(host);
+
+  if (isLocalHost(host)) {
+    return NextResponse.next();
+  }
 
   if (rootDomain && (host === rootDomain || host === `www.${rootDomain}`)) {
     return NextResponse.next();

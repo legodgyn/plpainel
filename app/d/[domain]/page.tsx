@@ -1,15 +1,12 @@
 import PublicSitePage from "@/app/s/[slug]/page";
 
 type Props = {
-  params: {
-    domain: string;
-  };
+  params: { domain: string } | Promise<{ domain: string }>;
 };
 
+export const dynamic = "force-dynamic";
+
 export default async function DomainPage(props: Props) {
-  return PublicSitePage({
-    params: {
-      slug: props.params.domain,
-    },
-  });
+  const { domain } = await Promise.resolve(props.params);
+  return <PublicSitePage params={{ slug: domain }} />;
 }

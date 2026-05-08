@@ -254,6 +254,24 @@ function makeFooter(opts: {
 // =====================
 type BalanceRow = { balance: number | null };
 
+function getCreatedSiteId(data: unknown) {
+  if (!data) return null;
+
+  if (typeof data === "string") return data;
+
+  if (Array.isArray(data)) {
+    return getCreatedSiteId(data[0]);
+  }
+
+  if (typeof data === "object") {
+    const row = data as { id?: unknown; site_id?: unknown };
+    const id = row.id || row.site_id;
+    return typeof id === "string" ? id : null;
+  }
+
+  return null;
+}
+
 type FormState = {
   slug: string;
   cnpj: string;
@@ -556,6 +574,36 @@ export default function NewSitePage() {
         } else {
           setMsg(error.message || "Erro ao criar site.");
         }
+        return;
+      }
+
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+
+      if (!accessToken) {
+        setMsg("Site criado, mas nao foi possivel confirmar a sessao para publicar.");
+        return;
+      }
+
+      const normalizeRes = await fetch("/api/sites/normalize-subdomain", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          slug,
+          siteId: getCreatedSiteId(data),
+        }),
+      });
+
+      const normalizeJson = await normalizeRes.json().catch(() => ({}));
+
+      if (!normalizeRes.ok || !normalizeJson?.ok) {
+        setMsg(
+          normalizeJson?.error ||
+            "Site criado, mas nao foi possivel ajustar o dominio padrao."
+        );
         return;
       }
 

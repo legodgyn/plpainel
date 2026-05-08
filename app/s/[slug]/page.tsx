@@ -129,6 +129,18 @@ async function findSite(slug: string, hostBaseDomain: string | null) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
+  if (slug.includes(".")) {
+    const { data } = await supabase
+      .from("sites")
+      .select("*")
+      .eq("custom_domain", slug.toLowerCase())
+      .eq("domain_mode", "custom_domain")
+      .eq("is_public", true)
+      .maybeSingle();
+
+    if (data) return data;
+  }
+
   if (hostBaseDomain) {
     const { data } = await supabase
       .from("sites")
@@ -164,6 +176,124 @@ function FallbackPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+function PublicCriticalCss() {
+  return (
+    <style>{`
+      .public-site {
+        min-height: 100vh;
+        background: #f5f0fa;
+        color: #0f172a;
+        font-family: Arial, Helvetica, sans-serif;
+      }
+      .public-site * { box-sizing: border-box; }
+      .public-site a { color: inherit; }
+      .public-site .mx-auto { margin-left: auto; margin-right: auto; }
+      .public-site .max-w-5xl { max-width: 64rem; }
+      .public-site .max-w-3xl { max-width: 48rem; }
+      .public-site .min-h-screen { min-height: 100vh; }
+      .public-site .flex { display: flex; }
+      .public-site .grid { display: grid; }
+      .public-site .block { display: block; }
+      .public-site .inline-flex { display: inline-flex; }
+      .public-site .hidden { display: none; }
+      .public-site .flex-col { flex-direction: column; }
+      .public-site .flex-wrap { flex-wrap: wrap; }
+      .public-site .items-center { align-items: center; }
+      .public-site .items-start { align-items: flex-start; }
+      .public-site .justify-between { justify-content: space-between; }
+      .public-site .justify-center { justify-content: center; }
+      .public-site .place-items-center { place-items: center; }
+      .public-site .text-center { text-align: center; }
+      .public-site .text-left { text-align: left; }
+      .public-site .text-right { text-align: right; }
+      .public-site .whitespace-pre-line { white-space: pre-line; }
+      .public-site .gap-3 { gap: .75rem; }
+      .public-site .gap-6 { gap: 1.5rem; }
+      .public-site .space-y-2 > * + * { margin-top: .5rem; }
+      .public-site .space-y-6 > * + * { margin-top: 1.5rem; }
+      .public-site .px-4 { padding-left: 1rem; padding-right: 1rem; }
+      .public-site .px-5 { padding-left: 1.25rem; padding-right: 1.25rem; }
+      .public-site .px-6 { padding-left: 1.5rem; padding-right: 1.5rem; }
+      .public-site .py-3 { padding-top: .75rem; padding-bottom: .75rem; }
+      .public-site .py-4 { padding-top: 1rem; padding-bottom: 1rem; }
+      .public-site .py-10 { padding-top: 2.5rem; padding-bottom: 2.5rem; }
+      .public-site .pt-10 { padding-top: 2.5rem; }
+      .public-site .pb-8 { padding-bottom: 2rem; }
+      .public-site .pb-14 { padding-bottom: 3.5rem; }
+      .public-site .p-6 { padding: 1.5rem; }
+      .public-site .p-7 { padding: 1.75rem; }
+      .public-site .mt-2 { margin-top: .5rem; }
+      .public-site .mt-3 { margin-top: .75rem; }
+      .public-site .mt-4 { margin-top: 1rem; }
+      .public-site .mt-5 { margin-top: 1.25rem; }
+      .public-site .mt-6 { margin-top: 1.5rem; }
+      .public-site .mt-7 { margin-top: 1.75rem; }
+      .public-site .mt-8 { margin-top: 2rem; }
+      .public-site .w-full { width: 100%; }
+      .public-site .h-9 { height: 2.25rem; }
+      .public-site .w-9 { width: 2.25rem; }
+      .public-site .h-14 { height: 3.5rem; }
+      .public-site .w-14 { width: 3.5rem; }
+      .public-site .h-\\[180px\\] { height: 180px; }
+      .public-site .w-\\[180px\\] { width: 180px; }
+      .public-site .rounded-full { border-radius: 9999px; }
+      .public-site .rounded-md { border-radius: .375rem; }
+      .public-site .rounded-xl { border-radius: .75rem; }
+      .public-site .rounded-2xl { border-radius: 1rem; }
+      .public-site .border { border: 1px solid #e9d5ff; }
+      .public-site .border-t { border-top: 1px solid #e9d5ff; }
+      .public-site .border-b { border-bottom: 1px solid #e9d5ff; }
+      .public-site .border-purple-200 { border-color: #e9d5ff; }
+      .public-site .border-purple-300 { border-color: #d9b3ff; }
+      .public-site .bg-white { background: #fff; }
+      .public-site .bg-white\\/90 { background: rgba(255,255,255,.9); }
+      .public-site .bg-purple-50 { background: #faf5ff; }
+      .public-site .bg-purple-800 { background: #6e11b0; }
+      .public-site .bg-slate-100 { background: #f1f5f9; }
+      .public-site .text-white { color: #fff; }
+      .public-site .text-slate-400 { color: #90a1b9; }
+      .public-site .text-slate-500 { color: #62748e; }
+      .public-site .text-slate-700 { color: #314158; }
+      .public-site .text-slate-800 { color: #1d293d; }
+      .public-site .text-slate-900 { color: #0f172b; }
+      .public-site .text-purple-700 { color: #8200da; }
+      .public-site .text-purple-900 { color: #59168b; }
+      .public-site .shadow-sm { box-shadow: 0 1px 3px rgba(15,23,42,.08), 0 1px 2px rgba(15,23,42,.06); }
+      .public-site .backdrop-blur { backdrop-filter: blur(8px); }
+      .public-site .text-xs { font-size: .75rem; line-height: 1rem; }
+      .public-site .text-sm { font-size: .875rem; line-height: 1.25rem; }
+      .public-site .text-base { font-size: 1rem; line-height: 1.5rem; }
+      .public-site .text-lg { font-size: 1.125rem; line-height: 1.75rem; }
+      .public-site .text-2xl { font-size: 1.5rem; line-height: 2rem; }
+      .public-site .text-3xl { font-size: 1.875rem; line-height: 2.25rem; }
+      .public-site .text-6xl { font-size: 3.75rem; line-height: 1; }
+      .public-site .font-semibold { font-weight: 600; }
+      .public-site .font-bold { font-weight: 700; }
+      .public-site .font-extrabold { font-weight: 800; }
+      .public-site .tracking-tight { letter-spacing: -.025em; }
+      .public-site .tracking-widest { letter-spacing: .1em; }
+      .public-site .leading-tight { line-height: 1.25; }
+      .public-site .leading-relaxed { line-height: 1.625; }
+      .public-site .opacity-70 { opacity: .7; }
+      .public-site .cursor-not-allowed { cursor: not-allowed; }
+      .public-site .hover\\:bg-purple-900:hover { background: #59168b; }
+      .public-site .hover\\:bg-purple-100:hover { background: #f3e8ff; }
+      .public-site .underline { text-decoration: underline; }
+      .public-site .underline-offset-4 { text-underline-offset: 4px; }
+      .public-site .pointer-events-none { pointer-events: none; }
+      @media (min-width: 640px) {
+        .public-site .sm\\:p-7 { padding: 1.75rem; }
+        .public-site .sm\\:p-10 { padding: 2.5rem; }
+        .public-site .sm\\:text-3xl { font-size: 1.875rem; line-height: 2.25rem; }
+        .public-site .sm\\:text-base { font-size: 1rem; line-height: 1.5rem; }
+      }
+      @media (min-width: 768px) {
+        .public-site .md\\:grid-cols-\\[1\\.4fr_\\.6fr\\] { grid-template-columns: 1.4fr .6fr; }
+      }
+    `}</style>
   );
 }
 
@@ -233,8 +363,14 @@ export default async function PublicSitePage(props: PageProps) {
   const simple_title = (data.simple_title as string | null) || "";
   const privacy = (data.privacy as string | null) || null;
   const footer = (data.footer as string | null) || "—";
+  const custom_domain = (data.custom_domain as string | null) || "";
+  const domain_mode = (data.domain_mode as string | null) || "";
   const base_domain =
     (data.base_domain as string | null) || hostBaseDomain || "plpainel.com";
+  const displayDomain =
+    domain_mode === "custom_domain" && custom_domain
+      ? custom_domain
+      : `${slug}.${base_domain}`;
 
   const igUrl = normalizeInstagram(instagram);
   const waUrl = normalizeWhatsApp(whatsapp);
@@ -273,7 +409,8 @@ export default async function PublicSitePage(props: PageProps) {
   }
 
   return (
-    <main className="min-h-screen bg-[#F5F0FA] text-slate-900">
+    <main className="public-site min-h-screen bg-[#F5F0FA] text-slate-900">
+      <PublicCriticalCss />
       <header className="border-b border-purple-200 bg-white/90 backdrop-blur">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4">
           <div className="flex items-center gap-3">
@@ -291,7 +428,7 @@ export default async function PublicSitePage(props: PageProps) {
             <div className="leading-tight">
               <div className="text-xs text-slate-500">Página pública</div>
               <div className="text-sm font-semibold text-slate-900">
-                {slug}.{base_domain}
+                {displayDomain}
               </div>
             </div>
           </div>
