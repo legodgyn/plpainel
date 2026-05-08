@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseBrowser";
 
 const CUSTOM_DOMAIN_IP = "187.77.33.45";
+const PANEL_MAIL_HOST = "mail.plpainel.com";
 const DRAFT_KEY = "plpainel:custom-domain-draft";
 const DRAFT_VERSION = 1;
 
@@ -585,13 +586,13 @@ export default function CustomDomainWizardPage() {
     }
   }
 
-  async function checkEmailRouting() {
+  async function checkPanelInbox() {
     setMsg(null);
     setEmailDetails(null);
     setLoading(true);
 
     try {
-      const res = await fetch("/api/dns/check-cloudflare-email", {
+      const res = await fetch("/api/dns/check-plpainel-email", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ domain }),
@@ -601,9 +602,9 @@ export default function CustomDomainWizardPage() {
       setEmailOk(Boolean(json.ok));
       setEmailDetails(
         json.ok
-          ? "Email Routing configurado corretamente."
-          : `Faltando MX: ${(json.missingMx || []).join(", ") || "nenhum"} | SPF: ${
-              json.hasCloudflareSpf ? "ok" : "pendente"
+          ? "Caixa de entrada configurada corretamente."
+          : `Faltando MX: ${(json.missing?.mx || []).join(", ") || "ok"} | SPF: ${
+              (json.missing?.spf || []).length ? "pendente" : "ok"
             }`
       );
     } finally {
@@ -631,7 +632,7 @@ export default function CustomDomainWizardPage() {
               ) : null}
             </div>
             <p className="mt-1 text-sm text-white/55">
-              Crie um site com domínio próprio, DNS e Cloudflare Email Routing.
+              Crie um site com domínio próprio, SSL e caixa de entrada no PLPainel.
             </p>
           </div>
         </div>
@@ -869,25 +870,22 @@ export default function CustomDomainWizardPage() {
         {step === 5 ? (
           <div className="space-y-6">
             <div>
-              <h2 className="text-xl font-bold">Configurar Email com Cloudflare</h2>
+              <h2 className="text-xl font-bold">Ativar Caixa de Entrada</h2>
               <p className="mt-2 text-sm text-white/55">
-                Ative o Email Routing na Cloudflare para receber emails como {contactEmail}.
+                Aponte o email do domínio para o PLPainel para receber mensagens dentro do painel.
               </p>
             </div>
 
             <div className="rounded-3xl border border-violet-500/15 bg-violet-500/10 p-5">
-              <div className="mb-4 text-sm font-bold">Registros esperados pelo Cloudflare Email Routing</div>
+              <div className="mb-4 text-sm font-bold">Registros de email no DNS</div>
               <div className="space-y-3">
-                <DnsRow type="MX" name="@" value="route1.mx.cloudflare.net" extra="Cloudflare define" />
-                <DnsRow type="MX" name="@" value="route2.mx.cloudflare.net" extra="Cloudflare define" />
-                <DnsRow type="MX" name="@" value="route3.mx.cloudflare.net" extra="Cloudflare define" />
-                <DnsRow type="TXT" name="@" value="v=spf1 include:_spf.mx.cloudflare.net ~all" />
+                <DnsRow type="MX" name="@" value={PANEL_MAIL_HOST} extra="Prioridade 10" />
+                <DnsRow type="TXT" name="@" value="v=spf1 mx ~all" />
               </div>
             </div>
 
             <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-4 text-sm text-white/65">
-              Para cair no painel, crie uma rota no Cloudflare Email Routing apontando para um Email Worker que envie o email para <b>/api/inbound-email</b>.
-              O endereço sugerido para verificações é <b>{contactEmail}</b>.
+              Depois da propagação do DNS, as mensagens enviadas para <b>{contactEmail}</b> aparecem na caixa de entrada do PLPainel.
             </div>
 
             {emailDetails ? (
@@ -898,11 +896,11 @@ export default function CustomDomainWizardPage() {
 
             <div className="flex flex-col gap-3 md:flex-row">
               <button
-                onClick={checkEmailRouting}
+                onClick={checkPanelInbox}
                 disabled={loading}
                 className="rounded-xl border border-violet-400/30 bg-violet-500/10 px-5 py-3 font-semibold text-violet-100 hover:bg-violet-500/15 disabled:opacity-60"
               >
-                {loading ? "Verificando..." : "Verificar Email Routing"}
+                {loading ? "Verificando..." : "Verificar e Ativar Caixa"}
               </button>
               <button
                 onClick={() => {
