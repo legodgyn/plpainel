@@ -841,28 +841,6 @@ export default function CustomDomainWizardPage() {
               </div>
             ) : null}
 
-            <div className="rounded-3xl border border-emerald-500/15 bg-emerald-500/10 p-5">
-              <div className="text-sm font-bold text-emerald-100">Certificado SSL</div>
-              <p className="mt-2 text-sm text-emerald-100/75">
-                Depois que o DNS estiver correto, o painel configura o SSL automaticamente.
-              </p>
-              <div className="mt-4 grid gap-3 text-sm text-emerald-100/80 md:grid-cols-2">
-                <div className="rounded-2xl border border-emerald-400/15 bg-black/20 px-4 py-3">
-                  <div className="text-xs font-bold text-emerald-100">1. DNS</div>
-                  <div className="mt-1 text-emerald-100/65">Verifique o registro A no painel.</div>
-                </div>
-                <div className="rounded-2xl border border-emerald-400/15 bg-black/20 px-4 py-3">
-                  <div className="text-xs font-bold text-emerald-100">2. SSL</div>
-                  <div className="mt-1 text-emerald-100/65">O painel instala e valida o certificado automaticamente.</div>
-                </div>
-              </div>
-              {!dnsOk ? (
-                <div className="mt-4 rounded-2xl border border-amber-400/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
-                  Primeiro verifique se o DNS já aponta para {CUSTOM_DOMAIN_IP}.
-                </div>
-              ) : null}
-            </div>
-
             {sslDetails ? (
               <div className={`rounded-2xl px-4 py-3 text-sm ${sslOk ? "bg-emerald-500/10 text-emerald-100" : "bg-amber-500/10 text-amber-100"}`}>
                 {sslDetails}
