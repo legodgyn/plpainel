@@ -14,6 +14,11 @@ const ROOT_DOMAINS = [
 
 const DEFAULT_ROOT_DOMAIN = ROOT_DOMAINS[0];
 
+type SiteDomainRow = {
+  base_domain: string | null;
+  domain_mode: string | null;
+};
+
 function getBearerToken(req: Request) {
   const auth = req.headers.get("authorization") || "";
   return auth.startsWith("Bearer ") ? auth.slice(7) : null;
@@ -23,18 +28,13 @@ function cleanSlug(value: unknown) {
   return String(value || "").trim().toLowerCase();
 }
 
-async function pickRootDomain(supabaseAdmin: ReturnType<typeof createClient>) {
-  const { data } = await supabaseAdmin
-    .from("sites")
-    .select("base_domain, domain_mode")
-    .in("base_domain", [...ROOT_DOMAINS]);
-
+function pickRootDomain(rows: SiteDomainRow[]) {
   const counts = new Map<string, number>();
   for (const root of ROOT_DOMAINS) {
     counts.set(root, 0);
   }
 
-  for (const row of data || []) {
+  for (const row of rows) {
     if (row.domain_mode === "custom_domain") {
       continue;
     }
@@ -114,7 +114,12 @@ export async function POST(req: Request) {
       );
     }
 
-    const baseDomain = await pickRootDomain(supabaseAdmin);
+    const { data: domainRows } = await supabaseAdmin
+      .from("sites")
+      .select("base_domain, domain_mode")
+      .in("base_domain", [...ROOT_DOMAINS]);
+
+    const baseDomain = pickRootDomain((domainRows || []) as SiteDomainRow[]);
 
     const { error: updateError } = await supabaseAdmin
       .from("sites")
