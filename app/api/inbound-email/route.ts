@@ -56,16 +56,9 @@ export async function POST(req: Request) {
       .eq("domain", domain)
       .maybeSingle();
 
-    if (!domainRow) {
-      return NextResponse.json(
-        { ok: false, error: `Domain not found: ${domain}` },
-        { status: 404 }
-      );
-    }
-
     let userId: string | null = null;
 
-    if (domainRow.is_global) {
+    if (domainRow?.is_global) {
       const { data: site } = await supabase
         .from("sites")
         .select("user_id")
@@ -74,7 +67,18 @@ export async function POST(req: Request) {
 
       userId = site?.user_id || null;
     } else {
-      userId = domainRow.assigned_user_id || null;
+      userId = domainRow?.assigned_user_id || null;
+    }
+
+    if (!userId) {
+      const { data: customSite } = await supabase
+        .from("sites")
+        .select("user_id")
+        .eq("custom_domain", domain)
+        .eq("domain_mode", "custom_domain")
+        .maybeSingle();
+
+      userId = customSite?.user_id || null;
     }
 
     if (!userId) {
