@@ -341,48 +341,6 @@ export default function CustomDomainWizardPage() {
     };
   }, [router]);
 
-  useEffect(() => {
-    const draft = readDraft();
-    setSavedDraft(draft);
-    if (draft) {
-      restoreDraft(draft);
-    }
-    setDraftChecked(true);
-  }, []);
-
-  useEffect(() => {
-    if (!draftChecked || !draftActive) return;
-
-    const nextDraft = {
-      version: DRAFT_VERSION,
-      step,
-      form,
-      siteId,
-      dnsOk,
-      sslOk,
-      emailOk,
-      dnsDetails,
-      sslDetails,
-      emailDetails,
-      updatedAt: new Date().toISOString(),
-    } satisfies WizardDraft;
-
-    writeDraft(nextDraft);
-    setSavedDraft(nextDraft);
-  }, [
-    draftChecked,
-    draftActive,
-    step,
-    form,
-    siteId,
-    dnsOk,
-    sslOk,
-    emailOk,
-    dnsDetails,
-    sslDetails,
-    emailDetails,
-  ]);
-
   function resetWizard(nextStep = 1) {
     clearDraft();
     setSavedDraft(null);
@@ -412,6 +370,50 @@ export default function CustomDomainWizardPage() {
     setMsg(null);
     setDraftActive(true);
   }
+
+  useEffect(() => {
+    const draft = readDraft();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSavedDraft(draft);
+    if (draft) {
+      restoreDraft(draft);
+    }
+    setDraftChecked(true);
+  }, []);
+
+  useEffect(() => {
+    if (!draftChecked || !draftActive) return;
+
+    const nextDraft = {
+      version: DRAFT_VERSION,
+      step,
+      form,
+      siteId,
+      dnsOk,
+      sslOk,
+      emailOk,
+      dnsDetails,
+      sslDetails,
+      emailDetails,
+      updatedAt: new Date().toISOString(),
+    } satisfies WizardDraft;
+
+    writeDraft(nextDraft);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSavedDraft(nextDraft);
+  }, [
+    draftChecked,
+    draftActive,
+    step,
+    form,
+    siteId,
+    dnsOk,
+    sslOk,
+    emailOk,
+    dnsDetails,
+    sslDetails,
+    emailDetails,
+  ]);
 
   async function fetchCnpj() {
     setMsg(null);
@@ -735,8 +737,10 @@ export default function CustomDomainWizardPage() {
                     const nextDomain = cleanDomain(e.target.value);
                     setDnsOk(false);
                     setSslOk(false);
+                    setEmailOk(false);
                     setDnsDetails(null);
                     setSslDetails(null);
+                    setEmailDetails(null);
                     setForm((prev) => ({
                       ...prev,
                       domain: nextDomain,
@@ -870,22 +874,49 @@ export default function CustomDomainWizardPage() {
         {step === 5 ? (
           <div className="space-y-6">
             <div>
-              <h2 className="text-xl font-bold">Ativar Caixa de Entrada</h2>
+              <h2 className="text-xl font-bold">Ativar Email Interno</h2>
               <p className="mt-2 text-sm text-white/55">
-                Aponte o email do domínio para o PLPainel para receber mensagens dentro do painel.
+                Configure o DNS para receber mensagens do domínio dentro da caixa de entrada do PLPainel.
               </p>
             </div>
 
             <div className="rounded-3xl border border-violet-500/15 bg-violet-500/10 p-5">
-              <div className="mb-4 text-sm font-bold">Registros de email no DNS</div>
+              <div className="mb-4">
+                <div className="text-sm font-bold">Registros obrigatórios no DNS</div>
+                <div className="mt-1 text-xs text-white/50">
+                  Pode ser configurado em qualquer provedor de DNS. Não precisa usar Cloudflare.
+                </div>
+              </div>
               <div className="space-y-3">
                 <DnsRow type="MX" name="@" value={PANEL_MAIL_HOST} extra="Prioridade 10" />
                 <DnsRow type="TXT" name="@" value="v=spf1 mx ~all" />
               </div>
             </div>
 
+            <div className="grid gap-3 md:grid-cols-3">
+              <div className="rounded-2xl border border-emerald-400/15 bg-emerald-500/10 p-4">
+                <div className="text-sm font-bold text-emerald-100">1. MX</div>
+                <div className="mt-1 text-xs text-emerald-100/70">
+                  Direciona o recebimento para {PANEL_MAIL_HOST}.
+                </div>
+              </div>
+              <div className="rounded-2xl border border-emerald-400/15 bg-emerald-500/10 p-4">
+                <div className="text-sm font-bold text-emerald-100">2. SPF</div>
+                <div className="mt-1 text-xs text-emerald-100/70">
+                  Autoriza o servidor de email do PLPainel no domínio.
+                </div>
+              </div>
+              <div className="rounded-2xl border border-emerald-400/15 bg-emerald-500/10 p-4">
+                <div className="text-sm font-bold text-emerald-100">3. Inbox</div>
+                <div className="mt-1 text-xs text-emerald-100/70">
+                  As mensagens ficam salvas no painel do cliente.
+                </div>
+              </div>
+            </div>
+
             <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-4 text-sm text-white/65">
-              Depois da propagação do DNS, as mensagens enviadas para <b>{contactEmail}</b> aparecem na caixa de entrada do PLPainel.
+              Depois da propagação do DNS, emails enviados para <b>{contactEmail}</b> aparecem em{" "}
+              <b>Meus Emails</b> no PLPainel. Esta etapa não cria redirecionamento para Gmail ou Outlook.
             </div>
 
             {emailDetails ? (
@@ -909,7 +940,8 @@ export default function CustomDomainWizardPage() {
                   setDraftActive(false);
                   setStep(6);
                 }}
-                className="rounded-xl bg-emerald-600 px-5 py-3 font-bold hover:bg-emerald-500"
+                disabled={!emailOk}
+                className="rounded-xl bg-emerald-600 px-5 py-3 font-bold hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Concluir
               </button>
