@@ -12,13 +12,6 @@ const ROOT_DOMAINS = [
   "mapspainel.com.br",
 ] as const;
 
-const DEFAULT_ROOT_DOMAIN = ROOT_DOMAINS[0];
-
-type SiteDomainRow = {
-  base_domain: string | null;
-  domain_mode: string | null;
-};
-
 function getBearerToken(req: Request) {
   const auth = req.headers.get("authorization") || "";
   return auth.startsWith("Bearer ") ? auth.slice(7) : null;
@@ -28,27 +21,15 @@ function cleanSlug(value: unknown) {
   return String(value || "").trim().toLowerCase();
 }
 
-function pickRootDomain(rows: SiteDomainRow[]) {
-  const counts = new Map<string, number>();
-  for (const root of ROOT_DOMAINS) {
-    counts.set(root, 0);
+function pickRootDomain(seed: string) {
+  const input = seed || String(Date.now());
+  let hash = 0;
+
+  for (let i = 0; i < input.length; i += 1) {
+    hash = (hash * 31 + input.charCodeAt(i)) >>> 0;
   }
 
-  for (const row of rows) {
-    if (row.domain_mode === "custom_domain") {
-      continue;
-    }
-
-    const baseDomain = String(row.base_domain || "");
-    if (counts.has(baseDomain)) {
-      counts.set(baseDomain, (counts.get(baseDomain) || 0) + 1);
-    }
-  }
-
-  return [...ROOT_DOMAINS].sort((a, b) => {
-    const diff = (counts.get(a) || 0) - (counts.get(b) || 0);
-    return diff || ROOT_DOMAINS.indexOf(a) - ROOT_DOMAINS.indexOf(b);
-  })[0] || DEFAULT_ROOT_DOMAIN;
+  return ROOT_DOMAINS[hash % ROOT_DOMAINS.length];
 }
 
 export async function POST(req: Request) {
@@ -114,12 +95,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const { data: domainRows } = await supabaseAdmin
-      .from("sites")
-      .select("base_domain, domain_mode")
-      .in("base_domain", [...ROOT_DOMAINS]);
-
-    const baseDomain = pickRootDomain((domainRows || []) as SiteDomainRow[]);
+    const baseDomain = pickRootDomain(`${site.id}:${site.slug}`);
 
     const { error: updateError } = await supabaseAdmin
       .from("sites")
