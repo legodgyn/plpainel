@@ -716,7 +716,7 @@ export default function NewSitePage() {
                 className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 outline-none focus:border-violet-400"
               />
               <div className="mt-1 text-[11px] text-white/50">
-                URL: https://<b>{slugify(form.slug) || "slug"}</b>.plpainel.com
+                URL: https://<b>{slugify(form.slug) || "slug"}</b>.[domínio disponível]
               </div>
             </div>
 

@@ -3,7 +3,16 @@ import { createClient } from "@supabase/supabase-js";
 
 export const dynamic = "force-dynamic";
 
-const DEFAULT_ROOT_DOMAIN = "plpainel.com";
+const ROOT_DOMAINS = [
+  "plpainel.com",
+  "acmpainel.com.br",
+  "ehspainel.com.br",
+  "lcppainel.com.br",
+  "lcspainel.com.br",
+  "mapspainel.com.br",
+] as const;
+
+const DEFAULT_ROOT_DOMAIN = ROOT_DOMAINS[0];
 
 function getBearerToken(req: Request) {
   const auth = req.headers.get("authorization") || "";
@@ -12,6 +21,34 @@ function getBearerToken(req: Request) {
 
 function cleanSlug(value: unknown) {
   return String(value || "").trim().toLowerCase();
+}
+
+async function pickRootDomain(supabaseAdmin: ReturnType<typeof createClient>) {
+  const { data } = await supabaseAdmin
+    .from("sites")
+    .select("base_domain, domain_mode")
+    .in("base_domain", [...ROOT_DOMAINS]);
+
+  const counts = new Map<string, number>();
+  for (const root of ROOT_DOMAINS) {
+    counts.set(root, 0);
+  }
+
+  for (const row of data || []) {
+    if (row.domain_mode === "custom_domain") {
+      continue;
+    }
+
+    const baseDomain = String(row.base_domain || "");
+    if (counts.has(baseDomain)) {
+      counts.set(baseDomain, (counts.get(baseDomain) || 0) + 1);
+    }
+  }
+
+  return [...ROOT_DOMAINS].sort((a, b) => {
+    const diff = (counts.get(a) || 0) - (counts.get(b) || 0);
+    return diff || ROOT_DOMAINS.indexOf(a) - ROOT_DOMAINS.indexOf(b);
+  })[0] || DEFAULT_ROOT_DOMAIN;
 }
 
 export async function POST(req: Request) {
@@ -77,10 +114,12 @@ export async function POST(req: Request) {
       );
     }
 
+    const baseDomain = await pickRootDomain(supabaseAdmin);
+
     const { error: updateError } = await supabaseAdmin
       .from("sites")
       .update({
-        base_domain: DEFAULT_ROOT_DOMAIN,
+        base_domain: baseDomain,
         domain_mode: null,
         custom_domain: null,
       })
@@ -94,7 +133,8 @@ export async function POST(req: Request) {
     return NextResponse.json({
       ok: true,
       siteId: site.id,
-      publicUrl: `https://${site.slug}.${DEFAULT_ROOT_DOMAIN}`,
+      baseDomain,
+      publicUrl: `https://${site.slug}.${baseDomain}`,
     });
   } catch (err) {
     return NextResponse.json(
