@@ -36,29 +36,34 @@ function getSlugFromSubdomain(host: string, root: string) {
   return h.slice(0, -suffix.length);
 }
 
+function isAssetPath(pathname: string) {
+  return (
+    pathname.startsWith("/_next") ||
+    pathname.startsWith("/api") ||
+    pathname === "/favicon.ico" ||
+    pathname === "/favicon.png" ||
+    pathname === "/robots.txt" ||
+    pathname === "/sitemap.xml" ||
+    pathname.startsWith("/images") ||
+    pathname.startsWith("/assets") ||
+    pathname.startsWith("/cdn-cgi")
+  );
+}
+
 export function middleware(req: NextRequest) {
   const host = cleanHost(req.headers.get("host") || "");
   const { pathname } = req.nextUrl;
 
-  if (
-    pathname.startsWith("/_next") ||
-    pathname.startsWith("/api") ||
-    pathname.startsWith("/favicon") ||
-    pathname.startsWith("/robots.txt") ||
-    pathname.startsWith("/sitemap.xml") ||
-    pathname.includes(".")
-  ) {
+  if (isAssetPath(pathname)) {
     return NextResponse.next();
   }
 
   const rootDomain = getRootDomain(host);
 
-  // domínio principal do painel
   if (rootDomain && (host === rootDomain || host === `www.${rootDomain}`)) {
     return NextResponse.next();
   }
 
-  // subdomínio antigo: cliente.ehspainel.com.br -> /s/cliente
   if (rootDomain) {
     const slug = getSlugFromSubdomain(host, rootDomain);
 
@@ -71,10 +76,9 @@ export function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // domínio próprio comprado: dominio.com.br -> /d/dominio.com.br
   if (!pathname.startsWith("/d/")) {
     const url = req.nextUrl.clone();
-    url.pathname = `/d/${host}`;
+    url.pathname = `/d/${encodeURIComponent(host)}`;
     return NextResponse.rewrite(url);
   }
 
@@ -82,5 +86,5 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/:path*"],
+  matcher: ["/((?!_next|api|favicon.ico|favicon.png|robots.txt|sitemap.xml|cdn-cgi).*)"],
 };
