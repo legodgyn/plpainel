@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseBrowser";
 
 const CUSTOM_DOMAIN_IP = "187.77.33.45";
+const DRAFT_KEY = "plpainel:custom-domain-draft";
+const DRAFT_VERSION = 1;
 
 type BalanceRow = { balance: number | null };
 
@@ -22,6 +24,18 @@ type FormState = {
   about: string;
   privacy: string;
   footer: string;
+};
+
+type WizardDraft = {
+  version: number;
+  step: number;
+  form: FormState;
+  siteId: string | null;
+  dnsOk: boolean;
+  emailOk: boolean;
+  dnsDetails: string | null;
+  emailDetails: string | null;
+  updatedAt: string;
 };
 
 const steps = ["Tokens", "CNPJ", "Gerar Site", "Domínio + DNS", "Email", "Concluído"];
@@ -141,6 +155,63 @@ function makeFooter(company: string, cnpj: string, email: string, phone?: string
   return `${company} | CNPJ: ${cnpj} | Contato: ${email}${phone ? ` | ${phone}` : ""} | ${new Date().getFullYear()} Todos os direitos reservados.`;
 }
 
+function safeStep(value: unknown) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return 1;
+  return Math.min(6, Math.max(1, Math.round(n)));
+}
+
+function formatDraftDate(value?: string) {
+  if (!value) return "";
+  try {
+    return new Date(value).toLocaleString("pt-BR", {
+      day: "2-digit",
+      month: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return "";
+  }
+}
+
+function readDraft() {
+  if (typeof window === "undefined") return null;
+
+  try {
+    const raw = window.localStorage.getItem(DRAFT_KEY);
+    if (!raw) return null;
+
+    const draft = JSON.parse(raw) as Partial<WizardDraft>;
+
+    if (draft.version !== DRAFT_VERSION || !draft.form) return null;
+
+    return {
+      version: DRAFT_VERSION,
+      step: safeStep(draft.step),
+      form: { ...initialForm, ...draft.form },
+      siteId: draft.siteId || null,
+      dnsOk: Boolean(draft.dnsOk),
+      emailOk: Boolean(draft.emailOk),
+      dnsDetails: draft.dnsDetails || null,
+      emailDetails: draft.emailDetails || null,
+      updatedAt: draft.updatedAt || new Date().toISOString(),
+    } satisfies WizardDraft;
+  } catch {
+    return null;
+  }
+}
+
+function writeDraft(draft: WizardDraft) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+}
+
+function clearDraft() {
+  if (typeof window === "undefined") return;
+  window.localStorage.removeItem(DRAFT_KEY);
+}
+
 function Progress({ current }: { current: number }) {
   return (
     <div className="mt-8 grid grid-cols-6 gap-2">
@@ -226,6 +297,9 @@ export default function CustomDomainWizardPage() {
   const [emailOk, setEmailOk] = useState(false);
   const [dnsDetails, setDnsDetails] = useState<string | null>(null);
   const [emailDetails, setEmailDetails] = useState<string | null>(null);
+  const [savedDraft, setSavedDraft] = useState<WizardDraft | null>(null);
+  const [draftChecked, setDraftChecked] = useState(false);
+  const [draftActive, setDraftActive] = useState(false);
 
   const domain = useMemo(() => cleanDomain(form.domain), [form.domain]);
   const contactEmail = useMemo(() => buildEmail(domain), [domain]);
@@ -259,6 +333,66 @@ export default function CustomDomainWizardPage() {
       alive = false;
     };
   }, [router]);
+
+  useEffect(() => {
+    const draft = readDraft();
+    setSavedDraft(draft);
+    setDraftChecked(true);
+  }, []);
+
+  useEffect(() => {
+    if (!draftChecked || !draftActive) return;
+
+    writeDraft({
+      version: DRAFT_VERSION,
+      step,
+      form,
+      siteId,
+      dnsOk,
+      emailOk,
+      dnsDetails,
+      emailDetails,
+      updatedAt: new Date().toISOString(),
+    });
+  }, [
+    draftChecked,
+    draftActive,
+    step,
+    form,
+    siteId,
+    dnsOk,
+    emailOk,
+    dnsDetails,
+    emailDetails,
+  ]);
+
+  function resetWizard(nextStep = 1) {
+    clearDraft();
+    setSavedDraft(null);
+    setDraftActive(true);
+    setStep(nextStep);
+    setForm(initialForm);
+    setMsg(null);
+    setSiteId(null);
+    setDnsOk(false);
+    setEmailOk(false);
+    setDnsDetails(null);
+    setEmailDetails(null);
+  }
+
+  function continueDraft() {
+    if (!savedDraft) return;
+
+    setForm(savedDraft.form);
+    setStep(savedDraft.step);
+    setSiteId(savedDraft.siteId);
+    setDnsOk(savedDraft.dnsOk);
+    setEmailOk(savedDraft.emailOk);
+    setDnsDetails(savedDraft.dnsDetails);
+    setEmailDetails(savedDraft.emailDetails);
+    setMsg(null);
+    setDraftActive(true);
+  }
 
   async function fetchCnpj() {
     setMsg(null);
@@ -436,6 +570,11 @@ export default function CustomDomainWizardPage() {
               <span className="rounded-full border border-emerald-400/20 bg-emerald-500/10 px-2.5 py-1 text-xs font-bold text-emerald-200">
                 NOVO
               </span>
+              {draftActive ? (
+                <span className="rounded-full border border-violet-400/20 bg-violet-500/10 px-2.5 py-1 text-xs font-bold text-violet-100">
+                  RASCUNHO SALVO
+                </span>
+              ) : null}
             </div>
             <p className="mt-1 text-sm text-white/55">
               Crie um site com domínio próprio, DNS e Cloudflare Email Routing.
@@ -455,6 +594,40 @@ export default function CustomDomainWizardPage() {
       <section className="mt-8 rounded-3xl border border-white/10 bg-white/[0.03] p-6 shadow-[0_20px_80px_rgba(0,0,0,.25)]">
         {step === 1 ? (
           <div className="space-y-6">
+            {savedDraft && !draftActive ? (
+              <div className="rounded-3xl border border-emerald-400/20 bg-emerald-500/10 p-5">
+                <div className="text-sm font-bold text-emerald-100">
+                  Voce tem uma criacao em andamento
+                </div>
+                <div className="mt-2 text-sm text-emerald-100/75">
+                  {savedDraft.form.domain ? (
+                    <>
+                      Dominio: <b>{cleanDomain(savedDraft.form.domain)}</b>
+                    </>
+                  ) : (
+                    "O rascunho ainda nao tem dominio preenchido."
+                  )}
+                  {formatDraftDate(savedDraft.updatedAt) ? (
+                    <span> | Salvo em {formatDraftDate(savedDraft.updatedAt)}</span>
+                  ) : null}
+                </div>
+                <div className="mt-4 grid gap-3 md:grid-cols-2">
+                  <button
+                    onClick={continueDraft}
+                    className="rounded-xl bg-emerald-500 px-5 py-3 font-bold text-white hover:bg-emerald-400"
+                  >
+                    Continuar de onde parei
+                  </button>
+                  <button
+                    onClick={() => resetWizard(2)}
+                    className="rounded-xl border border-white/10 bg-white/5 px-5 py-3 font-semibold text-white/80 hover:bg-white/10"
+                  >
+                    Criar novo
+                  </button>
+                </div>
+              </div>
+            ) : null}
+
             <div>
               <h2 className="text-xl font-bold">Verificação de Tokens</h2>
               <p className="mt-2 text-sm text-white/55">A geração de site com domínio próprio custa 1 token.</p>
@@ -469,7 +642,10 @@ export default function CustomDomainWizardPage() {
             </div>
 
             <button
-              onClick={() => setStep(2)}
+              onClick={() => {
+                setDraftActive(true);
+                setStep(2);
+              }}
               disabled={loadingBalance || !balance || balance < 1}
               className="w-full rounded-xl bg-emerald-500 px-5 py-4 font-bold text-white hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-50"
             >
@@ -671,7 +847,12 @@ export default function CustomDomainWizardPage() {
                 {loading ? "Verificando..." : "Verificar Email Routing"}
               </button>
               <button
-                onClick={() => setStep(6)}
+                onClick={() => {
+                  clearDraft();
+                  setSavedDraft(null);
+                  setDraftActive(false);
+                  setStep(6);
+                }}
                 className="rounded-xl bg-emerald-600 px-5 py-3 font-bold hover:bg-emerald-500"
               >
                 Concluir
