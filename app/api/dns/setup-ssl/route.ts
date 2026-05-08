@@ -45,6 +45,15 @@ function sslSetupFailureMessage(stderr: string) {
     return "Nao foi possivel ativar o SSL automaticamente. Nossa equipe precisa ajustar a permissao do servidor.";
   }
 
+  if (
+    text.includes("service is down") ||
+    text.includes("internal error") ||
+    text.includes("maintenance") ||
+    text.includes("letsencrypt.status.io")
+  ) {
+    return "O emissor de certificados esta temporariamente indisponivel. Aguarde alguns minutos e tente novamente.";
+  }
+
   if (text.includes("letsencrypt") || text.includes("certbot")) {
     return "Nao foi possivel emitir o SSL agora. Aguarde alguns minutos e tente novamente.";
   }
@@ -157,7 +166,7 @@ export async function POST(req: Request) {
       records,
       message: https.ok
         ? "SSL instalado e HTTPS respondendo."
-        : "Certbot terminou, mas o HTTPS ainda nao respondeu. Aguarde alguns instantes e verifique novamente.",
+        : "SSL solicitado, mas o HTTPS ainda nao respondeu. Aguarde alguns instantes e tente novamente.",
       https,
     });
   } catch (error) {
