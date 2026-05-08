@@ -36,6 +36,16 @@ function getSlugFromSubdomain(host: string, root: string) {
   return h.slice(0, -suffix.length);
 }
 
+function isLocalHost(host: string) {
+  const h = cleanHost(host);
+  return (
+    h === "localhost" ||
+    h === "127.0.0.1" ||
+    h === "::1" ||
+    h.endsWith(".localhost")
+  );
+}
+
 export function middleware(req: NextRequest) {
   const host = cleanHost(req.headers.get("host") || "");
   const { pathname } = req.nextUrl;
@@ -53,19 +63,29 @@ export function middleware(req: NextRequest) {
 
   const rootDomain = getRootDomain(host);
 
-  if (!rootDomain) {
+  if (isLocalHost(host)) {
     return NextResponse.next();
   }
 
-  if (host === rootDomain || host === `www.${rootDomain}`) {
+  if (rootDomain && (host === rootDomain || host === `www.${rootDomain}`)) {
     return NextResponse.next();
   }
 
-  const slug = getSlugFromSubdomain(host, rootDomain);
+  if (rootDomain) {
+    const slug = getSlugFromSubdomain(host, rootDomain);
 
-  if (slug && !pathname.startsWith("/s/")) {
+    if (slug && !pathname.startsWith("/s/")) {
+      const url = req.nextUrl.clone();
+      url.pathname = `/s/${slug}`;
+      return NextResponse.rewrite(url);
+    }
+
+    return NextResponse.next();
+  }
+
+  if (!pathname.startsWith("/d/")) {
     const url = req.nextUrl.clone();
-    url.pathname = `/s/${slug}`;
+    url.pathname = `/d/${encodeURIComponent(host)}`;
     return NextResponse.rewrite(url);
   }
 
