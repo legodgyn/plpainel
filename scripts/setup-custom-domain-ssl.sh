@@ -1,0 +1,88 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+DOMAIN="${1:-}"
+EMAIL="${2:-${CERTBOT_EMAIL:-}}"
+APP_PORT="${APP_PORT:-3000}"
+INCLUDE_WWW="${INCLUDE_WWW:-0}"
+NGINX_AVAILABLE_DIR="${NGINX_AVAILABLE_DIR:-/etc/nginx/sites-available}"
+NGINX_ENABLED_DIR="${NGINX_ENABLED_DIR:-/etc/nginx/sites-enabled}"
+
+if [[ -z "$DOMAIN" ]]; then
+  echo "Uso: sudo ./scripts/setup-custom-domain-ssl.sh dominio.com [email]"
+  exit 1
+fi
+
+if [[ ! "$DOMAIN" =~ ^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)+$ ]]; then
+  echo "Dominio invalido: $DOMAIN"
+  exit 1
+fi
+
+if [[ "$(id -u)" -ne 0 ]]; then
+  echo "Rode com sudo para editar Nginx e emitir o certificado."
+  exit 1
+fi
+
+if ! command -v nginx >/dev/null 2>&1; then
+  echo "Nginx nao encontrado. Instale o Nginx antes de continuar."
+  exit 1
+fi
+
+if ! command -v certbot >/dev/null 2>&1; then
+  apt-get update
+  apt-get install -y certbot python3-certbot-nginx
+fi
+
+SERVER_NAMES="$DOMAIN"
+if [[ "$INCLUDE_WWW" == "1" ]]; then
+  SERVER_NAMES="$SERVER_NAMES www.$DOMAIN"
+fi
+
+SERVER_FILE="$NGINX_AVAILABLE_DIR/plpainel-custom-$DOMAIN"
+
+cat > "$SERVER_FILE" <<NGINX
+server {
+    listen 80;
+    listen [::]:80;
+    server_name $SERVER_NAMES;
+
+    location / {
+        proxy_pass http://127.0.0.1:$APP_PORT;
+        proxy_http_version 1.1;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+}
+NGINX
+
+ln -sf "$SERVER_FILE" "$NGINX_ENABLED_DIR/plpainel-custom-$DOMAIN"
+nginx -t
+systemctl reload nginx
+
+CERTBOT_ARGS=(
+  --nginx
+  -d "$DOMAIN"
+  --agree-tos
+  --non-interactive
+  --redirect
+)
+
+if [[ "$INCLUDE_WWW" == "1" ]]; then
+  CERTBOT_ARGS+=(-d "www.$DOMAIN")
+fi
+
+if [[ -n "$EMAIL" ]]; then
+  CERTBOT_ARGS+=(--email "$EMAIL")
+else
+  CERTBOT_ARGS+=(--register-unsafely-without-email)
+fi
+
+certbot "${CERTBOT_ARGS[@]}"
+nginx -t
+systemctl reload nginx
+
+echo "SSL configurado para https://$DOMAIN"

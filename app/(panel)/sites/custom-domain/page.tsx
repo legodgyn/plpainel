@@ -32,8 +32,10 @@ type WizardDraft = {
   form: FormState;
   siteId: string | null;
   dnsOk: boolean;
+  sslOk: boolean;
   emailOk: boolean;
   dnsDetails: string | null;
+  sslDetails: string | null;
   emailDetails: string | null;
   updatedAt: string;
 };
@@ -192,8 +194,10 @@ function readDraft() {
       form: { ...initialForm, ...draft.form },
       siteId: draft.siteId || null,
       dnsOk: Boolean(draft.dnsOk),
+      sslOk: Boolean(draft.sslOk),
       emailOk: Boolean(draft.emailOk),
       dnsDetails: draft.dnsDetails || null,
+      sslDetails: draft.sslDetails || null,
       emailDetails: draft.emailDetails || null,
       updatedAt: draft.updatedAt || new Date().toISOString(),
     } satisfies WizardDraft;
@@ -294,8 +298,10 @@ export default function CustomDomainWizardPage() {
   const [loading, setLoading] = useState(false);
   const [siteId, setSiteId] = useState<string | null>(null);
   const [dnsOk, setDnsOk] = useState(false);
+  const [sslOk, setSslOk] = useState(false);
   const [emailOk, setEmailOk] = useState(false);
   const [dnsDetails, setDnsDetails] = useState<string | null>(null);
+  const [sslDetails, setSslDetails] = useState<string | null>(null);
   const [emailDetails, setEmailDetails] = useState<string | null>(null);
   const [savedDraft, setSavedDraft] = useState<WizardDraft | null>(null);
   const [draftChecked, setDraftChecked] = useState(false);
@@ -303,6 +309,13 @@ export default function CustomDomainWizardPage() {
 
   const domain = useMemo(() => cleanDomain(form.domain), [form.domain]);
   const contactEmail = useMemo(() => buildEmail(domain), [domain]);
+  const sslCommand = useMemo(
+    () =>
+      domain
+        ? `cd /var/www/plpainel && sudo bash scripts/setup-custom-domain-ssl.sh ${domain}`
+        : "cd /var/www/plpainel && sudo bash scripts/setup-custom-domain-ssl.sh seudominio.com.br",
+    [domain]
+  );
 
   useEffect(() => {
     let alive = true;
@@ -349,8 +362,10 @@ export default function CustomDomainWizardPage() {
       form,
       siteId,
       dnsOk,
+      sslOk,
       emailOk,
       dnsDetails,
+      sslDetails,
       emailDetails,
       updatedAt: new Date().toISOString(),
     });
@@ -361,8 +376,10 @@ export default function CustomDomainWizardPage() {
     form,
     siteId,
     dnsOk,
+    sslOk,
     emailOk,
     dnsDetails,
+    sslDetails,
     emailDetails,
   ]);
 
@@ -375,8 +392,10 @@ export default function CustomDomainWizardPage() {
     setMsg(null);
     setSiteId(null);
     setDnsOk(false);
+    setSslOk(false);
     setEmailOk(false);
     setDnsDetails(null);
+    setSslDetails(null);
     setEmailDetails(null);
   }
 
@@ -387,8 +406,10 @@ export default function CustomDomainWizardPage() {
     setStep(savedDraft.step);
     setSiteId(savedDraft.siteId);
     setDnsOk(savedDraft.dnsOk);
+    setSslOk(savedDraft.sslOk);
     setEmailOk(savedDraft.emailOk);
     setDnsDetails(savedDraft.dnsDetails);
+    setSslDetails(savedDraft.sslDetails);
     setEmailDetails(savedDraft.emailDetails);
     setMsg(null);
     setDraftActive(true);
@@ -525,6 +546,30 @@ export default function CustomDomainWizardPage() {
         json.ok
           ? "Domínio apontando corretamente."
           : `Encontrado: ${(json.records || []).join(", ") || "nenhum registro A"}`
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function checkHttps() {
+    setMsg(null);
+    setSslDetails(null);
+    setLoading(true);
+
+    try {
+      const res = await fetch("/api/dns/check-https", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ domain }),
+      });
+      const json = await res.json().catch(() => ({}));
+
+      setSslOk(Boolean(json.ok));
+      setSslDetails(
+        json.ok
+          ? "Certificado SSL ativo. O dominio ja responde em HTTPS."
+          : json.message || json.error || "HTTPS ainda nao respondeu com certificado valido."
       );
     } finally {
       setLoading(false);
@@ -790,6 +835,39 @@ export default function CustomDomainWizardPage() {
               </div>
             ) : null}
 
+            <div className="rounded-3xl border border-emerald-500/15 bg-emerald-500/10 p-5">
+              <div className="text-sm font-bold text-emerald-100">Certificado SSL</div>
+              <p className="mt-2 text-sm text-emerald-100/75">
+                Depois que o registro A estiver apontando para o servidor, rode este comando no servidor para criar o Nginx do dominio e emitir o certificado.
+              </p>
+              <div className="mt-4 rounded-2xl border border-white/10 bg-black/30 p-4 font-mono text-xs text-white/80">
+                {sslCommand}
+              </div>
+              <div className="mt-3 flex flex-col gap-3 md:flex-row">
+                <button
+                  type="button"
+                  onClick={() => navigator.clipboard?.writeText(sslCommand)}
+                  className="rounded-xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-white/80 hover:bg-white/10"
+                >
+                  Copiar comando
+                </button>
+                <button
+                  type="button"
+                  onClick={checkHttps}
+                  disabled={loading}
+                  className="rounded-xl border border-emerald-400/30 bg-emerald-500/10 px-5 py-3 text-sm font-semibold text-emerald-100 hover:bg-emerald-500/15 disabled:opacity-60"
+                >
+                  {loading ? "Verificando..." : "Verificar HTTPS"}
+                </button>
+              </div>
+            </div>
+
+            {sslDetails ? (
+              <div className={`rounded-2xl px-4 py-3 text-sm ${sslOk ? "bg-emerald-500/10 text-emerald-100" : "bg-amber-500/10 text-amber-100"}`}>
+                {sslDetails}
+              </div>
+            ) : null}
+
             <div className="flex flex-col gap-3 md:flex-row">
               <button
                 onClick={checkARecord}
@@ -800,7 +878,8 @@ export default function CustomDomainWizardPage() {
               </button>
               <button
                 onClick={() => setStep(5)}
-                className="rounded-xl bg-emerald-600 px-5 py-3 font-bold hover:bg-emerald-500"
+                disabled={!sslOk}
+                className="rounded-xl bg-emerald-600 px-5 py-3 font-bold hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Continuar para Email
               </button>
