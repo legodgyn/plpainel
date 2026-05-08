@@ -38,6 +38,24 @@ function isValidEmail(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
+function sslSetupFailureMessage(stderr: string) {
+  const text = stderr.toLowerCase();
+
+  if (text.includes("password") || text.includes("sudo")) {
+    return "Nao foi possivel ativar o SSL automaticamente. Nossa equipe precisa ajustar a permissao do servidor.";
+  }
+
+  if (text.includes("letsencrypt") || text.includes("certbot")) {
+    return "Nao foi possivel emitir o SSL agora. Aguarde alguns minutos e tente novamente.";
+  }
+
+  if (text.includes("nginx")) {
+    return "Nao foi possivel aplicar a configuracao do servidor agora. Tente novamente em alguns minutos.";
+  }
+
+  return "Nao foi possivel ativar o SSL agora. Tente novamente em alguns minutos.";
+}
+
 async function checkHttps(domain: string) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 10000);
@@ -125,7 +143,7 @@ export async function POST(req: Request) {
     const args = ["-n", "env", `CUSTOM_DOMAIN_A_RECORD_IP=${expectedIp}`, "bash", scriptPath, domain];
     if (email) args.push(email);
 
-    const { stdout, stderr } = await execFileAsync("sudo", args, {
+    await execFileAsync("sudo", args, {
       timeout: 180000,
       maxBuffer: 1024 * 1024,
     });
@@ -137,8 +155,6 @@ export async function POST(req: Request) {
       sslOk: https.ok,
       domain,
       records,
-      output: stdout,
-      errorOutput: stderr,
       message: https.ok
         ? "SSL instalado e HTTPS respondendo."
         : "Certbot terminou, mas o HTTPS ainda nao respondeu. Aguarde alguns instantes e verifique novamente.",
@@ -147,20 +163,19 @@ export async function POST(req: Request) {
   } catch (error) {
     const err = error as Error & { stdout?: string; stderr?: string; code?: string | number };
     const stderr = err.stderr || "";
-    const permissionHint =
-      err.code === 1 && stderr.toLowerCase().includes("password")
-        ? "Configure sudo sem senha para o usuario do app executar o script de SSL."
-        : null;
+    console.error("SSL setup failed", {
+      code: err.code,
+      message: err.message,
+      stdout: err.stdout,
+      stderr,
+    });
 
     return NextResponse.json(
       {
         ok: false,
         dnsOk: true,
         sslOk: false,
-        error: err.message || "Erro ao configurar SSL.",
-        output: err.stdout || "",
-        errorOutput: stderr,
-        hint: permissionHint,
+        message: sslSetupFailureMessage(stderr),
       },
       { status: 500 }
     );

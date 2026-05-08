@@ -309,13 +309,6 @@ export default function CustomDomainWizardPage() {
 
   const domain = useMemo(() => cleanDomain(form.domain), [form.domain]);
   const contactEmail = useMemo(() => buildEmail(domain), [domain]);
-  const sslCommand = useMemo(
-    () =>
-      domain
-        ? `cd /var/www/plpainel && sudo env CUSTOM_DOMAIN_A_RECORD_IP=${CUSTOM_DOMAIN_IP} bash scripts/setup-custom-domain-ssl.sh ${domain} ${form.email || contactEmail}`
-        : `cd /var/www/plpainel && sudo env CUSTOM_DOMAIN_A_RECORD_IP=${CUSTOM_DOMAIN_IP} bash scripts/setup-custom-domain-ssl.sh seudominio.com.br contato@seudominio.com.br`,
-    [contactEmail, domain, form.email]
-  );
 
   useEffect(() => {
     let alive = true;
@@ -547,10 +540,13 @@ export default function CustomDomainWizardPage() {
       if (!ok) {
         setSslOk(false);
         setSslDetails(null);
+        setDnsDetails(
+          `Encontrado: ${(json.records || []).join(", ") || "nenhum registro A"}`
+        );
         return;
       }
 
-      setDnsDetails("Domínio apontando corretamente. Instalando Certbot e configurando SSL...");
+      setDnsDetails("Domínio apontando corretamente. Configurando SSL...");
 
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData.session?.access_token;
@@ -572,40 +568,14 @@ export default function CustomDomainWizardPage() {
       setSslOk(Boolean(sslJson.sslOk));
       setSslDetails(
         sslJson.sslOk
-          ? "Certbot instalado/configurado e HTTPS ativo."
+          ? "SSL instalado e HTTPS ativo."
           : sslJson.message ||
-              sslJson.hint ||
-              sslJson.error ||
-              "DNS ok, mas nao foi possivel instalar/verificar o SSL."
+              "DNS ok, mas nao foi possivel ativar o SSL agora."
       );
 
       if (!sslRes.ok || !sslJson.ok) {
-        setMsg(sslJson.hint || sslJson.error || "Nao foi possivel configurar o SSL no servidor.");
+        setMsg(sslJson.message || "Nao foi possivel ativar o SSL agora. Tente novamente em alguns minutos.");
       }
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function checkHttps() {
-    setMsg(null);
-    setSslDetails(null);
-    setLoading(true);
-
-    try {
-      const res = await fetch("/api/dns/check-https", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ domain }),
-      });
-      const json = await res.json().catch(() => ({}));
-
-      setSslOk(Boolean(json.ok));
-      setSslDetails(
-        json.ok
-          ? "Certificado SSL ativo. O dominio ja responde em HTTPS."
-          : json.message || json.error || "HTTPS ainda nao respondeu com certificado valido."
-      );
     } finally {
       setLoading(false);
     }
@@ -865,7 +835,7 @@ export default function CustomDomainWizardPage() {
               <div className="mb-4 text-sm font-bold text-violet-100">Registro obrigatório antes do SSL</div>
               <DnsRow type="A" name="@" value={CUSTOM_DOMAIN_IP} />
               <div className="mt-4 rounded-2xl border border-amber-400/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
-                Antes de rodar o Certbot, o domínio precisa estar com esse registro A apontando para {CUSTOM_DOMAIN_IP}.
+                Antes de ativar o SSL, o domínio precisa estar com esse registro A apontando para {CUSTOM_DOMAIN_IP}.
               </div>
               <div className="mt-3 rounded-2xl border border-sky-400/20 bg-sky-500/10 px-4 py-3 text-sm text-sky-100">
                 Se usar Cloudflare, deixe o proxy desligado nesse registro durante a primeira validação: nuvem cinza.
@@ -881,48 +851,23 @@ export default function CustomDomainWizardPage() {
             <div className="rounded-3xl border border-emerald-500/15 bg-emerald-500/10 p-5">
               <div className="text-sm font-bold text-emerald-100">Certificado SSL</div>
               <p className="mt-2 text-sm text-emerald-100/75">
-                Rode este comando no servidor somente depois que o teste do registro A mostrar que o domínio está apontando corretamente.
-                Ele instala o Certbot e o plugin do Nginx se ainda não existirem, cria a configuração do Nginx e emite o SSL.
+                Depois que o DNS estiver correto, o painel configura o SSL automaticamente.
               </p>
-              <div className="mt-4 grid gap-3 text-sm text-emerald-100/80 md:grid-cols-3">
+              <div className="mt-4 grid gap-3 text-sm text-emerald-100/80 md:grid-cols-2">
                 <div className="rounded-2xl border border-emerald-400/15 bg-black/20 px-4 py-3">
                   <div className="text-xs font-bold text-emerald-100">1. DNS</div>
                   <div className="mt-1 text-emerald-100/65">Verifique o registro A no painel.</div>
                 </div>
                 <div className="rounded-2xl border border-emerald-400/15 bg-black/20 px-4 py-3">
-                  <div className="text-xs font-bold text-emerald-100">2. Certbot</div>
-                  <div className="mt-1 text-emerald-100/65">Copie e rode o comando no servidor.</div>
-                </div>
-                <div className="rounded-2xl border border-emerald-400/15 bg-black/20 px-4 py-3">
-                  <div className="text-xs font-bold text-emerald-100">3. HTTPS</div>
-                  <div className="mt-1 text-emerald-100/65">Volte aqui e clique em Verificar HTTPS.</div>
+                  <div className="text-xs font-bold text-emerald-100">2. SSL</div>
+                  <div className="mt-1 text-emerald-100/65">O painel instala e valida o certificado automaticamente.</div>
                 </div>
               </div>
               {!dnsOk ? (
                 <div className="mt-4 rounded-2xl border border-amber-400/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
-                  O Certbot ainda pode falhar: primeiro clique em Verificar Agora e aguarde o DNS apontar para {CUSTOM_DOMAIN_IP}.
+                  Primeiro verifique se o DNS já aponta para {CUSTOM_DOMAIN_IP}.
                 </div>
               ) : null}
-              <div className="mt-4 rounded-2xl border border-white/10 bg-black/30 p-4 font-mono text-xs text-white/80">
-                {sslCommand}
-              </div>
-              <div className="mt-3 flex flex-col gap-3 md:flex-row">
-                <button
-                  type="button"
-                  onClick={() => navigator.clipboard?.writeText(sslCommand)}
-                  className="rounded-xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-white/80 hover:bg-white/10"
-                >
-                  Copiar comando
-                </button>
-                <button
-                  type="button"
-                  onClick={checkHttps}
-                  disabled={loading || !dnsOk}
-                  className="rounded-xl border border-emerald-400/30 bg-emerald-500/10 px-5 py-3 text-sm font-semibold text-emerald-100 hover:bg-emerald-500/15 disabled:opacity-60"
-                >
-                  {loading ? "Verificando..." : "Verificar HTTPS"}
-                </button>
-              </div>
             </div>
 
             {sslDetails ? (
