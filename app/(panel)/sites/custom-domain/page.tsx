@@ -528,9 +528,10 @@ export default function CustomDomainWizardPage() {
     }
   }
 
-  async function checkARecord() {
+  async function setupSslFromDnsCheck() {
     setMsg(null);
     setDnsDetails(null);
+    setSslDetails(null);
     setLoading(true);
 
     try {
@@ -546,12 +547,41 @@ export default function CustomDomainWizardPage() {
       if (!ok) {
         setSslOk(false);
         setSslDetails(null);
+        return;
       }
-      setDnsDetails(
-        json.ok
-          ? "Domínio apontando corretamente."
-          : `Encontrado: ${(json.records || []).join(", ") || "nenhum registro A"}`
+
+      setDnsDetails("Domínio apontando corretamente. Instalando Certbot e configurando SSL...");
+
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) {
+        router.push("/login");
+        return;
+      }
+
+      const sslRes = await fetch("/api/dns/setup-ssl", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ domain, email: form.email || contactEmail }),
+      });
+      const sslJson = await sslRes.json().catch(() => ({}));
+
+      setSslOk(Boolean(sslJson.sslOk));
+      setSslDetails(
+        sslJson.sslOk
+          ? "Certbot instalado/configurado e HTTPS ativo."
+          : sslJson.message ||
+              sslJson.hint ||
+              sslJson.error ||
+              "DNS ok, mas nao foi possivel instalar/verificar o SSL."
       );
+
+      if (!sslRes.ok || !sslJson.ok) {
+        setMsg(sslJson.hint || sslJson.error || "Nao foi possivel configurar o SSL no servidor.");
+      }
     } finally {
       setLoading(false);
     }
@@ -903,11 +933,11 @@ export default function CustomDomainWizardPage() {
 
             <div className="flex flex-col gap-3 md:flex-row">
               <button
-                onClick={checkARecord}
+                onClick={setupSslFromDnsCheck}
                 disabled={loading}
                 className="rounded-xl border border-violet-400/30 bg-violet-500/10 px-5 py-3 font-semibold text-violet-100 hover:bg-violet-500/15 disabled:opacity-60"
               >
-                {loading ? "Verificando..." : "Verificar Agora"}
+                {loading ? "Configurando SSL..." : "Verificar DNS e Instalar SSL"}
               </button>
               <button
                 onClick={() => setStep(5)}
