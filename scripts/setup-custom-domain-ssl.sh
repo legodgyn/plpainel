@@ -5,6 +5,7 @@ DOMAIN="${1:-}"
 EMAIL="${2:-${CERTBOT_EMAIL:-}}"
 APP_PORT="${APP_PORT:-3000}"
 INCLUDE_WWW="${INCLUDE_WWW:-0}"
+EXPECTED_IP="${CUSTOM_DOMAIN_A_RECORD_IP:-187.77.33.45}"
 NGINX_AVAILABLE_DIR="${NGINX_AVAILABLE_DIR:-/etc/nginx/sites-available}"
 NGINX_ENABLED_DIR="${NGINX_ENABLED_DIR:-/etc/nginx/sites-enabled}"
 
@@ -25,6 +26,31 @@ fi
 
 if ! command -v nginx >/dev/null 2>&1; then
   echo "Nginx nao encontrado. Instale o Nginx antes de continuar."
+  exit 1
+fi
+
+resolve_domain_ips() {
+  if command -v getent >/dev/null 2>&1; then
+    getent ahostsv4 "$DOMAIN" | awk '{print $1}' | sort -u
+    return
+  fi
+
+  if command -v dig >/dev/null 2>&1; then
+    dig +short A "$DOMAIN" | sort -u
+    return
+  fi
+
+  if command -v host >/dev/null 2>&1; then
+    host -t A "$DOMAIN" | awk '/has address/ {print $4}' | sort -u
+    return
+  fi
+}
+
+RESOLVED_IPS="$(resolve_domain_ips || true)"
+if ! printf '%s\n' "$RESOLVED_IPS" | grep -qx "$EXPECTED_IP"; then
+  echo "O registro A de $DOMAIN ainda nao aponta para $EXPECTED_IP."
+  echo "Encontrado: ${RESOLVED_IPS:-nenhum registro A}"
+  echo "Ajuste o DNS e aguarde a propagacao antes de rodar o Certbot."
   exit 1
 fi
 

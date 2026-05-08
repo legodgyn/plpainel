@@ -312,9 +312,9 @@ export default function CustomDomainWizardPage() {
   const sslCommand = useMemo(
     () =>
       domain
-        ? `cd /var/www/plpainel && sudo bash scripts/setup-custom-domain-ssl.sh ${domain}`
-        : "cd /var/www/plpainel && sudo bash scripts/setup-custom-domain-ssl.sh seudominio.com.br",
-    [domain]
+        ? `cd /var/www/plpainel && sudo env CUSTOM_DOMAIN_A_RECORD_IP=${CUSTOM_DOMAIN_IP} bash scripts/setup-custom-domain-ssl.sh ${domain} ${form.email || contactEmail}`
+        : `cd /var/www/plpainel && sudo env CUSTOM_DOMAIN_A_RECORD_IP=${CUSTOM_DOMAIN_IP} bash scripts/setup-custom-domain-ssl.sh seudominio.com.br contato@seudominio.com.br`,
+    [contactEmail, domain, form.email]
   );
 
   useEffect(() => {
@@ -541,7 +541,12 @@ export default function CustomDomainWizardPage() {
       });
       const json = await res.json().catch(() => ({}));
 
-      setDnsOk(Boolean(json.ok));
+      const ok = Boolean(json.ok);
+      setDnsOk(ok);
+      if (!ok) {
+        setSslOk(false);
+        setSslDetails(null);
+      }
       setDnsDetails(
         json.ok
           ? "Domínio apontando corretamente."
@@ -734,6 +739,10 @@ export default function CustomDomainWizardPage() {
                   value={form.domain}
                   onChange={(e) => {
                     const nextDomain = cleanDomain(e.target.value);
+                    setDnsOk(false);
+                    setSslOk(false);
+                    setDnsDetails(null);
+                    setSslDetails(null);
                     setForm((prev) => ({
                       ...prev,
                       domain: nextDomain,
@@ -823,9 +832,13 @@ export default function CustomDomainWizardPage() {
             </div>
 
             <div className="rounded-3xl border border-violet-500/15 bg-violet-500/10 p-5">
+              <div className="mb-4 text-sm font-bold text-violet-100">Registro obrigatório antes do SSL</div>
               <DnsRow type="A" name="@" value={CUSTOM_DOMAIN_IP} />
               <div className="mt-4 rounded-2xl border border-amber-400/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
-                Se usar Cloudflare, deixe o proxy desligado nesse registro enquanto verifica: nuvem cinza.
+                Antes de rodar o Certbot, o domínio precisa estar com esse registro A apontando para {CUSTOM_DOMAIN_IP}.
+              </div>
+              <div className="mt-3 rounded-2xl border border-sky-400/20 bg-sky-500/10 px-4 py-3 text-sm text-sky-100">
+                Se usar Cloudflare, deixe o proxy desligado nesse registro durante a primeira validação: nuvem cinza.
               </div>
             </div>
 
@@ -838,8 +851,27 @@ export default function CustomDomainWizardPage() {
             <div className="rounded-3xl border border-emerald-500/15 bg-emerald-500/10 p-5">
               <div className="text-sm font-bold text-emerald-100">Certificado SSL</div>
               <p className="mt-2 text-sm text-emerald-100/75">
-                Depois que o registro A estiver apontando para o servidor, rode este comando no servidor para criar o Nginx do dominio e emitir o certificado.
+                Rode este comando no servidor somente depois que o teste do registro A mostrar que o domínio está apontando corretamente.
               </p>
+              <div className="mt-4 grid gap-3 text-sm text-emerald-100/80 md:grid-cols-3">
+                <div className="rounded-2xl border border-emerald-400/15 bg-black/20 px-4 py-3">
+                  <div className="text-xs font-bold text-emerald-100">1. DNS</div>
+                  <div className="mt-1 text-emerald-100/65">Verifique o registro A no painel.</div>
+                </div>
+                <div className="rounded-2xl border border-emerald-400/15 bg-black/20 px-4 py-3">
+                  <div className="text-xs font-bold text-emerald-100">2. Certbot</div>
+                  <div className="mt-1 text-emerald-100/65">Copie e rode o comando no servidor.</div>
+                </div>
+                <div className="rounded-2xl border border-emerald-400/15 bg-black/20 px-4 py-3">
+                  <div className="text-xs font-bold text-emerald-100">3. HTTPS</div>
+                  <div className="mt-1 text-emerald-100/65">Volte aqui e clique em Verificar HTTPS.</div>
+                </div>
+              </div>
+              {!dnsOk ? (
+                <div className="mt-4 rounded-2xl border border-amber-400/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+                  O Certbot ainda pode falhar: primeiro clique em Verificar Agora e aguarde o DNS apontar para {CUSTOM_DOMAIN_IP}.
+                </div>
+              ) : null}
               <div className="mt-4 rounded-2xl border border-white/10 bg-black/30 p-4 font-mono text-xs text-white/80">
                 {sslCommand}
               </div>
@@ -854,7 +886,7 @@ export default function CustomDomainWizardPage() {
                 <button
                   type="button"
                   onClick={checkHttps}
-                  disabled={loading}
+                  disabled={loading || !dnsOk}
                   className="rounded-xl border border-emerald-400/30 bg-emerald-500/10 px-5 py-3 text-sm font-semibold text-emerald-100 hover:bg-emerald-500/15 disabled:opacity-60"
                 >
                   {loading ? "Verificando..." : "Verificar HTTPS"}
