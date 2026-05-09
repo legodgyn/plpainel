@@ -6,8 +6,6 @@ import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseBrowser";
 
-type TokenRow = { balance: number } | null;
-
 type ExtraPermissions = {
   can_change_layout: boolean;
   can_transfer_sites: boolean;
@@ -107,6 +105,27 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
     []
   );
 
+  const customDomainNav = useMemo(
+    () => [
+      {
+        href: "/sites/custom-domain",
+        label: "Criar site com domÃ­nio prÃ³prio",
+        icon: "âœ¨",
+      },
+      { href: "/domains/my", label: "Meus domÃ­nios", icon: "ðŸŒ" },
+      { href: "/emails", label: "Emails", icon: "âœ‰ï¸" },
+    ],
+    []
+  );
+
+  const customDomainGroupActive = useMemo(
+    () =>
+      customDomainNav.some(
+        (item) => pathname === item.href || pathname.startsWith(`${item.href}/`)
+      ),
+    [customDomainNav, pathname]
+  );
+
   const nav = useMemo(() => {
     const items = [...baseNav];
 
@@ -176,7 +195,6 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
     canTransferSites,
     canViewOrders,
     canManageSuggestions,
-    canUseCustomDomain,
     isAdminMaster,
   ]);
 
@@ -414,6 +432,52 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
                   </Link>
                 );
               })}
+
+              {canUseCustomDomain ? (
+                <details
+                  className="group rounded-xl border border-transparent"
+                  open={customDomainGroupActive}
+                >
+                  <summary
+                    className={[
+                      "flex cursor-pointer list-none items-center gap-3 rounded-xl px-3 py-2 text-sm",
+                      customDomainGroupActive
+                        ? "border border-violet-400/30 bg-violet-600/25 text-white"
+                        : "border border-transparent text-white/75 hover:bg-white/10",
+                    ].join(" ")}
+                  >
+                    <span className="w-6 text-center">ðŸ”</span>
+                    <span className="flex-1">DomÃ­nio PrÃ³prio</span>
+                    <span className="text-xs text-white/45 transition group-open:rotate-180">
+                      â–¾
+                    </span>
+                  </summary>
+
+                  <div className="mt-1 space-y-1 pl-4">
+                    {customDomainNav.map((item) => {
+                      const active =
+                        pathname === item.href ||
+                        pathname.startsWith(`${item.href}/`);
+
+                      return (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          className={[
+                            "flex items-center gap-3 rounded-xl border px-3 py-2 text-sm",
+                            active
+                              ? "border-emerald-400/25 bg-emerald-500/15 text-white"
+                              : "border-transparent text-white/65 hover:bg-white/10 hover:text-white",
+                          ].join(" ")}
+                        >
+                          <span className="w-5 text-center text-xs">{item.icon}</span>
+                          <span>{item.label}</span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </details>
+              ) : null}
             </nav>
 
             <button
