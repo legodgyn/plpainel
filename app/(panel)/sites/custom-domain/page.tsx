@@ -830,10 +830,14 @@ export default function CustomDomainWizardPage() {
             </div>
 
             <div className="rounded-3xl border border-violet-500/15 bg-violet-500/10 p-5">
-              <div className="mb-4 text-sm font-bold text-violet-100">Registro obrigatório antes do SSL</div>
-              <DnsRow type="A" name="@" value={CUSTOM_DOMAIN_IP} />
+              <div className="mb-4 text-sm font-bold text-violet-100">Registros obrigatórios antes do SSL</div>
+              <div className="space-y-3">
+                <DnsRow type="A" name="@" value={CUSTOM_DOMAIN_IP} />
+                <DnsRow type="A" name="*" value={CUSTOM_DOMAIN_IP} />
+              </div>
               <div className="mt-4 rounded-2xl border border-amber-400/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
-                Antes de ativar o SSL, o domínio precisa estar com esse registro A apontando para {CUSTOM_DOMAIN_IP}.
+                Antes de ativar o SSL, o domínio precisa estar com o registro A @ apontando para {CUSTOM_DOMAIN_IP}.
+                O registro A * libera a criação de subdomínios depois, como loja.{domain || "seudominio.com"}.
               </div>
               <div className="mt-3 rounded-2xl border border-sky-400/20 bg-sky-500/10 px-4 py-3 text-sm text-sky-100">
                 Se usar Cloudflare, deixe o proxy desligado nesse registro durante a primeira validação: nuvem cinza.
