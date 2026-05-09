@@ -89,15 +89,15 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
     isAdminMaster || extraPermissions.can_manage_suggestions;
   const baseNav = useMemo(
     () => [
-      { href: "/dashboard", label: "Dashboard", icon: "▦" },
-      { href: "/loja", label: "Loja", icon: "$" },
-      { href: "/sites", label: "Meus Sites", icon: "◎" },
-      { href: "/sites/new", label: "Criar Site", icon: "+" },
-      { href: "/tokens", label: "Comprar Tokens", icon: "▰" },
-      { href: "/billing", label: "Minhas Compras", icon: "▤" },
-      { href: "/affiliate", label: "Afiliados", icon: "◇" },
-      { href: "/tutorial", label: "Tutorial", icon: "?" },
-      { href: "/sugestoes", label: "Sugestoes e Melhorias", icon: "!" },
+      { href: "/dashboard", label: "Dashboard", icon: "📊" },
+      { href: "/loja", label: "Loja", icon: "🛍️" },
+      { href: "/sites", label: "Meus Sites", icon: "🌐" },
+      { href: "/sites/new", label: "Criar Site", icon: "➕" },
+      { href: "/tokens", label: "Comprar Tokens", icon: "💳" },
+      { href: "/billing", label: "Minhas Compras", icon: "🧾" },
+      { href: "/affiliate", label: "Afiliados", icon: "🤝" },
+      { href: "/tutorial", label: "Tutorial", icon: "📚" },
+      { href: "/sugestoes", label: "Sugestões e Melhorias", icon: "💡" },
     ],
     []
   );
@@ -105,16 +105,16 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
     () => [
       {
         href: "/sites/custom-domain",
-        label: "Conectar dominio proprio",
-        icon: "◇",
+        label: "Conectar domínio próprio",
+        icon: "✨",
       },
       {
         href: "/sites/domain-subdomain",
-        label: "Criar site em dominio conectado",
-        icon: "+",
+        label: "Criar site em domínio conectado",
+        icon: "➕",
       },
-      { href: "/domains/my", label: "Meus dominios", icon: "◎" },
-      { href: "/emails", label: "Emails", icon: "@" },
+      { href: "/domains/my", label: "Meus domínios", icon: "🌍" },
+      { href: "/emails", label: "Emails", icon: "✉️" },
     ],
     []
   );
@@ -133,7 +133,7 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
       items.push({
         href: "/sites/template-simples",
         label: "Alterar Layout",
-        icon: "*",
+        icon: "🎨",
       });
     }
 
@@ -141,7 +141,7 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
       items.push({
         href: "/admin",
         label: "Compras na Plataforma",
-        icon: "#",
+        icon: "🛒",
       });
     }
 
@@ -149,40 +149,40 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
       items.push({
         href: "/admin/pagamentos-afiliados",
         label: "Pagamentos Afiliados",
-        icon: "$",
+        icon: "💸",
       });
-      items.push({ href: "/users", label: "Usuarios", icon: "U" });
+      items.push({ href: "/users", label: "Usuários", icon: "👥" });
       items.push({
         href: "https://bm.plpainel.com/dashboard.html",
         label: "Controle de BM's",
-        icon: "^",
+        icon: "📈",
       });
 
           if (canTransferSites) {
       items.push({
         href: "/admin/transferir-sites",
-        label: "Transferencias",
-        icon: ">",
+        label: "Transferências",
+        icon: "🔄",
       });
     }
       items.push({
         href: "/admin/updates",
-        label: "Atualizacoes",
-        icon: "~",
+        label: "Atualizações",
+        icon: "🛠️",
       });
 
           if (canManageSuggestions) {
       items.push({
         href: "/admin/sugestoes",
-        label: "Sugestoes (Admin)",
-        icon: "!",
+        label: "Sugestões (Admin)",
+        icon: "💡",
       });
     }
       
       items.push({
         href: "/admin/permissoes",
-        label: "Permissoes Extras",
-        icon: "P",
+        label: "Permissões Extras",
+        icon: "🔐",
       });
     }
                    
@@ -200,7 +200,7 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
 
   const supportLink = useMemo(() => {
     const phone = "5562999994162";
-    const text = encodeURIComponent("Ola! Preciso de suporte no plpainel.");
+    const text = encodeURIComponent("Olá! Preciso de suporte no plpainel.");
     return `https://wa.me/${phone}?text=${text}`;
   }, []);
 
@@ -299,7 +299,7 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
     }
 
     if (digits.length < 10 || digits.length > 11) {
-      setWhatsMsg("Digite um WhatsApp valido com DDD.");
+      setWhatsMsg("Digite um WhatsApp válido com DDD.");
       return;
     }
 
@@ -312,7 +312,7 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
       });
 
       if (error) {
-        setWhatsMsg(error.message || "Nao foi possivel salvar seu WhatsApp.");
+        setWhatsMsg(error.message || "Não foi possível salvar seu WhatsApp.");
         return;
       }
 
@@ -370,7 +370,7 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
 
               <span>Falar com o suporte</span>
               <span className="ml-1 text-white/90 transition-transform duration-200 group-hover:translate-x-0.5">
-                {"->"}
+                →
               </span>
             </span>
           </a>
@@ -445,9 +445,9 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
                               : "border border-transparent text-white/75 hover:bg-white/10",
                           ].join(" ")}
                         >
-                          <span className="w-6 text-center">◇</span>
-                          <span className="flex-1">Dominio Proprio</span>
-                          <span className="text-xs text-white/45 transition group-open:rotate-180">v</span>
+                          <span className="w-6 text-center">🔗</span>
+                          <span className="flex-1">Domínio Próprio</span>
+                          <span className="text-xs text-white/45 transition group-open:rotate-180">▾</span>
                         </summary>
 
                         <div className="mt-1 space-y-1 pl-4">
