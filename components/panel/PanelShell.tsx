@@ -87,9 +87,6 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
     isAdminMaster || extraPermissions.can_view_orders;
   const canManageSuggestions =
     isAdminMaster || extraPermissions.can_manage_suggestions;
-  const canUseCustomDomain =
-    isAdminMaster || extraPermissions.can_use_custom_domain;
-
   const baseNav = useMemo(
     () => [
       { href: "/dashboard", label: "Dashboard", icon: "📊" },
@@ -433,51 +430,49 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
                 );
               })}
 
-              {canUseCustomDomain ? (
-                <details
-                  className="group rounded-xl border border-transparent"
-                  open={customDomainGroupActive}
+              <details
+                className="group rounded-xl border border-transparent"
+                open={customDomainGroupActive}
+              >
+                <summary
+                  className={[
+                    "flex cursor-pointer list-none items-center gap-3 rounded-xl px-3 py-2 text-sm",
+                    customDomainGroupActive
+                      ? "border border-violet-400/30 bg-violet-600/25 text-white"
+                      : "border border-transparent text-white/75 hover:bg-white/10",
+                  ].join(" ")}
                 >
-                  <summary
-                    className={[
-                      "flex cursor-pointer list-none items-center gap-3 rounded-xl px-3 py-2 text-sm",
-                      customDomainGroupActive
-                        ? "border border-violet-400/30 bg-violet-600/25 text-white"
-                        : "border border-transparent text-white/75 hover:bg-white/10",
-                    ].join(" ")}
-                  >
-                    <span className="w-6 text-center">ðŸ”</span>
-                    <span className="flex-1">DomÃ­nio PrÃ³prio</span>
-                    <span className="text-xs text-white/45 transition group-open:rotate-180">
-                      â–¾
-                    </span>
-                  </summary>
+                  <span className="w-6 text-center">ðŸ”</span>
+                  <span className="flex-1">DomÃ­nio PrÃ³prio</span>
+                  <span className="text-xs text-white/45 transition group-open:rotate-180">
+                    â–¾
+                  </span>
+                </summary>
 
-                  <div className="mt-1 space-y-1 pl-4">
-                    {customDomainNav.map((item) => {
-                      const active =
-                        pathname === item.href ||
-                        pathname.startsWith(`${item.href}/`);
+                <div className="mt-1 space-y-1 pl-4">
+                  {customDomainNav.map((item) => {
+                    const active =
+                      pathname === item.href ||
+                      pathname.startsWith(`${item.href}/`);
 
-                      return (
-                        <Link
-                          key={item.href}
-                          href={item.href}
-                          className={[
-                            "flex items-center gap-3 rounded-xl border px-3 py-2 text-sm",
-                            active
-                              ? "border-emerald-400/25 bg-emerald-500/15 text-white"
-                              : "border-transparent text-white/65 hover:bg-white/10 hover:text-white",
-                          ].join(" ")}
-                        >
-                          <span className="w-5 text-center text-xs">{item.icon}</span>
-                          <span>{item.label}</span>
-                        </Link>
-                      );
-                    })}
-                  </div>
-                </details>
-              ) : null}
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        className={[
+                          "flex items-center gap-3 rounded-xl border px-3 py-2 text-sm",
+                          active
+                            ? "border-emerald-400/25 bg-emerald-500/15 text-white"
+                            : "border-transparent text-white/65 hover:bg-white/10 hover:text-white",
+                        ].join(" ")}
+                      >
+                        <span className="w-5 text-center text-xs">{item.icon}</span>
+                        <span>{item.label}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </details>
             </nav>
 
             <button
