@@ -717,6 +717,31 @@ export default function DomainSubdomainSitePage() {
         return;
       }
 
+      const fullDomain = `${slug}.${selectedDomain}`;
+      const sslRes = await fetch("/api/dns/setup-ssl", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          domain: fullDomain,
+          email: form.email.trim() || user.email || `contato@${selectedDomain}`,
+        }),
+      });
+
+      const sslJson = await sslRes.json().catch(() => ({}));
+
+      if (!sslRes.ok || !sslJson?.ok) {
+        setBalance((prev) => (typeof prev === "number" ? Math.max(0, prev - 1) : prev));
+        setMsg(
+          sslJson?.message ||
+            sslJson?.error ||
+            `Site criado em ${fullDomain}, mas nao foi possivel ativar o SSL automaticamente. Verifique o DNS wildcard e tente novamente.`
+        );
+        return;
+      }
+
       setBalance((prev) => (typeof prev === "number" ? Math.max(0, prev - 1) : prev));
       router.push("/sites");
     } catch (e: any) {
@@ -1016,7 +1041,7 @@ export default function DomainSubdomainSitePage() {
             disabled={loading || domainsLoading || domains.length === 0}
             className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold hover:bg-emerald-500 disabled:opacity-60"
           >
-            {loading ? "Criando..." : "Criar site"}
+            {loading ? "Criando e ativando SSL..." : "Criar site"}
           </button>
         </div>
       </div>
