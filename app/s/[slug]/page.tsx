@@ -450,17 +450,6 @@ function ModernPublicSite({
         </section>
       ) : null}
 
-      {privacy ? (
-        <section id="privacidade" className="px-4 py-10">
-          <div className="mx-auto max-w-6xl">
-            <h2 className="mb-4 text-2xl font-black">Política de privacidade</h2>
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_12px_28px_rgba(15,23,42,.08)]">
-              <p className="whitespace-pre-line text-sm leading-8 text-slate-700">{privacy}</p>
-            </div>
-          </div>
-        </section>
-      ) : null}
-
       <footer className="bg-teal-950 px-4 py-8 text-white/85">
         <div className="mx-auto grid max-w-6xl gap-5 sm:grid-cols-[1.5fr_.8fr]">
           <div>
@@ -468,11 +457,31 @@ function ModernPublicSite({
             <div className="whitespace-pre-line text-sm leading-7 text-white/70">{footer}</div>
           </div>
           <div className="grid content-start gap-3 sm:justify-end">
-            {privacy ? <a href="#privacidade" className="text-sm font-bold text-white/90">Política de Privacidade</a> : null}
+            {privacy ? <a href="#privacy-modal" className="text-sm font-bold text-white/90">Política de Privacidade</a> : null}
             <a href="#home" className="text-sm font-bold text-white/90">Voltar ao topo</a>
           </div>
         </div>
       </footer>
+
+      {privacy ? (
+        <div
+          id="privacy-modal"
+          className="invisible fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/70 p-5 opacity-0 transition target:visible target:opacity-100"
+        >
+          <a href="#home" className="absolute inset-0" aria-label="Fechar política de privacidade" />
+          <div className="relative max-h-[80vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white p-7 shadow-[0_30px_60px_rgba(0,0,0,.25)]">
+            <a
+              href="#home"
+              aria-label="Fechar"
+              className="absolute right-4 top-3 text-2xl font-bold text-slate-500 hover:text-slate-900"
+            >
+              ×
+            </a>
+            <h2 className="pr-8 text-2xl font-black text-slate-950">Política de Privacidade</h2>
+            <p className="mt-4 whitespace-pre-line text-sm leading-8 text-slate-700">{privacy}</p>
+          </div>
+        </div>
+      ) : null}
     </main>
   );
 }
