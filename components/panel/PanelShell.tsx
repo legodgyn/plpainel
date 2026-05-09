@@ -106,8 +106,13 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
     () => [
       {
         href: "/sites/custom-domain",
-        label: "Criar site com domÃ­nio prÃ³prio",
+        label: "Conectar domÃ­nio prÃ³prio",
         icon: "âœ¨",
+      },
+      {
+        href: "/sites/domain-subdomain",
+        label: "Criar site em dominio conectado",
+        icon: "+",
       },
       { href: "/domains/my", label: "Meus domÃ­nios", icon: "ðŸŒ" },
       { href: "/emails", label: "Emails", icon: "âœ‰ï¸" },

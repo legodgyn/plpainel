@@ -123,14 +123,33 @@ export async function POST(req: Request) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!,
       { auth: { persistSession: false } }
     );
-    const { data: site } = await supabaseAdmin
+    const { data: customDomainSite } = await supabaseAdmin
       .from("sites")
       .select("id")
       .eq("user_id", authData.user.id)
       .eq("custom_domain", domain)
       .maybeSingle();
 
-    if (!site?.id) {
+    let ownedSiteId = customDomainSite?.id as string | undefined;
+
+    if (!ownedSiteId) {
+      const [subdomainSlug, ...baseParts] = domain.split(".").filter(Boolean);
+      const baseDomain = baseParts.join(".");
+
+      if (subdomainSlug && baseDomain) {
+        const { data: subdomainSite } = await supabaseAdmin
+          .from("sites")
+          .select("id")
+          .eq("user_id", authData.user.id)
+          .eq("slug", subdomainSlug)
+          .eq("base_domain", baseDomain)
+          .maybeSingle();
+
+        ownedSiteId = subdomainSite?.id as string | undefined;
+      }
+    }
+
+    if (!ownedSiteId) {
       return NextResponse.json(
         { ok: false, error: "Dominio nao encontrado nos seus sites." },
         { status: 403 }

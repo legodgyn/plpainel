@@ -21,6 +21,20 @@ function cleanSlug(value: unknown) {
   return String(value || "").trim().toLowerCase();
 }
 
+function cleanDomain(value: unknown) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/^https?:\/\//, "")
+    .replace(/^www\./, "")
+    .split("/")[0]
+    .split(":")[0];
+}
+
+function isValidDomain(value: string) {
+  return /^[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(value);
+}
+
 function pickRootDomain(seed: string) {
   const input = seed || String(Date.now());
   let hash = 0;
@@ -43,6 +57,7 @@ export async function POST(req: Request) {
     const body = await req.json().catch(() => ({}));
     const slug = cleanSlug(body.slug);
     const siteId = String(body.siteId || "").trim();
+    const requestedBaseDomain = cleanDomain(body.baseDomain);
 
     if (!slug && !siteId) {
       return NextResponse.json(
@@ -95,7 +110,65 @@ export async function POST(req: Request) {
       );
     }
 
-    const baseDomain = pickRootDomain(`${site.id}:${site.slug}`);
+    let baseDomain: string = pickRootDomain(`${site.id}:${site.slug}`);
+
+    if (requestedBaseDomain) {
+      if (!isValidDomain(requestedBaseDomain)) {
+        return NextResponse.json(
+          { ok: false, error: "Dominio selecionado invalido." },
+          { status: 400 }
+        );
+      }
+
+      const { data: availableDomain } = await supabaseAdmin
+        .from("available_domains")
+        .select("id, domain")
+        .eq("assigned_user_id", authData.user.id)
+        .eq("domain", requestedBaseDomain)
+        .maybeSingle();
+
+      const { data: connectedDomainSite } = availableDomain
+        ? { data: null }
+        : await supabaseAdmin
+            .from("sites")
+            .select("id, custom_domain")
+            .eq("user_id", authData.user.id)
+            .eq("domain_mode", "custom_domain")
+            .eq("custom_domain", requestedBaseDomain)
+            .maybeSingle();
+
+      const ownedDomain =
+        (availableDomain?.domain as string | undefined) ||
+        (connectedDomainSite?.custom_domain as string | undefined);
+
+      if (!ownedDomain) {
+        return NextResponse.json(
+          { ok: false, error: "Dominio nao pertence ao usuario logado." },
+          { status: 403 }
+        );
+      }
+
+      baseDomain = ownedDomain;
+    }
+
+    const { data: existingSite, error: existingError } = await supabaseAdmin
+      .from("sites")
+      .select("id")
+      .eq("slug", site.slug)
+      .eq("base_domain", baseDomain)
+      .neq("id", site.id)
+      .maybeSingle();
+
+    if (existingError) {
+      return NextResponse.json({ ok: false, error: existingError.message }, { status: 500 });
+    }
+
+    if (existingSite?.id) {
+      return NextResponse.json(
+        { ok: false, error: "Ja existe um site com esse subdominio neste dominio." },
+        { status: 409 }
+      );
+    }
 
     const { error: updateError } = await supabaseAdmin
       .from("sites")

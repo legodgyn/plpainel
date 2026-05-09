@@ -130,15 +130,31 @@ async function findSite(slug: string, hostBaseDomain: string | null) {
   );
 
   if (slug.includes(".")) {
+    const cleanFullDomain = slug.toLowerCase();
     const { data } = await supabase
       .from("sites")
       .select("*")
-      .eq("custom_domain", slug.toLowerCase())
+      .eq("custom_domain", cleanFullDomain)
       .eq("domain_mode", "custom_domain")
       .eq("is_public", true)
       .maybeSingle();
 
     if (data) return data;
+
+    const [hostSlug, ...baseParts] = cleanFullDomain.split(".").filter(Boolean);
+    const baseDomain = baseParts.join(".");
+
+    if (hostSlug && baseDomain) {
+      const { data: subdomainSite } = await supabase
+        .from("sites")
+        .select("*")
+        .eq("slug", hostSlug)
+        .eq("base_domain", baseDomain)
+        .eq("is_public", true)
+        .maybeSingle();
+
+      if (subdomainSite) return subdomainSite;
+    }
   }
 
   if (hostBaseDomain) {
@@ -560,10 +576,11 @@ export default async function PublicSitePage(props: PageProps) {
   const domain_mode = (data.domain_mode as string | null) || "";
   const base_domain =
     (data.base_domain as string | null) || hostBaseDomain || "plpainel.com";
+  const siteSlug = (data.slug as string | null) || slug;
   const displayDomain =
     domain_mode === "custom_domain" && custom_domain
       ? custom_domain
-      : `${slug}.${base_domain}`;
+      : `${siteSlug}.${base_domain}`;
 
   const igUrl = normalizeInstagram(instagram);
   const waUrl = normalizeWhatsApp(whatsapp);
