@@ -61,7 +61,7 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
   const [extraPermissions, setExtraPermissions] =
     useState<ExtraPermissions>(emptyPermissions);
 
-  // modal whatsapp obrigatório
+  // modal whatsapp obrigatorio
   const [needsWhatsapp, setNeedsWhatsapp] = useState(false);
   const [savingWhatsapp, setSavingWhatsapp] = useState(false);
   const [profileName, setProfileName] = useState("");
@@ -89,37 +89,35 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
     isAdminMaster || extraPermissions.can_manage_suggestions;
   const baseNav = useMemo(
     () => [
-      { href: "/dashboard", label: "Dashboard", icon: "📊" },
-      { href: "/loja", label: "Loja", icon: "🛍️" },
-      { href: "/sites", label: "Meus Sites", icon: "🌐" },
-      { href: "/sites/new", label: "Criar Site", icon: "➕" },
-      { href: "/tokens", label: "Comprar Tokens", icon: "💳" },
-      { href: "/billing", label: "Minhas Compras", icon: "🧾" },
-      { href: "/affiliate", label: "Afiliados", icon: "🤝" },
-      { href: "/tutorial", label: "Tutorial", icon: "📚" },
-      { href: "/sugestoes", label: "Sugestões e Melhorias", icon: "💡" },
+      { href: "/dashboard", label: "Dashboard", icon: "▦" },
+      { href: "/loja", label: "Loja", icon: "$" },
+      { href: "/sites", label: "Meus Sites", icon: "◎" },
+      { href: "/sites/new", label: "Criar Site", icon: "+" },
+      { href: "/tokens", label: "Comprar Tokens", icon: "▰" },
+      { href: "/billing", label: "Minhas Compras", icon: "▤" },
+      { href: "/affiliate", label: "Afiliados", icon: "◇" },
+      { href: "/tutorial", label: "Tutorial", icon: "?" },
+      { href: "/sugestoes", label: "Sugestoes e Melhorias", icon: "!" },
     ],
     []
   );
-
   const customDomainNav = useMemo(
     () => [
       {
         href: "/sites/custom-domain",
-        label: "Conectar domÃ­nio prÃ³prio",
-        icon: "âœ¨",
+        label: "Conectar dominio proprio",
+        icon: "◇",
       },
       {
         href: "/sites/domain-subdomain",
         label: "Criar site em dominio conectado",
         icon: "+",
       },
-      { href: "/domains/my", label: "Meus domÃ­nios", icon: "ðŸŒ" },
-      { href: "/emails", label: "Emails", icon: "âœ‰ï¸" },
+      { href: "/domains/my", label: "Meus dominios", icon: "◎" },
+      { href: "/emails", label: "Emails", icon: "@" },
     ],
     []
   );
-
   const customDomainGroupActive = useMemo(
     () =>
       customDomainNav.some(
@@ -135,7 +133,7 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
       items.push({
         href: "/sites/template-simples",
         label: "Alterar Layout",
-        icon: "🎨",
+        icon: "*",
       });
     }
 
@@ -143,7 +141,7 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
       items.push({
         href: "/admin",
         label: "Compras na Plataforma",
-        icon: "🛒",
+        icon: "#",
       });
     }
 
@@ -151,40 +149,40 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
       items.push({
         href: "/admin/pagamentos-afiliados",
         label: "Pagamentos Afiliados",
-        icon: "💸",
+        icon: "$",
       });
-      items.push({ href: "/users", label: "Usuários", icon: "👥" });
+      items.push({ href: "/users", label: "Usuarios", icon: "U" });
       items.push({
         href: "https://bm.plpainel.com/dashboard.html",
         label: "Controle de BM's",
-        icon: "📈",
+        icon: "^",
       });
 
           if (canTransferSites) {
       items.push({
         href: "/admin/transferir-sites",
-        label: "Transferências",
-        icon: "🔄",
+        label: "Transferencias",
+        icon: ">",
       });
     }
       items.push({
         href: "/admin/updates",
-        label: "Atualizações",
-        icon: "🛠️",
+        label: "Atualizacoes",
+        icon: "~",
       });
 
           if (canManageSuggestions) {
       items.push({
         href: "/admin/sugestoes",
-        label: "Sugestões (Admin)",
-        icon: "💡",
+        label: "Sugestoes (Admin)",
+        icon: "!",
       });
     }
       
       items.push({
         href: "/admin/permissoes",
-        label: "Permissões Extras",
-        icon: "🔐",
+        label: "Permissoes Extras",
+        icon: "P",
       });
     }
                    
@@ -202,7 +200,7 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
 
   const supportLink = useMemo(() => {
     const phone = "5562999994162";
-    const text = encodeURIComponent("Olá! Preciso de suporte no plpainel.");
+    const text = encodeURIComponent("Ola! Preciso de suporte no plpainel.");
     return `https://wa.me/${phone}?text=${text}`;
   }, []);
 
@@ -301,7 +299,7 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
     }
 
     if (digits.length < 10 || digits.length > 11) {
-      setWhatsMsg("Digite um WhatsApp válido com DDD.");
+      setWhatsMsg("Digite um WhatsApp valido com DDD.");
       return;
     }
 
@@ -314,7 +312,7 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
       });
 
       if (error) {
-        setWhatsMsg(error.message || "Não foi possível salvar seu WhatsApp.");
+        setWhatsMsg(error.message || "Nao foi possivel salvar seu WhatsApp.");
         return;
       }
 
@@ -336,11 +334,11 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
         <div className="mx-auto max-w-[1600px] px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Image
-              src="/logo1.png"
+              src="/logo.png"
               alt="PL Painel"
               width={200}
               height={80}
-              className="h-16 w-40"
+              className="h-16 w-40 object-contain"
             />
           </div>
 
@@ -372,7 +370,7 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
 
               <span>Falar com o suporte</span>
               <span className="ml-1 text-white/90 transition-transform duration-200 group-hover:translate-x-0.5">
-                →
+                {"->"}
               </span>
             </span>
           </a>
@@ -412,79 +410,81 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
                     : "text-white/75 hover:bg-white/10 border border-transparent",
                 ].join(" ");
 
-                if (external) {
-                  return (
-                    <a
-                      key={item.href}
-                      href={item.href}
-                      target="_blank"
-                      rel="noreferrer"
-                      className={className}
-                    >
-                      <span className="w-6 text-center">{item.icon}</span>
-                      <span>{item.label}</span>
-                    </a>
-                  );
-                }
-
-                return (
+                const navItem = external ? (
+                  <a
+                    key={item.href}
+                    href={item.href}
+                    target="_blank"
+                    rel="noreferrer"
+                    className={className}
+                  >
+                    <span className="w-6 text-center">{item.icon}</span>
+                    <span>{item.label}</span>
+                  </a>
+                ) : (
                   <Link key={item.href} href={item.href} className={className}>
                     <span className="w-6 text-center">{item.icon}</span>
                     <span>{item.label}</span>
                   </Link>
                 );
-              })}
 
-              <details
-                className="group rounded-xl border border-transparent"
-                open={customDomainGroupActive}
-              >
-                <summary
-                  className={[
-                    "flex cursor-pointer list-none items-center gap-3 rounded-xl px-3 py-2 text-sm",
-                    customDomainGroupActive
-                      ? "border border-violet-400/30 bg-violet-600/25 text-white"
-                      : "border border-transparent text-white/75 hover:bg-white/10",
-                  ].join(" ")}
-                >
-                  <span className="w-6 text-center">ðŸ”</span>
-                  <span className="flex-1">DomÃ­nio PrÃ³prio</span>
-                  <span className="text-xs text-white/45 transition group-open:rotate-180">
-                    â–¾
-                  </span>
-                </summary>
+                return (
+                  <div key={item.href}>
+                    {navItem}
 
-                <div className="mt-1 space-y-1 pl-4">
-                  {customDomainNav.map((item) => {
-                    const active =
-                      pathname === item.href ||
-                      pathname.startsWith(`${item.href}/`);
-
-                    return (
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        className={[
-                          "flex items-center gap-3 rounded-xl border px-3 py-2 text-sm",
-                          active
-                            ? "border-emerald-400/25 bg-emerald-500/15 text-white"
-                            : "border-transparent text-white/65 hover:bg-white/10 hover:text-white",
-                        ].join(" ")}
+                    {item.href === "/sites/new" ? (
+                      <details
+                        className="group mt-1 rounded-xl border border-transparent"
+                        open={customDomainGroupActive}
                       >
-                        <span className="w-5 text-center text-xs">{item.icon}</span>
-                        <span>{item.label}</span>
-                      </Link>
-                    );
-                  })}
-                </div>
-              </details>
+                        <summary
+                          className={[
+                            "flex cursor-pointer list-none items-center gap-3 rounded-xl px-3 py-2 text-sm",
+                            customDomainGroupActive
+                              ? "border border-violet-400/30 bg-violet-600/25 text-white"
+                              : "border border-transparent text-white/75 hover:bg-white/10",
+                          ].join(" ")}
+                        >
+                          <span className="w-6 text-center">◇</span>
+                          <span className="flex-1">Dominio Proprio</span>
+                          <span className="text-xs text-white/45 transition group-open:rotate-180">v</span>
+                        </summary>
+
+                        <div className="mt-1 space-y-1 pl-4">
+                          {customDomainNav.map((domainItem) => {
+                            const domainActive =
+                              pathname === domainItem.href ||
+                              pathname.startsWith(`${domainItem.href}/`);
+
+                            return (
+                              <Link
+                                key={domainItem.href}
+                                href={domainItem.href}
+                                className={[
+                                  "flex items-center gap-3 rounded-xl border px-3 py-2 text-sm",
+                                  domainActive
+                                    ? "border-emerald-400/25 bg-emerald-500/15 text-white"
+                                    : "border-transparent text-white/65 hover:bg-white/10 hover:text-white",
+                                ].join(" ")}
+                              >
+                                <span className="w-5 text-center text-xs">{domainItem.icon}</span>
+                                <span>{domainItem.label}</span>
+                              </Link>
+                            );
+                          })}
+                        </div>
+                      </details>
+                    ) : null}
+                  </div>
+                );
+              })}
             </nav>
 
             <button
               onClick={signOut}
               className="mt-5 w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white hover:bg-white/10"
             >
-              🚪 Sair
+              Sair
             </button>
           </div>
         </aside>
@@ -557,3 +557,5 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
     </div>
   );
 }
+
+
