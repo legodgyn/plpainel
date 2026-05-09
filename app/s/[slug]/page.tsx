@@ -303,12 +303,12 @@ type ModernPublicSiteProps = {
   mission: string;
   phone: string;
   email: string;
-  whatsapp: string;
   about: string;
   privacy: string | null;
   footer: string;
   logo_url: string;
   displayDomain: string;
+  officialActivity: string;
   igUrl: string | null;
   waCta: string | null;
 };
@@ -319,181 +319,159 @@ function ModernPublicSite({
   mission,
   phone,
   email,
-  whatsapp,
   about,
   privacy,
   footer,
   logo_url,
   displayDomain,
+  officialActivity,
   igUrl,
   waCta,
 }: ModernPublicSiteProps) {
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-900">
+    <main className="min-h-screen bg-white text-slate-900">
       <PublicCriticalCss />
-      <div className="bg-[linear-gradient(90deg,rgba(15,118,110,.10),transparent_38%),linear-gradient(180deg,#fbfcff_0%,#f8fafc_54%,#ffffff_100%)]">
-        <div className="mx-auto w-full max-w-6xl px-4 py-7">
-          <nav className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white/90 p-3 shadow-[0_18px_60px_rgba(16,24,40,.08)] sm:flex-row sm:items-center sm:justify-between">
-            <a href="#" className="flex min-w-0 items-center gap-3">
-              {logo_url ? (
-                <img src={logo_url} alt={company_name} className="h-12 w-12 rounded-xl object-contain" />
-              ) : (
-                <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-teal-700 text-xl font-black text-white">
-                  {(company_name?.[0] || "E").toUpperCase()}
-                </div>
-              )}
-              <div className="min-w-0">
-                <div className="truncate font-bold text-slate-950">{company_name}</div>
-                <div className="mt-0.5 truncate text-xs text-slate-500">{displayDomain}</div>
+      <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/90 backdrop-blur">
+        <div className="mx-auto flex min-h-[74px] w-full max-w-6xl flex-col gap-4 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <a href="#home" className="flex min-w-0 items-center gap-3">
+            {logo_url ? (
+              <img src={logo_url} alt={company_name} className="h-11 w-11 rounded-xl object-contain" />
+            ) : (
+              <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-teal-700 to-emerald-500 text-lg font-black text-white shadow-[0_10px_20px_rgba(16,185,129,.24)]">
+                {(company_name?.[0] || "E").toUpperCase()}
               </div>
-            </a>
+            )}
+            <div className="min-w-0 leading-tight">
+              <strong className="block truncate text-sm text-slate-950">{company_name}</strong>
+              <span className="mt-1 block truncate text-xs text-slate-500">Atendimento profissional</span>
+            </div>
+          </a>
 
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-              <a href="#quem-somos" className="inline-flex min-h-10 items-center justify-center rounded-full px-4 text-sm font-bold text-slate-600">
-                Quem somos
+          <nav className="flex flex-wrap items-center gap-2 sm:justify-end">
+            <a href="#home" className="rounded-xl px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">Home</a>
+            <a href="#sobre" className="rounded-xl px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">Sobre</a>
+            <a href="#servicos" className="rounded-xl px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">Serviços</a>
+            <a href="#dados" className="rounded-xl px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">Dados oficiais</a>
+            {waCta ? (
+              <a href={waCta} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center justify-center rounded-xl bg-gradient-to-br from-teal-700 to-emerald-500 px-4 text-sm font-extrabold text-white shadow-[0_12px_25px_rgba(16,185,129,.24)]">
+                Contato
               </a>
-              {privacy ? (
-                <a href="#privacidade" className="inline-flex min-h-10 items-center justify-center rounded-full px-4 text-sm font-bold text-slate-600">
-                  Privacidade
-                </a>
-              ) : null}
-              {waCta ? (
-                <a href={waCta} target="_blank" rel="noreferrer" className="inline-flex min-h-10 items-center justify-center rounded-full bg-slate-950 px-4 text-sm font-extrabold text-white">
-                  WhatsApp
-                </a>
-              ) : null}
-            </div>
+            ) : null}
           </nav>
-
-          <section className="mt-6 grid gap-5 lg:grid-cols-[minmax(0,1fr)_430px]">
-            <div
-              className="flex min-h-[560px] flex-col justify-end rounded-[28px] bg-cover bg-center p-7 text-white sm:p-10"
-              style={{
-                backgroundImage:
-                  "linear-gradient(135deg, rgba(16,24,40,.84), rgba(15,118,110,.74)), url('https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1400&q=80')",
-              }}
-            >
-              <div className="w-fit rounded-full border border-white/25 bg-white/10 px-3 py-2 text-xs font-extrabold backdrop-blur">
-                CNPJ verificado - Atendimento oficial
-              </div>
-              <h1 className="mt-5 max-w-3xl text-4xl font-black leading-none tracking-normal sm:text-6xl">
-                Presença digital com aparência de empresa grande.
-              </h1>
-              <p className="mt-5 max-w-2xl text-base leading-8 text-white/80 sm:text-lg">
-                Um site público elegante para apresentar a empresa, transmitir confiança e levar o visitante direto para o atendimento.
-              </p>
-              <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-                {waCta ? (
-                  <a href={waCta} target="_blank" rel="noreferrer" className="inline-flex min-h-12 items-center justify-center rounded-xl bg-white px-5 text-sm font-black text-slate-950">
-                    Chamar no WhatsApp
-                  </a>
-                ) : null}
-                <a href="#quem-somos" className="inline-flex min-h-12 items-center justify-center rounded-xl border border-white/30 px-5 text-sm font-black text-white">
-                  Ver informações
-                </a>
-              </div>
-            </div>
-
-            <aside className="grid gap-4">
-              <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_14px_40px_rgba(16,24,40,.06)]">
-                <h2 className="text-2xl font-black">{company_name}</h2>
-                <p className="mt-3 leading-7 text-slate-500">
-                  Dados principais da empresa, canais oficiais e informações institucionais reunidos em uma página profissional.
-                </p>
-                <div className="mt-5 grid gap-3 text-sm">
-                  <div className="flex items-start justify-between gap-4 rounded-xl bg-slate-50 p-3">
-                    <span className="text-slate-500">CNPJ</span>
-                    <b className="text-right">{cnpj}</b>
-                  </div>
-                  <div className="flex items-start justify-between gap-4 rounded-xl bg-slate-50 p-3">
-                    <span className="text-slate-500">Domínio</span>
-                    <b className="break-all text-right">{displayDomain}</b>
-                  </div>
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-slate-800 bg-slate-950 p-6 text-white shadow-[0_14px_40px_rgba(16,24,40,.10)]">
-                <h3 className="text-xl font-black">Contato rápido</h3>
-                <p className="mt-3 leading-7 text-white/65">Canais oficiais da empresa reunidos em um lugar só.</p>
-                <div className="mt-5 grid gap-3 text-sm">
-                  {email ? (
-                    <div className="flex items-start justify-between gap-4 border-b border-white/10 pb-3">
-                      <span className="text-white/55">Email</span>
-                      <b className="break-all text-right">{email}</b>
-                    </div>
-                  ) : null}
-                  {phone ? (
-                    <div className="flex items-start justify-between gap-4 border-b border-white/10 pb-3">
-                      <span className="text-white/55">Telefone</span>
-                      <b className="text-right">{phone}</b>
-                    </div>
-                  ) : null}
-                  {whatsapp ? (
-                    <div className="flex items-start justify-between gap-4 border-b border-white/10 pb-3">
-                      <span className="text-white/55">WhatsApp</span>
-                      <b className="text-right">{whatsapp}</b>
-                    </div>
-                  ) : null}
-                  {igUrl ? (
-                    <div className="flex items-start justify-between gap-4 border-b border-white/10 pb-3">
-                      <span className="text-white/55">Instagram</span>
-                      <a className="text-right font-bold" href={igUrl} target="_blank" rel="noreferrer">
-                        Acessar
-                      </a>
-                    </div>
-                  ) : null}
-                </div>
-              </div>
-            </aside>
-          </section>
         </div>
-      </div>
+      </header>
 
-      <section id="quem-somos" className="mx-auto w-full max-w-6xl px-4 py-8">
-        <div className="mb-5 grid gap-5 lg:grid-cols-[.8fr_1.2fr] lg:items-end">
-          <h2 className="m-0 text-3xl font-black leading-tight text-slate-950 sm:text-4xl">
-            Informações completas para gerar confiança.
-          </h2>
-          <p className="m-0 leading-8 text-slate-500">
-            Dados institucionais, missão, canais de contato e política de privacidade com leitura clara em qualquer tela.
+      <section id="home" className="bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,.24),transparent_24rem),linear-gradient(90deg,#0f766e_0%,#059669_56%,#34d399_100%)] px-4 py-16 text-white">
+        <div className="mx-auto max-w-6xl text-center">
+          <h1 className="mx-auto max-w-4xl text-3xl font-black leading-tight tracking-normal sm:text-5xl">
+            {company_name}
+          </h1>
+          <p className="mx-auto mt-4 max-w-3xl text-base leading-8 text-white/90 sm:text-lg">
+            {mission || "Atendimento profissional, qualidade e confiança em uma página oficial com informações claras sobre a empresa."}
           </p>
-        </div>
-
-        <div className="grid gap-4 lg:grid-cols-[1.25fr_.75fr]">
-          <article className="rounded-2xl border border-slate-200 bg-white p-6">
-            <span className="inline-flex rounded-full bg-emerald-50 px-3 py-2 text-xs font-black uppercase text-teal-700">
-              Quem somos
-            </span>
-            <h3 className="mt-3 text-xl font-black">{company_name}</h3>
-            <p className="mt-4 whitespace-pre-line leading-8 text-slate-600">{about || "—"}</p>
-          </article>
-
-          {mission ? (
-            <article className="rounded-2xl border border-teal-100 bg-teal-50 p-6">
-              <span className="inline-flex rounded-full bg-emerald-100 px-3 py-2 text-xs font-black uppercase text-teal-700">
-                Nossa missão
-              </span>
-              <h3 className="mt-3 text-xl font-black">Atender com clareza</h3>
-              <p className="mt-4 whitespace-pre-line leading-8 text-slate-700">{mission}</p>
-            </article>
-          ) : null}
+          <div className="mt-7 flex flex-wrap justify-center gap-3">
+            <a href="#servicos" className="inline-flex min-h-11 items-center justify-center rounded-xl bg-white px-5 text-sm font-extrabold text-teal-700">
+              Ver serviços
+            </a>
+            {waCta ? (
+              <a href={waCta} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center justify-center rounded-xl border border-white/40 bg-white/10 px-5 text-sm font-extrabold text-white">
+                Chamar no WhatsApp
+              </a>
+            ) : null}
+          </div>
         </div>
       </section>
 
-      {privacy ? (
-        <section id="privacidade" className="mx-auto w-full max-w-6xl px-4 py-8">
-          <article className="rounded-2xl border border-slate-200 bg-white p-6">
-            <span className="inline-flex rounded-full bg-emerald-50 px-3 py-2 text-xs font-black uppercase text-teal-700">
-              Política de privacidade
-            </span>
-            <h3 className="mt-3 text-xl font-black">Transparência no uso de dados</h3>
-            <p className="mt-4 whitespace-pre-line leading-8 text-slate-600">{privacy}</p>
+      <section className="px-4 py-10">
+        <div className="mx-auto grid max-w-6xl gap-5 lg:grid-cols-3">
+          <article id="sobre" className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_12px_28px_rgba(15,23,42,.08)]">
+            <h3 className="text-lg font-black">Quem somos</h3>
+            <p className="mt-3 whitespace-pre-line text-sm leading-7 text-slate-500">
+              {about || "Esta empresa atua com atendimento profissional, comunicação clara e foco em qualidade."}
+            </p>
           </article>
+
+          <article id="servicos" className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_12px_28px_rgba(15,23,42,.08)]">
+            <h3 className="text-lg font-black">O que fazemos</h3>
+            <ul className="mt-3 list-disc space-y-1 pl-5 text-sm leading-7 text-slate-500">
+              <li>{company_name}</li>
+              <li>Atendimento profissional</li>
+              <li>Qualidade e confiança</li>
+              <li>Suporte e agilidade</li>
+            </ul>
+          </article>
+
+          <article id="contato" className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_12px_28px_rgba(15,23,42,.08)]">
+            <h3 className="text-lg font-black">Contato</h3>
+            <div className="mt-3 grid gap-3 text-sm font-bold text-slate-900">
+              {phone ? <div className="flex items-center gap-3"><span className="grid h-8 w-8 place-items-center rounded-xl bg-emerald-50 text-teal-700">☎</span>{phone}</div> : null}
+              {email ? <div className="flex items-center gap-3"><span className="grid h-8 w-8 place-items-center rounded-xl bg-emerald-50 text-teal-700">@</span><span className="break-all">{email}</span></div> : null}
+              {waCta ? <a href={waCta} target="_blank" rel="noreferrer" className="flex items-center gap-3"><span className="grid h-8 w-8 place-items-center rounded-xl bg-emerald-50 text-teal-700">→</span>Chamar no WhatsApp</a> : null}
+              {igUrl ? <a href={igUrl} target="_blank" rel="noreferrer" className="flex items-center gap-3"><span className="grid h-8 w-8 place-items-center rounded-xl bg-emerald-50 text-teal-700">◎</span>Instagram</a> : null}
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section id="dados" className="bg-emerald-50 px-4 py-10">
+        <div className="mx-auto max-w-6xl">
+          <h2 className="mb-4 text-2xl font-black">Dados oficiais</h2>
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_8px_20px_rgba(15,23,42,.06)]">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div>
+                <small className="block text-xs font-black uppercase tracking-wide text-slate-500">Razão Social</small>
+                <div className="mt-2 text-sm font-black leading-5">{company_name}</div>
+              </div>
+              <div>
+                <small className="block text-xs font-black uppercase tracking-wide text-slate-500">CNPJ</small>
+                <div className="mt-2 text-sm font-black leading-5">{cnpj}</div>
+              </div>
+              <div>
+                <small className="block text-xs font-black uppercase tracking-wide text-slate-500">Domínio</small>
+                <div className="mt-2 break-all text-sm font-black leading-5">{displayDomain}</div>
+              </div>
+              <div>
+                <small className="block text-xs font-black uppercase tracking-wide text-slate-500">Atividade</small>
+                <div className="mt-2 text-sm font-black leading-5">{officialActivity || "Atendimento profissional"}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {mission ? (
+        <section className="px-4 py-10">
+          <div className="mx-auto max-w-6xl">
+            <h2 className="mb-4 text-2xl font-black">Nossa missão</h2>
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_12px_28px_rgba(15,23,42,.08)]">
+              <p className="whitespace-pre-line text-sm leading-8 text-slate-700">{mission}</p>
+            </div>
+          </div>
         </section>
       ) : null}
 
-      <footer className="mx-auto mt-6 w-full max-w-6xl border-t border-slate-200 px-4 py-8">
-        <div className="whitespace-pre-line text-sm leading-7 text-slate-500">{footer}</div>
+      {privacy ? (
+        <section id="privacidade" className="px-4 py-10">
+          <div className="mx-auto max-w-6xl">
+            <h2 className="mb-4 text-2xl font-black">Política de privacidade</h2>
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_12px_28px_rgba(15,23,42,.08)]">
+              <p className="whitespace-pre-line text-sm leading-8 text-slate-700">{privacy}</p>
+            </div>
+          </div>
+        </section>
+      ) : null}
+
+      <footer className="bg-teal-950 px-4 py-8 text-white/85">
+        <div className="mx-auto grid max-w-6xl gap-5 sm:grid-cols-[1.5fr_.8fr]">
+          <div>
+            <div className="mb-2 font-black text-white">{company_name}</div>
+            <div className="whitespace-pre-line text-sm leading-7 text-white/70">{footer}</div>
+          </div>
+          <div className="grid content-start gap-3 sm:justify-end">
+            {privacy ? <a href="#privacidade" className="text-sm font-bold text-white/90">Política de Privacidade</a> : null}
+            <a href="#home" className="text-sm font-bold text-white/90">Voltar ao topo</a>
+          </div>
+        </div>
       </footer>
     </main>
   );
@@ -565,6 +543,10 @@ export default async function PublicSitePage(props: PageProps) {
   const simple_title = (data.simple_title as string | null) || "";
   const privacy = (data.privacy as string | null) || null;
   const footer = (data.footer as string | null) || "—";
+  const officialActivity =
+    (data.cnae_principal as string | null) ||
+    (data.natureza as string | null) ||
+    "";
   const custom_domain = (data.custom_domain as string | null) || "";
   const domain_mode = (data.domain_mode as string | null) || "";
   const base_domain =
@@ -617,12 +599,12 @@ export default async function PublicSitePage(props: PageProps) {
       mission={mission}
       phone={phone}
       email={email}
-      whatsapp={whatsapp}
       about={about}
       privacy={privacy}
       footer={footer}
       logo_url={logo_url}
       displayDomain={displayDomain}
+      officialActivity={officialActivity}
       igUrl={igUrl}
       waCta={waCta}
     />
