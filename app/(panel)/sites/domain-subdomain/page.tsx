@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseBrowser";
+import { makeCompanyAbout, makeCompanyMission } from "@/lib/companyTexts";
 
 // =====================
 // Helpers
@@ -557,19 +558,20 @@ export default function DomainSubdomainSitePage() {
       const cnaePrincipal =
         data.cnae_fiscal_descricao || (data.cnae_fiscal ? `CNAE ${data.cnae_fiscal}` : "") || "";
 
-      const mission = makeMission(razao || fantasia || "nossa empresa");
-      const about = makeAbout({
-        razao: razao || fantasia || "Empresa",
-        fantasia: fantasia || null,
+      const companyTextInput = {
+        legalName: razao || fantasia || "Empresa",
+        fantasyName: fantasia || null,
         cnpj: formatCNPJ(String(data.cnpj || cnpjDigits)),
-        abertura,
-        cidade: municipio || null,
-        uf: uf || null,
-        porte: porte || null,
-        natureza: natureza || null,
-        cnae: cnaePrincipal || null,
-        endereco: enderecoFull || null,
-      });
+        openedAt: abertura,
+        city: municipio || null,
+        state: uf || null,
+        size: porte || null,
+        legalNature: natureza || null,
+        mainActivity: cnaePrincipal || null,
+        address: enderecoFull || null,
+      };
+      const mission = makeCompanyMission(companyTextInput);
+      const about = makeCompanyAbout(companyTextInput);
 
       const privacy = makePrivacy({
         razao: razao || fantasia || "Empresa",

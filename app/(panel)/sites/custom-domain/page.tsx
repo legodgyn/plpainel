@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseBrowser";
+import { makeCompanyAbout, makeCompanyMission } from "@/lib/companyTexts";
 
 const CUSTOM_DOMAIN_IP = "187.77.33.45";
 const PANEL_MAIL_HOST = "mail.plpainel.com";
@@ -439,6 +440,7 @@ export default function CustomDomainWizardPage() {
 
       const data = await res.json();
       const company = data.razao_social || data.razao || data.nome_fantasia || "Empresa";
+      const fantasyName = data.nome_fantasia || data.fantasia || null;
       const phone = formatBRPhone(String(data.ddd_telefone_1 || data.telefone || ""));
       const formattedCnpj = formatCNPJ(String(data.cnpj || digits));
       const address = [
@@ -450,6 +452,20 @@ export default function CustomDomainWizardPage() {
       ]
         .join("")
         .trim();
+      const cnaePrincipal =
+        data.cnae_fiscal_descricao || (data.cnae_fiscal ? `CNAE ${data.cnae_fiscal}` : "") || "";
+      const companyTextInput = {
+        legalName: company,
+        fantasyName,
+        cnpj: formattedCnpj,
+        openedAt: data.data_inicio_atividade || data.data_abertura || null,
+        city: data.municipio || data.cidade || null,
+        state: data.uf || null,
+        size: data.porte || null,
+        legalNature: data.natureza_juridica || data.natureza || null,
+        mainActivity: cnaePrincipal || null,
+        address: address || null,
+      };
 
       setForm((prev) => ({
         ...prev,
@@ -458,15 +474,8 @@ export default function CustomDomainWizardPage() {
         phone,
         whatsapp: phone,
         email: contactEmail,
-        mission: makeMission(company),
-        about: makeAbout({
-          company,
-          cnpj: formattedCnpj,
-          abertura: data.data_inicio_atividade || data.data_abertura || null,
-          cidade: data.municipio || data.cidade || null,
-          uf: data.uf || null,
-          endereco: address || null,
-        }),
+        mission: makeCompanyMission(companyTextInput),
+        about: makeCompanyAbout(companyTextInput),
         privacy: makePrivacy(company, formattedCnpj, contactEmail, phone),
         footer: makeFooter(company, formattedCnpj, contactEmail, phone),
       }));
