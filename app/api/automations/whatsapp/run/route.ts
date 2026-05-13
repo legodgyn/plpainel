@@ -287,7 +287,7 @@ export async function GET(req: Request) {
           `Olá ${profile.name || ""}! ⚠️\n\n` +
           `Seus tokens no *PL Painel* acabaram.\n\n` +
           `Quando quiser continuar criando sites e usando a plataforma, é só recarregar, ou se tiver alguma dúvida, estamos prontos para ajudar você! 🚀\n\n` +
-          `GRUPO SOMENTE PARA USUÁRIOS DO PAINEL - https://chat.whatsapp.com/K02Sr1yagkV6LWERV3xuab`;`;
+          `GRUPO SOMENTE PARA USUÁRIOS DO PAINEL - https://chat.whatsapp.com/K02Sr1yagkV6LWERV3xuab`;
 
         await sendEvolutionText(profile.whatsapp, text);
 
