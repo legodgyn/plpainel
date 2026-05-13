@@ -117,7 +117,7 @@ export async function GET(req: Request) {
           `Seu pagamento no PL Painel foi confirmado com sucesso.\n\n` +
           `Valor: ${totalLabel}\n\n` +
           `Se precisar de ajuda para usar seus tokens, me chama aqui. 🚀\n\n` +
-          `Entre no nosso grupo - https://chat.whatsapp.com/K02Sr1yagkV6LWERV3xuab`;
+          `GRUPO SOMENTE PARA USUÁRIOS DO PAINEL - https://chat.whatsapp.com/K02Sr1yagkV6LWERV3xuab`;
 
         const evolutionResponse = await sendEvolutionText(profile.whatsapp, text);
 
