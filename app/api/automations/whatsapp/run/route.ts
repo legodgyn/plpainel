@@ -174,7 +174,7 @@ export async function GET(req: Request) {
           `Olá ${user.name || ""}! 👋\n\n` +
           `Vi que você criou uma conta no *PL Painel*, mas ainda não fez sua primeira compra.\n\n` +
           `Se quiser, posso te ajudar a começar e criar seu primeiro site e VERIFICAR sua BM em tempo recorde. 🚀\n\n` +
-          `Entre no nosso grupo - https://chat.whatsapp.com/HscyWLc5vEPKL6w6Esopb9`;
+          `GRUPO SOMENTE PARA USUÁRIOS DO PAINEL - https://chat.whatsapp.com/K02Sr1yagkV6LWERV3xuab`;
 
         await sendEvolutionText(user.whatsapp, text);
 
@@ -287,7 +287,7 @@ export async function GET(req: Request) {
           `Olá ${profile.name || ""}! ⚠️\n\n` +
           `Seus tokens no *PL Painel* acabaram.\n\n` +
           `Quando quiser continuar criando sites e usando a plataforma, é só recarregar, ou se tiver alguma dúvida, estamos prontos para ajudar você! 🚀\n\n` +
-          `Entre no nosso grupo - https://chat.whatsapp.com/HscyWLc5vEPKL6w6Esopb9`;
+          `GRUPO SOMENTE PARA USUÁRIOS DO PAINEL - https://chat.whatsapp.com/K02Sr1yagkV6LWERV3xuab`;`;
 
         await sendEvolutionText(profile.whatsapp, text);
 
@@ -411,7 +411,7 @@ export async function GET(req: Request) {
           `Olá ${user.name || ""}! 👋\n\n` +
           `Já faz um tempo desde sua última compra no *PL Painel*.\n\n` +
           `Se quiser voltar a criar sites, verificar BM's e usar a plataforma, me chama aqui que posso te ajudar a retomar e verificar sua BM em tempo recorde. 🚀\n\n` +
-          `Entre no nosso grupo - https://chat.whatsapp.com/HscyWLc5vEPKL6w6Esopb9`;
+          `GRUPO SOMENTE PARA USUÁRIOS DO PAINEL - https://chat.whatsapp.com/K02Sr1yagkV6LWERV3xuab`;
 
         await sendEvolutionText(user.whatsapp, text);
 
