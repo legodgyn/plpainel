@@ -1050,12 +1050,6 @@ export default function NewSitePage() {
           >
             {loading ? "Criando..." : "Publicar agora"}
           </button>
-          <button
-            onClick={() => router.push("/sites/template-simples")}
-            className="pl-btn"
-          >
-            Editar layout
-          </button>
         </div>
       </div>
     </main>
