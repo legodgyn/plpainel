@@ -254,6 +254,47 @@ function makeFooter(opts: {
 // Page
 // =====================
 type BalanceRow = { balance: number | null };
+type TemplateType =
+  | "professional_green"
+  | "clean_institutional"
+  | "commercial_landing"
+  | "classic_simple";
+
+const templateOptions: Array<{
+  value: TemplateType;
+  title: string;
+  description: string;
+  recommended?: boolean;
+}> = [
+  {
+    value: "professional_green",
+    title: "Profissional Verde",
+    description: "Visual moderno com hero forte, seções institucionais e WhatsApp em destaque.",
+    recommended: true,
+  },
+  {
+    value: "clean_institutional",
+    title: "Institucional Limpo",
+    description: "Mais claro e direto, bom para empresas de serviço que querem leitura rápida.",
+  },
+  {
+    value: "commercial_landing",
+    title: "Landing Comercial",
+    description: "Focado em conversão, chamada para contato e prova social logo no início.",
+  },
+  {
+    value: "classic_simple",
+    title: "Clássico Simples",
+    description: "Mantém uma estrutura básica para quem prefere um site mais enxuto.",
+  },
+];
+
+const colorOptions = [
+  { name: "Verde PL", value: "#00B884" },
+  { name: "Escuro premium", value: "#10231C" },
+  { name: "Azul confiança", value: "#0B68D8" },
+  { name: "Dourado CTA", value: "#F3B23C" },
+];
 
 function getCreatedSiteId(data: unknown) {
   if (!data) return null;
@@ -342,6 +383,10 @@ export default function NewSitePage() {
 
   const [balance, setBalance] = useState<number | null>(null);
   const [balanceLoading, setBalanceLoading] = useState(true);
+  const [templateType, setTemplateType] = useState<TemplateType>("professional_green");
+  const [themeColor, setThemeColor] = useState("#00B884");
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -609,6 +654,43 @@ export default function NewSitePage() {
         return;
       }
 
+      const createdSiteId = getCreatedSiteId(data) || normalizeJson?.siteId || null;
+      if (createdSiteId) {
+        let uploadedLogo: string | null = null;
+
+        if (logoFile) {
+          const ext = logoFile.name.split(".").pop() || "png";
+          const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+          const filePath = `${user.id}/${fileName}`;
+
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from("site-assets")
+            .upload(filePath, logoFile, { upsert: true });
+
+          if (!uploadError && uploadData?.path) {
+            const { data: publicUrlData } = supabase.storage
+              .from("site-assets")
+              .getPublicUrl(uploadData.path);
+            uploadedLogo = publicUrlData.publicUrl;
+          }
+        }
+
+        const updatePayload: Record<string, string | null> = {
+          template_type: templateType,
+          simple_title: form.fantasy_name || form.company_name.trim() || null,
+        };
+
+        if (uploadedLogo) {
+          updatePayload.logo_url = uploadedLogo;
+        }
+
+        await supabase
+          .from("sites")
+          .update(updatePayload)
+          .eq("id", createdSiteId)
+          .eq("user_id", user.id);
+      }
+
       setBalance((prev) => (typeof prev === "number" ? Math.max(0, prev - 1) : prev));
       router.push("/sites");
     } catch (e: any) {
@@ -626,29 +708,30 @@ export default function NewSitePage() {
   }
 
   return (
-    <div className="max-w-5xl text-white">
-      <div className="flex items-start justify-between gap-4">
+    <main className="pl-page max-w-7xl space-y-6">
+      <div className="pl-page-title">
         <div>
-          <h1 className="text-2xl font-semibold">Criar Site</h1>
-          <p className="mt-1 text-sm text-white/60">
+          <span className="pl-badge">Novo site</span>
+          <h1>Criar Site</h1>
+          <p>
             Preencha manualmente ou use <b>Gerar dados</b> para autopreencher via CNPJ.
           </p>
         </div>
 
-        <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm">
-          <div className="text-white/70">Tokens</div>
-          <div className="text-lg font-bold">{balanceLoading ? "—" : balance ?? 0}</div>
+        <div className="pl-card-soft min-w-[140px] px-4 py-3">
+          <div className="text-xs font-bold text-slate-500">Tokens</div>
+          <div className="text-2xl font-black text-slate-950">{balanceLoading ? "-" : balance ?? 0}</div>
         </div>
       </div>
 
       {msg && !insufficientTokens && (
-        <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
           {msg}
         </div>
       )}
 
       {insufficientTokens && (
-        <div className="mt-4 rounded-xl border border-amber-500/20 bg-amber-500/10 px-4 py-4 text-sm text-amber-200">
+        <div className="rounded-[28px] border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-800">
           <div className="font-semibold">Você não possui tokens suficientes para criar um site.</div>
           <div className="mt-1 text-amber-100/80">
             Cada site criado consome 1 token. Compre mais tokens para continuar.
@@ -657,7 +740,7 @@ export default function NewSitePage() {
           <div className="mt-4">
             <button
               onClick={() => router.push("/tokens")}
-              className="rounded-xl bg-violet-600 px-4 py-2 font-semibold text-white transition hover:bg-violet-500"
+              className="pl-btn pl-btn-primary"
             >
               Comprar Tokens
             </button>
@@ -665,24 +748,24 @@ export default function NewSitePage() {
         </div>
       )}
 
-      <div className="mt-6 space-y-4">
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+      <div className="space-y-5">
+        <div className="pl-card">
           <div className="grid gap-3 md:grid-cols-3 md:items-end">
             <div className="md:col-span-2">
-              <label className="text-xs text-white/70">CNPJ *</label>
+              <label className="pl-label">CNPJ *</label>
               <input
                 value={form.cnpj}
                 onChange={(e) => setForm((p) => ({ ...p, cnpj: formatCNPJ(e.target.value) }))}
                 placeholder="00.000.000/0000-00"
                 inputMode="numeric"
-                className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 text-white outline-none focus:border-violet-400"
+                className="pl-input mt-2"
               />
             </div>
 
             <button
               onClick={generateFromCnpj}
               disabled={genLoading}
-              className="rounded-xl bg-violet-600 px-4 py-2 text-sm font-semibold hover:bg-violet-500 disabled:opacity-60"
+              className="pl-btn pl-btn-primary justify-center"
             >
               {genLoading ? "Gerando..." : "Gerar dados"}
             </button>
@@ -690,40 +773,40 @@ export default function NewSitePage() {
 
           <div className="mt-3 grid gap-3 md:grid-cols-2">
             <div>
-              <label className="text-xs text-white/70">Razão Social *</label>
+              <label className="pl-label">Razao Social *</label>
               <input
                 value={form.company_name}
                 onChange={(e) => setForm((p) => ({ ...p, company_name: e.target.value }))}
-                className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 outline-none focus:border-violet-400"
+                className="pl-input mt-2"
               />
             </div>
 
             <div>
-              <label className="text-xs text-white/70">Nome Fantasia</label>
+              <label className="pl-label">Nome Fantasia</label>
               <input
                 value={form.fantasy_name}
                 onChange={(e) => setForm((p) => ({ ...p, fantasy_name: e.target.value }))}
-                className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 outline-none focus:border-violet-400"
+                className="pl-input mt-2"
               />
             </div>
           </div>
 
           <div className="mt-3 grid gap-3 md:grid-cols-3">
             <div>
-              <label className="text-xs text-white/70">Domínio *</label>
+              <label className="pl-label">Dominio *</label>
               <input
                 value={form.slug}
                 onChange={(e) => setForm((p) => ({ ...p, slug: e.target.value }))}
                 placeholder="movy-digital"
-                className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 outline-none focus:border-violet-400"
+                className="pl-input mt-2"
               />
-              <div className="mt-1 text-[11px] text-white/50">
+              <div className="mt-2 text-xs font-semibold text-slate-500">
                 URL: https://<b>{slugify(form.slug) || "slug"}</b>.[domínio disponível]
               </div>
             </div>
 
             <div>
-              <label className="text-xs text-white/70">Telefone</label>
+              <label className="pl-label">Telefone</label>
               <input
                 value={form.phone}
                 onChange={(e) => {
@@ -735,47 +818,47 @@ export default function NewSitePage() {
                   }));
                 }}
                 placeholder="(11) 99999-9999"
-                className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 outline-none focus:border-violet-400"
+                className="pl-input mt-2"
               />
             </div>
 
             <div>
-              <label className="text-xs text-white/70">WhatsApp</label>
+              <label className="pl-label">WhatsApp</label>
               <input
                 value={form.whatsapp}
                 onChange={(e) => setForm((p) => ({ ...p, whatsapp: formatBRPhone(e.target.value) }))}
                 placeholder="(11) 99999-9999"
-                className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 outline-none focus:border-violet-400"
+                className="pl-input mt-2"
               />
             </div>
           </div>
 
           <div className="mt-3 grid gap-3 md:grid-cols-3">
             <div className="md:col-span-1">
-              <label className="text-xs text-white/70">E-mail</label>
+              <label className="pl-label">E-mail</label>
               <input
                 value={form.email}
                 onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
                 placeholder="contato@empresa.com"
-                className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 outline-none focus:border-violet-400"
+                className="pl-input mt-2"
               />
             </div>
 
             <div>
-              <label className="text-xs text-white/70">Instagram</label>
+              <label className="pl-label">Instagram</label>
               <input
                 value={form.instagram}
                 onChange={(e) => setForm((p) => ({ ...p, instagram: e.target.value }))}
-                className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 outline-none focus:border-violet-400"
+                className="pl-input mt-2"
               />
             </div>
 
             <div>
-              <label className="text-xs text-white/70">Facebook</label>
+              <label className="pl-label">Facebook</label>
               <input
                 value={form.facebook}
                 onChange={(e) => setForm((p) => ({ ...p, facebook: e.target.value }))}
-                className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 outline-none focus:border-violet-400"
+                className="pl-input mt-2"
               />
             </div>
           </div>
@@ -788,75 +871,174 @@ export default function NewSitePage() {
               onChange={(e) => setForm((p) => ({ ...p, is_public: e.target.checked }))}
               className="h-4 w-4"
             />
-            <label htmlFor="is_public" className="text-sm text-white/80">
+            <label htmlFor="is_public" className="text-sm font-semibold text-slate-600">
               Deixar site público
             </label>
           </div>
         </div>
 
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-          <div className="text-sm font-semibold">Meta tag de verificação</div>
-          <div className="mt-1 text-xs text-white/60">
-            Cole aqui a <b>meta tag completa</b> (VOCÊ SO VAI PREENCHER AQUI APOS CRIAR O DOMINIO NA BM,
+        <div className="pl-card">
+          <div className="text-sm font-black text-slate-950">Meta Tag</div>
+          <div className="mt-1 text-xs font-semibold text-slate-500">
+            Cole aqui a <b>meta tag completa</b> (voce so vai preencher aqui apos criar o dominio na BM,
             PEGUE A META TAG E COLE AQUI E SALVE NOVAMENTE).
           </div>
           <textarea
             value={form.meta_tag}
             onChange={(e) => setForm((p) => ({ ...p, meta_tag: e.target.value }))}
             rows={3}
-            className="mt-3 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 text-white outline-none focus:border-violet-400"
+            className="pl-textarea mt-3"
             placeholder='Ex: <meta name="facebook-domain-verification" content="xxxxx" />  ou apenas xxxxx'
           />
         </div>
 
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+        <div className="pl-card">
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <div className="text-sm font-semibold">Nossa missão</div>
+              <div className="text-sm font-black text-slate-950">Nossa missao</div>
               <textarea
                 value={form.mission}
                 onChange={(e) => setForm((p) => ({ ...p, mission: e.target.value }))}
                 rows={8}
-                className="mt-3 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 outline-none focus:border-violet-400"
+                className="pl-textarea mt-3"
               />
             </div>
 
             <div>
-              <div className="text-sm font-semibold">Sobre nós</div>
+              <div className="text-sm font-black text-slate-950">Sobre nos</div>
               <textarea
                 value={form.about}
                 onChange={(e) => setForm((p) => ({ ...p, about: e.target.value }))}
                 rows={8}
-                className="mt-3 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 outline-none focus:border-violet-400"
+                className="pl-textarea mt-3"
               />
             </div>
 
             <div>
-              <div className="text-sm font-semibold">Política de privacidade</div>
+              <div className="text-sm font-black text-slate-950">Politica de privacidade</div>
               <textarea
                 value={form.privacy}
                 onChange={(e) => setForm((p) => ({ ...p, privacy: e.target.value }))}
                 rows={8}
-                className="mt-3 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 outline-none focus:border-violet-400"
+                className="pl-textarea mt-3"
               />
             </div>
 
             <div>
-              <div className="text-sm font-semibold">Rodapé</div>
+              <div className="text-sm font-black text-slate-950">Rodape</div>
               <textarea
                 value={form.footer}
                 onChange={(e) => setForm((p) => ({ ...p, footer: e.target.value }))}
                 rows={8}
-                className="mt-3 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 outline-none focus:border-violet-400"
+                className="pl-textarea mt-3"
               />
             </div>
           </div>
         </div>
 
-        <div className="flex gap-3">
+        <div className="pl-card p-5 text-[var(--panel-ink)]">
+          <div className="mb-4">
+            <div className="text-sm font-black">Modelo do site</div>
+            <div className="mt-1 text-xs text-[var(--panel-muted)]">
+              Escolha o visual inicial. Depois você pode publicar direto ou editar o layout.
+            </div>
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-2">
+            {templateOptions.map((option) => {
+              const active = templateType === option.value;
+
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setTemplateType(option.value)}
+                  className={[
+                    "rounded-2xl border p-4 text-left transition",
+                    active
+                      ? "border-emerald-300 bg-emerald-50 shadow-[0_18px_45px_rgba(0,184,132,.13)]"
+                      : "border-[var(--panel-line)] bg-white hover:border-emerald-200",
+                  ].join(" ")}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <div className="font-black">{option.title}</div>
+                      <p className="mt-1 text-xs leading-5 text-[var(--panel-muted)]">
+                        {option.description}
+                      </p>
+                    </div>
+                    {option.recommended ? (
+                      <span className="pl-badge pl-badge-ok">recomendado</span>
+                    ) : null}
+                  </div>
+                  <div className="mt-4 grid grid-cols-[1.1fr_.9fr] gap-2">
+                    <span className="h-14 rounded-xl bg-[#eaf4ef]" />
+                    <span className="h-14 rounded-xl bg-[#d9f8ec]" />
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="mt-5 grid gap-4 md:grid-cols-2">
+            <div>
+              <label className="pl-label">Logomarca opcional</label>
+              <label className="flex cursor-pointer flex-wrap items-center gap-3 rounded-2xl border border-[var(--panel-line)] bg-white p-4">
+                <span className="pl-btn pl-btn-primary">Subir logomarca</span>
+                <span className="text-sm text-[var(--panel-muted)]">
+                  {logoFile?.name || "Se não enviar, o site usa o nome da empresa"}
+                </span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0] || null;
+                    setLogoFile(file);
+                    setLogoPreview(file ? URL.createObjectURL(file) : null);
+                  }}
+                />
+              </label>
+              {logoPreview ? (
+                <img
+                  src={logoPreview}
+                  alt="Prévia da logomarca"
+                  className="mt-3 h-16 max-w-[180px] rounded-xl object-contain"
+                />
+              ) : null}
+            </div>
+
+            <div>
+              <label className="pl-label">Cores do site</label>
+              <div className="grid grid-cols-2 gap-3">
+                {colorOptions.map((color) => (
+                  <button
+                    key={color.value}
+                    type="button"
+                    onClick={() => setThemeColor(color.value)}
+                    className={[
+                      "rounded-2xl border bg-white p-3 text-left transition",
+                      themeColor === color.value
+                        ? "border-emerald-300 shadow-[0_12px_30px_rgba(0,184,132,.12)]"
+                        : "border-[var(--panel-line)]",
+                    ].join(" ")}
+                  >
+                    <span
+                      className="block h-10 rounded-xl"
+                      style={{ background: color.value }}
+                    />
+                    <span className="mt-2 block text-xs font-black">{color.name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-3">
           <button
             onClick={() => router.push("/sites")}
-            className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold hover:bg-white/10"
+            className="pl-btn"
           >
             Cancelar
           </button>
@@ -864,12 +1046,18 @@ export default function NewSitePage() {
           <button
             onClick={handleCreate}
             disabled={loading}
-            className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold hover:bg-emerald-500 disabled:opacity-60"
+            className="pl-btn pl-btn-primary"
           >
-            {loading ? "Criando..." : "Criar site"}
+            {loading ? "Criando..." : "Publicar agora"}
+          </button>
+          <button
+            onClick={() => router.push("/sites/template-simples")}
+            className="pl-btn"
+          >
+            Editar layout
           </button>
         </div>
       </div>
-    </div>
+    </main>
   );
 }

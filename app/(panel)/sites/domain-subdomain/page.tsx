@@ -761,38 +761,39 @@ export default function DomainSubdomainSitePage() {
   }
 
   return (
-    <div className="max-w-5xl text-white">
-      <div className="flex items-start justify-between gap-4">
+    <main className="pl-page max-w-7xl space-y-6">
+      <div className="pl-page-title">
         <div>
-          <h1 className="text-2xl font-semibold">Criar Site em Domínio Conectado</h1>
-          <p className="mt-1 text-sm text-white/60">
+          <span className="pl-badge">Dominio conectado</span>
+          <h1>Criar Site em Dominio Conectado</h1>
+          <p>
             Escolha um domínio seu e gere um site em subdomínio consumindo 1 token.
           </p>
         </div>
 
-        <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm">
-          <div className="text-white/70">Tokens</div>
-          <div className="text-lg font-bold">{balanceLoading ? "—" : balance ?? 0}</div>
+        <div className="pl-card-soft min-w-[140px] px-4 py-3">
+          <div className="text-xs font-bold text-slate-500">Tokens</div>
+          <div className="text-2xl font-black text-slate-950">{balanceLoading ? "-" : balance ?? 0}</div>
         </div>
       </div>
 
       {msg && !insufficientTokens && (
-        <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
           {msg}
         </div>
       )}
 
       {insufficientTokens && (
-        <div className="mt-4 rounded-xl border border-amber-500/20 bg-amber-500/10 px-4 py-4 text-sm text-amber-200">
-          <div className="font-semibold">Você não possui tokens suficientes para criar um site.</div>
-          <div className="mt-1 text-amber-100/80">
+        <div className="rounded-[28px] border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-800">
+          <div className="font-black">Voce nao possui tokens suficientes para criar um site.</div>
+          <div className="mt-1 font-semibold">
             Cada site criado consome 1 token. Compre mais tokens para continuar.
           </div>
 
           <div className="mt-4">
             <button
               onClick={() => router.push("/tokens")}
-              className="rounded-xl bg-violet-600 px-4 py-2 font-semibold text-white transition hover:bg-violet-500"
+              className="pl-btn pl-btn-primary"
             >
               Comprar Tokens
             </button>
@@ -800,16 +801,16 @@ export default function DomainSubdomainSitePage() {
         </div>
       )}
 
-      <div className="mt-6 space-y-4">
-        <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/10 p-5">
+      <div className="space-y-5">
+        <div className="pl-card">
           <div className="grid gap-4 md:grid-cols-[1.2fr_1fr] md:items-end">
             <div>
-              <label className="text-xs text-emerald-100/80">Domínio conectado *</label>
+              <label className="pl-label">Dominio conectado *</label>
               <select
                 value={selectedDomain}
                 onChange={(e) => setSelectedDomain(e.target.value)}
                 disabled={domainsLoading || domains.length === 0}
-                className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-4 py-2 text-white outline-none focus:border-emerald-300"
+                className="pl-select mt-2"
               >
                 {domainsLoading ? (
                   <option value="">Carregando domínios...</option>
@@ -823,43 +824,43 @@ export default function DomainSubdomainSitePage() {
                   ))
                 )}
               </select>
-              <p className="mt-2 text-xs text-emerald-50/70">
+              <p className="mt-2 text-xs font-semibold text-slate-500">
                 Para os subdomínios funcionarem, deixe no DNS um registro A com nome * apontando para 187.77.33.45.
               </p>
             </div>
 
-            <div className="rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white/80">
-              <div className="text-xs text-white/50">Prévia da URL</div>
-              <div className="mt-1 break-all font-semibold text-emerald-200">
+            <div className="rounded-[24px] border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+              <div className="text-xs font-bold text-emerald-700">Previa da URL</div>
+              <div className="mt-1 break-all font-black">
                 https://{slugify(form.slug) || "subdominio"}.{selectedDomain || "seu-dominio.com"}
               </div>
             </div>
           </div>
 
           {!domainsLoading && domains.length === 0 && (
-            <div className="mt-4 rounded-xl border border-amber-400/20 bg-amber-400/10 px-4 py-3 text-sm text-amber-100">
+            <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
               Nenhum domínio conectado foi encontrado na sua conta. Primeiro conecte um domínio próprio ou compre um domínio.
             </div>
           )}
         </div>
 
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+        <div className="pl-card">
           <div className="grid gap-3 md:grid-cols-3 md:items-end">
             <div className="md:col-span-2">
-              <label className="text-xs text-white/70">CNPJ *</label>
+              <label className="pl-label">CNPJ *</label>
               <input
                 value={form.cnpj}
                 onChange={(e) => setForm((p) => ({ ...p, cnpj: formatCNPJ(e.target.value) }))}
                 placeholder="00.000.000/0000-00"
                 inputMode="numeric"
-                className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 text-white outline-none focus:border-violet-400"
+                className="pl-input mt-2"
               />
             </div>
 
             <button
               onClick={generateFromCnpj}
               disabled={genLoading}
-              className="rounded-xl bg-violet-600 px-4 py-2 text-sm font-semibold hover:bg-violet-500 disabled:opacity-60"
+              className="pl-btn pl-btn-primary justify-center"
             >
               {genLoading ? "Gerando..." : "Gerar dados"}
             </button>
@@ -867,32 +868,32 @@ export default function DomainSubdomainSitePage() {
 
           <div className="mt-3 grid gap-3 md:grid-cols-2">
             <div>
-              <label className="text-xs text-white/70">Razão Social *</label>
+              <label className="pl-label">Razao Social *</label>
               <input
                 value={form.company_name}
                 onChange={(e) => setForm((p) => ({ ...p, company_name: e.target.value }))}
-                className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 outline-none focus:border-violet-400"
+                className="pl-input mt-2"
               />
             </div>
 
             <div>
-              <label className="text-xs text-white/70">Nome Fantasia</label>
+              <label className="pl-label">Nome Fantasia</label>
               <input
                 value={form.fantasy_name}
                 onChange={(e) => setForm((p) => ({ ...p, fantasy_name: e.target.value }))}
-                className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 outline-none focus:border-violet-400"
+                className="pl-input mt-2"
               />
             </div>
           </div>
 
           <div className="mt-3 grid gap-3 md:grid-cols-3">
             <div>
-              <label className="text-xs text-white/70">Subdomínio *</label>
+              <label className="pl-label">Subdominio *</label>
               <input
                 value={form.slug}
                 onChange={(e) => setForm((p) => ({ ...p, slug: e.target.value }))}
                 placeholder="movy-digital"
-                className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 outline-none focus:border-violet-400"
+                className="pl-input mt-2"
               />
               <div className="mt-1 text-[11px] text-white/50">
                 URL: https://<b>{slugify(form.slug) || "slug"}</b>.{selectedDomain || "seu-dominio.com"}
@@ -900,7 +901,7 @@ export default function DomainSubdomainSitePage() {
             </div>
 
             <div>
-              <label className="text-xs text-white/70">Telefone</label>
+              <label className="pl-label">Telefone</label>
               <input
                 value={form.phone}
                 onChange={(e) => {
@@ -912,47 +913,47 @@ export default function DomainSubdomainSitePage() {
                   }));
                 }}
                 placeholder="(11) 99999-9999"
-                className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 outline-none focus:border-violet-400"
+                className="pl-input mt-2"
               />
             </div>
 
             <div>
-              <label className="text-xs text-white/70">WhatsApp</label>
+              <label className="pl-label">WhatsApp</label>
               <input
                 value={form.whatsapp}
                 onChange={(e) => setForm((p) => ({ ...p, whatsapp: formatBRPhone(e.target.value) }))}
                 placeholder="(11) 99999-9999"
-                className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 outline-none focus:border-violet-400"
+                className="pl-input mt-2"
               />
             </div>
           </div>
 
           <div className="mt-3 grid gap-3 md:grid-cols-3">
             <div className="md:col-span-1">
-              <label className="text-xs text-white/70">E-mail</label>
+              <label className="pl-label">E-mail</label>
               <input
                 value={form.email}
                 onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
                 placeholder="contato@empresa.com"
-                className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 outline-none focus:border-violet-400"
+                className="pl-input mt-2"
               />
             </div>
 
             <div>
-              <label className="text-xs text-white/70">Instagram</label>
+              <label className="pl-label">Instagram</label>
               <input
                 value={form.instagram}
                 onChange={(e) => setForm((p) => ({ ...p, instagram: e.target.value }))}
-                className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 outline-none focus:border-violet-400"
+                className="pl-input mt-2"
               />
             </div>
 
             <div>
-              <label className="text-xs text-white/70">Facebook</label>
+              <label className="pl-label">Facebook</label>
               <input
                 value={form.facebook}
                 onChange={(e) => setForm((p) => ({ ...p, facebook: e.target.value }))}
-                className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 outline-none focus:border-violet-400"
+                className="pl-input mt-2"
               />
             </div>
           </div>
@@ -971,9 +972,9 @@ export default function DomainSubdomainSitePage() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-          <div className="text-sm font-semibold">Meta tag de verificação</div>
-          <div className="mt-1 text-xs text-white/60">
+        <div className="pl-card">
+          <div className="text-sm font-black text-slate-950">Meta Tag</div>
+          <div className="mt-1 text-xs font-semibold text-slate-500">
             Cole aqui a <b>meta tag completa</b> (VOCÊ SO VAI PREENCHER AQUI APOS CRIAR O DOMINIO NA BM,
             PEGUE A META TAG E COLE AQUI E SALVE NOVAMENTE).
           </div>
@@ -981,59 +982,59 @@ export default function DomainSubdomainSitePage() {
             value={form.meta_tag}
             onChange={(e) => setForm((p) => ({ ...p, meta_tag: e.target.value }))}
             rows={3}
-            className="mt-3 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 text-white outline-none focus:border-violet-400"
+            className="pl-textarea mt-3"
             placeholder='Ex: <meta name="facebook-domain-verification" content="xxxxx" />  ou apenas xxxxx'
           />
         </div>
 
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+        <div className="pl-card">
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <div className="text-sm font-semibold">Nossa missão</div>
+              <div className="text-sm font-black text-slate-950">Nossa missao</div>
               <textarea
                 value={form.mission}
                 onChange={(e) => setForm((p) => ({ ...p, mission: e.target.value }))}
                 rows={8}
-                className="mt-3 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 outline-none focus:border-violet-400"
+                className="pl-textarea mt-3"
               />
             </div>
 
             <div>
-              <div className="text-sm font-semibold">Sobre nós</div>
+              <div className="text-sm font-black text-slate-950">Sobre nos</div>
               <textarea
                 value={form.about}
                 onChange={(e) => setForm((p) => ({ ...p, about: e.target.value }))}
                 rows={8}
-                className="mt-3 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 outline-none focus:border-violet-400"
+                className="pl-textarea mt-3"
               />
             </div>
 
             <div>
-              <div className="text-sm font-semibold">Política de privacidade</div>
+              <div className="text-sm font-black text-slate-950">Politica de privacidade</div>
               <textarea
                 value={form.privacy}
                 onChange={(e) => setForm((p) => ({ ...p, privacy: e.target.value }))}
                 rows={8}
-                className="mt-3 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 outline-none focus:border-violet-400"
+                className="pl-textarea mt-3"
               />
             </div>
 
             <div>
-              <div className="text-sm font-semibold">Rodapé</div>
+              <div className="text-sm font-black text-slate-950">Rodape</div>
               <textarea
                 value={form.footer}
                 onChange={(e) => setForm((p) => ({ ...p, footer: e.target.value }))}
                 rows={8}
-                className="mt-3 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 outline-none focus:border-violet-400"
+                className="pl-textarea mt-3"
               />
             </div>
           </div>
         </div>
 
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
           <button
             onClick={() => router.push("/sites")}
-            className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold hover:bg-white/10"
+            className="pl-btn"
           >
             Cancelar
           </button>
@@ -1041,12 +1042,12 @@ export default function DomainSubdomainSitePage() {
           <button
             onClick={handleCreate}
             disabled={loading || domainsLoading || domains.length === 0}
-            className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold hover:bg-emerald-500 disabled:opacity-60"
+            className="pl-btn pl-btn-primary"
           >
             {loading ? "Criando e ativando SSL..." : "Criar site"}
           </button>
         </div>
       </div>
-    </div>
+    </main>
   );
 }

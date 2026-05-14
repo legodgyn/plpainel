@@ -20,7 +20,6 @@ export default function EmailsPage() {
   useEffect(() => {
     async function load() {
       setLoading(true);
-
       const { data: auth } = await supabase.auth.getUser();
       const user = auth.user;
 
@@ -74,59 +73,50 @@ export default function EmailsPage() {
   }, []);
 
   return (
-    <main className="mx-auto max-w-5xl px-4 py-8 text-white">
-      <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
-        <h1 className="text-2xl font-bold">E-mails</h1>
-        <p className="mt-1 text-sm text-white/60">
-          Acesse a caixa de entrada dos domínios disponíveis e comprados.
-        </p>
+    <main className="pl-page max-w-6xl space-y-6">
+      <div className="pl-page-title">
+        <div>
+          <h1>Emails</h1>
+          <p>Acesse caixas internas dos domínios disponíveis, comprados e conectados.</p>
+        </div>
+        <span className="pl-badge pl-badge-ok">{domains.length} domínios</span>
       </div>
 
-      <div className="mt-6 grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2">
         {loading ? (
-          <div className="text-white/60">Carregando...</div>
+          <div className="pl-card p-5 text-[var(--panel-muted)]">Carregando...</div>
         ) : domains.length === 0 ? (
-          <div className="text-white/60">Nenhum domínio disponível.</div>
+          <div className="pl-card p-6 text-[var(--panel-muted)] md:col-span-2">
+            Nenhum domínio disponível.
+          </div>
         ) : (
           domains.map((d) => {
             const isGlobal = Boolean(d.is_global);
-
-            const email = isGlobal
-              ? `${mainSlug}@${d.domain}`
-              : `facebook@${d.domain}`;
+            const email = isGlobal ? `${mainSlug}@${d.domain}` : `facebook@${d.domain}`;
 
             return (
               <Link
                 key={d.id}
                 href={`/emails/${encodeURIComponent(d.domain)}`}
-                className="rounded-2xl border border-white/10 bg-white/5 p-5 transition hover:bg-white/10"
+                className="pl-card p-5 transition hover:-translate-y-0.5"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <div className="text-lg font-bold">{d.domain}</div>
-
-                    <div className="mt-1 text-xs text-white/50">
+                    <div className="break-all text-lg font-black">{d.domain}</div>
+                    <div className="mt-1 text-xs text-[var(--panel-muted)]">
                       {isGlobal ? "Domínio global" : d.source === "custom" ? "Domínio próprio" : "Domínio comprado"}
                     </div>
                   </div>
-
-                  <span
-                    className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                      isGlobal
-                        ? "bg-violet-500/10 text-violet-200"
-                        : "bg-emerald-500/10 text-emerald-200"
-                    }`}
-                  >
+                  <span className={isGlobal ? "pl-badge" : "pl-badge pl-badge-ok"}>
                     {isGlobal ? "Global" : "Seu"}
                   </span>
                 </div>
 
-                <div className="mt-4 rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-200">
-                  Use para verificação:{" "}
-                  <span className="font-bold">{email}</span>
+                <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+                  Use para verificação: <span className="font-black">{email}</span>
                 </div>
 
-                <div className="mt-3 text-sm text-white/60">
+                <div className="mt-3 text-sm font-bold text-[var(--panel-green-2)]">
                   Abrir caixa de entrada →
                 </div>
               </Link>

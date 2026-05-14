@@ -231,7 +231,7 @@ function Progress({ current }: { current: number }) {
             {index > 0 ? (
               <div
                 className={`absolute right-1/2 top-4 h-0.5 w-full ${
-                  done || active ? "bg-violet-500" : "bg-white/10"
+                  done || active ? "bg-emerald-400" : "bg-slate-200"
                 }`}
               />
             ) : null}
@@ -240,13 +240,13 @@ function Progress({ current }: { current: number }) {
                 done
                   ? "bg-emerald-500 text-white"
                   : active
-                  ? "bg-violet-600 text-white"
-                  : "bg-white/10 text-white/70"
+                  ? "bg-slate-950 text-white"
+                  : "bg-slate-100 text-slate-500"
               }`}
             >
               {done ? "✓" : n}
             </div>
-            <div className={`text-center text-[11px] ${active ? "font-semibold text-white" : "text-white/45"}`}>
+            <div className={`text-center text-[11px] ${active ? "font-black text-slate-950" : "font-semibold text-slate-400"}`}>
               {label}
             </div>
           </div>
@@ -268,22 +268,22 @@ function DnsRow({
   extra?: string;
 }) {
   return (
-    <div className="grid gap-3 rounded-2xl bg-black/20 p-4 text-sm md:grid-cols-[.6fr_.8fr_1.6fr_.8fr]">
+    <div className="grid gap-3 rounded-2xl border border-emerald-100 bg-white p-4 text-sm md:grid-cols-[.6fr_.8fr_1.6fr_.8fr]">
       <div>
-        <div className="text-[10px] uppercase text-white/40">Tipo</div>
-        <div className="mt-1 font-bold text-violet-200">{type}</div>
+        <div className="text-[10px] font-black uppercase text-slate-400">Tipo</div>
+        <div className="mt-1 font-black text-slate-950">{type}</div>
       </div>
       <div>
-        <div className="text-[10px] uppercase text-white/40">Nome</div>
-        <div className="mt-1 font-semibold">{name}</div>
+        <div className="text-[10px] font-black uppercase text-slate-400">Nome</div>
+        <div className="mt-1 font-semibold text-slate-700">{name}</div>
       </div>
       <div className="min-w-0">
-        <div className="text-[10px] uppercase text-white/40">Valor</div>
-        <div className="mt-1 break-all font-semibold text-emerald-200">{value}</div>
+        <div className="text-[10px] font-black uppercase text-slate-400">Valor</div>
+        <div className="mt-1 break-all font-black text-emerald-700">{value}</div>
       </div>
       <div>
-        <div className="text-[10px] uppercase text-white/40">{extra ? "Obs." : "TTL"}</div>
-        <div className="mt-1 font-semibold text-white/70">{extra || "Auto"}</div>
+        <div className="text-[10px] font-black uppercase text-slate-400">{extra ? "Obs." : "TTL"}</div>
+        <div className="mt-1 font-semibold text-slate-600">{extra || "Auto"}</div>
       </div>
     </div>
   );
@@ -624,25 +624,25 @@ export default function CustomDomainWizardPage() {
   }
 
   return (
-    <main className="mx-auto max-w-5xl text-white">
+    <main className="pl-page max-w-7xl space-y-6">
       <div>
         <div className="flex items-center gap-3">
-          <div className="grid h-9 w-9 place-items-center rounded-xl border border-violet-400/30 bg-violet-500/10 text-violet-200">
+          <div className="grid h-11 w-11 place-items-center rounded-2xl border border-emerald-100 bg-emerald-50 text-emerald-700">
             ◇
           </div>
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-black">Domínio Próprio Guiado</h1>
-              <span className="rounded-full border border-emerald-400/20 bg-emerald-500/10 px-2.5 py-1 text-xs font-bold text-emerald-200">
+              <h1 className="text-3xl font-black text-slate-950">Dominio Proprio Guiado</h1>
+              <span className="pl-badge pl-badge-ok">
                 NOVO
               </span>
               {draftActive ? (
-                <span className="rounded-full border border-violet-400/20 bg-violet-500/10 px-2.5 py-1 text-xs font-bold text-violet-100">
+                <span className="pl-badge">
                   RASCUNHO SALVO
                 </span>
               ) : null}
             </div>
-            <p className="mt-1 text-sm text-white/55">
+            <p className="mt-1 text-sm font-semibold text-slate-500">
               Crie um site com domínio próprio, SSL e caixa de entrada no PLPainel.
             </p>
           </div>
@@ -652,13 +652,13 @@ export default function CustomDomainWizardPage() {
       </div>
 
       {msg ? (
-        <div className="mt-5 rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-100">
+        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
           {msg}
         </div>
       ) : null}
 
       {draftActive ? (
-        <div className="mt-5 flex flex-col gap-3 rounded-2xl border border-violet-400/20 bg-violet-500/10 px-4 py-3 text-sm text-violet-100 md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-col gap-3 rounded-[28px] border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-900 md:flex-row md:items-center md:justify-between">
           <div>
             <b>Criação em andamento salva.</b>{" "}
             {domain ? (
@@ -673,14 +673,14 @@ export default function CustomDomainWizardPage() {
           <button
             type="button"
             onClick={() => resetWizard(2)}
-            className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-white/80 hover:bg-white/10"
+            className="pl-btn"
           >
             Criar novo
           </button>
         </div>
       ) : null}
 
-      <section className="mt-8 rounded-3xl border border-white/10 bg-white/[0.03] p-6 shadow-[0_20px_80px_rgba(0,0,0,.25)]">
+      <section className="pl-card">
         {step === 1 ? (
           <div className="space-y-6">
             <div>
@@ -721,25 +721,25 @@ export default function CustomDomainWizardPage() {
         {step === 2 ? (
           <div className="space-y-6">
             <div>
-              <h2 className="text-xl font-bold">Buscar Empresa pelo CNPJ</h2>
-              <p className="mt-2 text-sm text-white/55">
+              <h2 className="text-xl font-black text-slate-950">Buscar Empresa pelo CNPJ</h2>
+              <p className="mt-2 text-sm font-semibold text-slate-500">
                 Informe o CNPJ e o domínio que o cliente já comprou.
               </p>
             </div>
 
             <div className="grid gap-4 md:grid-cols-[1fr_1fr_auto] md:items-end">
               <label className="block">
-                <span className="text-xs text-white/50">CNPJ</span>
+                <span className="pl-label">CNPJ</span>
                 <input
                   value={form.cnpj}
                   onChange={(e) => setForm((prev) => ({ ...prev, cnpj: formatCNPJ(e.target.value) }))}
                   placeholder="00.000.000/0000-00"
-                  className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 outline-none focus:border-violet-400"
+                  className="pl-input mt-2"
                 />
               </label>
 
               <label className="block">
-                <span className="text-xs text-white/50">Domínio próprio</span>
+                <span className="pl-label">Dominio proprio</span>
                 <input
                   value={form.domain}
                   onChange={(e) => {
@@ -757,20 +757,20 @@ export default function CustomDomainWizardPage() {
                     }));
                   }}
                   placeholder="seudominio.com.br"
-                  className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 outline-none focus:border-violet-400"
+                  className="pl-input mt-2"
                 />
               </label>
 
               <button
                 onClick={fetchCnpj}
                 disabled={loading}
-                className="rounded-xl bg-violet-600 px-6 py-3 font-bold hover:bg-violet-500 disabled:opacity-60"
+                className="pl-btn pl-btn-primary justify-center px-6"
               >
                 {loading ? "Buscando..." : "Buscar"}
               </button>
             </div>
 
-            <button onClick={() => setStep(1)} className="text-sm text-white/60 hover:text-white">
+            <button onClick={() => setStep(1)} className="text-sm font-semibold text-slate-500 hover:text-slate-950">
               ← Voltar
             </button>
           </div>
@@ -779,34 +779,34 @@ export default function CustomDomainWizardPage() {
         {step === 3 ? (
           <div className="space-y-6">
             <div>
-              <h2 className="text-xl font-bold">Gerar Site com IA</h2>
-              <p className="mt-2 text-sm text-white/55">
+              <h2 className="text-xl font-black text-slate-950">Gerar Site com IA</h2>
+              <p className="mt-2 text-sm font-semibold text-slate-500">
                 Revise os dados antes de criar o site. Depois você configura o DNS.
               </p>
             </div>
 
-            <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-5">
-              <div className="font-bold">{form.company_name || "Empresa"}</div>
-              <div className="mt-1 text-sm text-white/50">{domain || "seudominio.com.br"}</div>
+            <div className="pl-card-soft">
+              <div className="font-black text-slate-950">{form.company_name || "Empresa"}</div>
+              <div className="mt-1 text-sm font-semibold text-slate-500">{domain || "seudominio.com.br"}</div>
 
               <div className="mt-5 grid gap-4 md:grid-cols-2">
                 <input
                   value={form.phone}
                   onChange={(e) => setForm((prev) => ({ ...prev, phone: formatBRPhone(e.target.value) }))}
                   placeholder="Telefone"
-                  className="rounded-xl border border-white/10 bg-black/20 px-4 py-3 outline-none focus:border-violet-400"
+                  className="pl-input"
                 />
                 <input
                   value={form.whatsapp}
                   onChange={(e) => setForm((prev) => ({ ...prev, whatsapp: formatBRPhone(e.target.value) }))}
                   placeholder="WhatsApp"
-                  className="rounded-xl border border-white/10 bg-black/20 px-4 py-3 outline-none focus:border-violet-400"
+                  className="pl-input"
                 />
                 <input
                   value={form.email}
                   onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))}
                   placeholder={contactEmail}
-                  className="rounded-xl border border-white/10 bg-black/20 px-4 py-3 outline-none focus:border-violet-400 md:col-span-2"
+                  className="pl-input md:col-span-2"
                 />
               </div>
             </div>
@@ -814,14 +814,14 @@ export default function CustomDomainWizardPage() {
             <div className="flex flex-col gap-3 md:flex-row">
               <button
                 onClick={() => setStep(2)}
-                className="rounded-xl border border-white/10 bg-white/5 px-5 py-3 font-semibold text-white/75 hover:bg-white/10"
+                className="pl-btn"
               >
                 Voltar
               </button>
               <button
                 onClick={createSite}
                 disabled={loading}
-                className="flex-1 rounded-xl bg-violet-600 px-5 py-3 font-bold hover:bg-violet-500 disabled:opacity-60"
+                className="pl-btn pl-btn-primary flex-1 justify-center"
               >
                 {loading ? "Criando..." : "Gerar e Criar Site (1 token)"}
               </button>
@@ -832,35 +832,35 @@ export default function CustomDomainWizardPage() {
         {step === 4 ? (
           <div className="space-y-6">
             <div>
-              <h2 className="text-xl font-bold">Conectar Domínio Próprio</h2>
-              <p className="mt-2 text-sm text-white/55">
+              <h2 className="text-xl font-black text-slate-950">Conectar Dominio Proprio</h2>
+              <p className="mt-2 text-sm font-semibold text-slate-500">
                 No DNS do domínio, crie o registro abaixo apontando para o servidor.
               </p>
             </div>
 
-            <div className="rounded-3xl border border-violet-500/15 bg-violet-500/10 p-5">
-              <div className="mb-4 text-sm font-bold text-violet-100">Registros obrigatórios antes do SSL</div>
+            <div className="rounded-[28px] border border-emerald-100 bg-emerald-50 p-5">
+              <div className="mb-4 text-sm font-black text-emerald-900">Registros obrigatorios antes do SSL</div>
               <div className="space-y-3">
                 <DnsRow type="A" name="@" value={CUSTOM_DOMAIN_IP} />
                 <DnsRow type="A" name="*" value={CUSTOM_DOMAIN_IP} />
               </div>
-              <div className="mt-4 rounded-2xl border border-amber-400/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+              <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
                 Antes de ativar o SSL, o domínio precisa estar com o registro A @ apontando para {CUSTOM_DOMAIN_IP}.
                 O registro A * libera a criação de subdomínios depois, como loja.{domain || "seudominio.com"}.
               </div>
-              <div className="mt-3 rounded-2xl border border-sky-400/20 bg-sky-500/10 px-4 py-3 text-sm text-sky-100">
+              <div className="mt-3 rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm font-semibold text-sky-800">
                 Se usar Cloudflare, deixe o proxy desligado nesse registro durante a primeira validação: nuvem cinza.
               </div>
             </div>
 
             {dnsDetails ? (
-              <div className={`rounded-2xl px-4 py-3 text-sm ${dnsOk ? "bg-emerald-500/10 text-emerald-100" : "bg-amber-500/10 text-amber-100"}`}>
+              <div className={`rounded-2xl px-4 py-3 text-sm font-semibold ${dnsOk ? "bg-emerald-50 text-emerald-800" : "bg-amber-50 text-amber-800"}`}>
                 {dnsDetails}
               </div>
             ) : null}
 
             {sslDetails ? (
-              <div className={`rounded-2xl px-4 py-3 text-sm ${sslOk ? "bg-emerald-500/10 text-emerald-100" : "bg-amber-500/10 text-amber-100"}`}>
+              <div className={`rounded-2xl px-4 py-3 text-sm font-semibold ${sslOk ? "bg-emerald-50 text-emerald-800" : "bg-amber-50 text-amber-800"}`}>
                 {sslDetails}
               </div>
             ) : null}
@@ -869,14 +869,14 @@ export default function CustomDomainWizardPage() {
               <button
                 onClick={setupSslFromDnsCheck}
                 disabled={loading}
-                className="rounded-xl border border-violet-400/30 bg-violet-500/10 px-5 py-3 font-semibold text-violet-100 hover:bg-violet-500/15 disabled:opacity-60"
+                className="pl-btn"
               >
                 {loading ? "Configurando SSL..." : "Verificar DNS e Instalar SSL"}
               </button>
               <button
                 onClick={() => setStep(5)}
                 disabled={!sslOk}
-                className="rounded-xl bg-emerald-600 px-5 py-3 font-bold hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-50"
+                className="pl-btn pl-btn-primary disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Continuar para Email
               </button>

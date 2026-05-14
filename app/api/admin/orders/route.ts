@@ -103,8 +103,18 @@ export async function GET(req: Request) {
       })
     );
 
+    const totalPaidByUser = new Map<string, number>();
+    for (const order of rows) {
+      if (normalizeStatus(order.status).key !== "paid") continue;
+      totalPaidByUser.set(
+        order.user_id,
+        (totalPaidByUser.get(order.user_id) || 0) + Number(order.total_cents || 0)
+      );
+    }
+
     const out = rows.map((o) => {
       const st = normalizeStatus(o.status);
+      const customerTotalCents = totalPaidByUser.get(o.user_id) || 0;
       return {
         id: o.id,
         created_at: o.created_at,
@@ -112,6 +122,8 @@ export async function GET(req: Request) {
         email: emailByUser.get(o.user_id) || null,
         total_cents: Number(o.total_cents || 0),
         total_label: money(Number(o.total_cents || 0)),
+        customer_total_cents: customerTotalCents,
+        customer_total_label: money(customerTotalCents),
         status: st.key,
         status_label: st.label,
         affiliate_code: affiliateByUser.get(o.user_id) || null,

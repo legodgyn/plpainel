@@ -1,46 +1,56 @@
 "use client";
 
+const videos = [
+  {
+    title: "Configuracao inicial",
+    description: "Veja o passo a passo principal da plataforma antes de criar seus sites.",
+    src: "https://www.youtube.com/embed/Pb5Tor1dEf4?si=uF5_LdHhvCQgtty5",
+  },
+  {
+    title: "Primeiros passos",
+    description: "Aprenda o fluxo principal para criar e acompanhar seus sites.",
+    src: "https://www.youtube.com/embed/K8z1U2n_XpQ?si=llQoHU6aslC5RLF1",
+  },
+  {
+    title: "Verificacao e ajustes",
+    description: "Veja como seguir a etapa de verificacao e finalizar a configuracao.",
+    src: "https://www.youtube.com/embed/ISmcbsGXl_o?si=G5x03ryDsHtTSHST",
+  },
+];
+
 export default function TutorialPage() {
   return (
-    <main className="mx-auto w-full max-w-6xl px-4 py-8 text-white">
-      <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
-        <h1 className="text-2xl font-bold">Tutorial de Verificação</h1>
-        <p className="mt-2 text-sm text-white/60">
-          Assista ao vídeo abaixo para aprender a verificar sua BM.
-        </p>
-      </div>
-
-      <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-6">
-        <div className="overflow-hidden rounded-2xl border border-white/10 bg-black">
-          <div className="aspect-video w-full">
-              <iframe
-              className="h-full w-full"
-              src="https://www.youtube.com/embed/Pb5Tor1dEf4?si=uF5_LdHhvCQgtty5"
-              title="Tutorial da Plataforma"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-              allowFullScreen
-            /><br></br>
-             <iframe
-              className="h-full w-full"
-              src="https://www.youtube.com/embed/K8z1U2n_XpQ?si=llQoHU6aslC5RLF1"
-              title="Tutorial da Plataforma"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-              allowFullScreen
-            /><br></br>
-            <iframe
-              className="h-full w-full"
-              src="https://www.youtube.com/embed/ISmcbsGXl_o?si=G5x03ryDsHtTSHST"
-              title="Tutorial da Plataforma"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-              allowFullScreen
-            />
-          </div>
+    <main className="pl-page max-w-7xl space-y-6">
+      <div className="pl-page-title">
+        <div>
+          <span className="pl-badge">Central de ajuda</span>
+          <h1>Tutorial</h1>
+          <p>Assista aos videos de apoio para usar o painel com mais seguranca.</p>
         </div>
       </div>
+
+      <section className="grid gap-5 lg:grid-cols-3">
+        {videos.map((video) => (
+          <article key={video.src} className="pl-card overflow-hidden p-0">
+            <div className="p-5">
+              <h2 className="text-xl font-black text-slate-950">{video.title}</h2>
+              <p className="mt-1 text-sm font-semibold text-slate-500">{video.description}</p>
+            </div>
+
+            <div className="border-t border-slate-100 bg-slate-950 p-3">
+              <div className="aspect-video overflow-hidden rounded-[24px] bg-black">
+                <iframe
+                  className="h-full w-full"
+                  src={video.src}
+                  title={video.title}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                />
+              </div>
+            </div>
+          </article>
+        ))}
+      </section>
     </main>
   );
-
 }
-
-
-

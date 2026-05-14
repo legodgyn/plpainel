@@ -47,22 +47,20 @@ export default function TokensPage() {
   const [err, setErr] = useState<string | null>(null);
 
   const baseUnitPriceCents = 500;
-
   const discountPercent = getDiscountPercent(Number(tokens || 0));
   const originalTotalCents = Math.max(0, Number(tokens || 0)) * baseUnitPriceCents;
   const discountedTotalCents = Math.round(originalTotalCents * (1 - discountPercent / 100));
   const savedCents = Math.max(0, originalTotalCents - discountedTotalCents);
-
   const effectiveUnitPriceCents =
     Number(tokens || 0) > 0
       ? Math.round(discountedTotalCents / Number(tokens || 0))
       : baseUnitPriceCents;
 
   const packs = [
-    { label: "10 tokens", qty: 10 },
-    { label: "25 tokens", qty: 25, popular: true, subtitle: "Melhor custo-benefício" },
-    { label: "50 tokens", qty: 50 },
-    { label: "100 tokens", qty: 100 },
+    { label: "10 tokens", qty: 10, note: "Para testar campanhas" },
+    { label: "25 tokens", qty: 25, popular: true, note: "Melhor custo-beneficio" },
+    { label: "50 tokens", qty: 50, note: "Operacao recorrente" },
+    { label: "100 tokens", qty: 100, note: "Maior economia" },
   ];
 
   async function handleBuyPix(qty: number) {
@@ -70,7 +68,7 @@ export default function TokensPage() {
 
     const q = Number(qty);
     if (!Number.isFinite(q) || q < 5) {
-      setErr("Compra mínima: 5 tokens.");
+      setErr("Compra minima: 5 tokens.");
       return;
     }
 
@@ -87,7 +85,7 @@ export default function TokensPage() {
       const token = sess.session?.access_token;
 
       if (!token) {
-        setErr("Sessão não carregou. Recarregue a página e tente novamente.");
+        setErr("Sessao nao carregou. Recarregue a pagina e tente novamente.");
         return;
       }
 
@@ -135,213 +133,154 @@ export default function TokensPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 py-10 text-white">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+    <main className="pl-page max-w-7xl space-y-6">
+      <div className="pl-page-title">
         <div>
-          <h1 className="text-3xl font-bold">Comprar Tokens</h1>
-          <p className="mt-1 text-sm text-white/60">
-            Escolha a quantidade ideal para criar seus sites com rapidez.
-          </p>
+          <span className="pl-badge pl-badge-ok">PIX instantaneo</span>
+          <h1>Comprar Tokens</h1>
+          <p>Escolha um pacote ou informe uma quantidade personalizada para criar novos sites.</p>
         </div>
 
-        <Link
-          href="/dashboard"
-          className="text-sm text-white/70 transition hover:text-white"
-        >
-          ← Voltar para o Dashboard
+        <Link href="/billing" className="pl-btn">
+          Minhas compras
         </Link>
       </div>
 
       {err ? (
-        <div className="mb-5 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
           {err}
         </div>
       ) : null}
 
-      <div className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-[0_20px_80px_rgba(0,0,0,.25)]">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="text-sm text-white/70">
-            Pagamento disponível: <span className="font-semibold text-white">PIX</span>
-          </div>
-
-          <div className="rounded-full border border-emerald-400/20 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-200">
-            Mais sites = Mais BM's Verificadas!
-          </div>
-        </div>
-
-        <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {packs.map((p) => {
-            const packDiscount = getDiscountPercent(p.qty);
-            const packOriginal = p.qty * baseUnitPriceCents;
-            const packFinal = Math.round(packOriginal * (1 - packDiscount / 100));
-            const isPopular = (p as any).popular;
-            const isSelected = tokens === p.qty;
-
-            return (
-              <button
-                key={p.qty}
-                disabled={loading}
-                onClick={() => setTokens(p.qty)}
-                className={`relative rounded-2xl border px-5 py-5 text-left transition duration-200 ${
-                  isPopular
-                    ? `scale-[1.03] ${
-                        isSelected
-                          ? "border-violet-300 bg-violet-500/20 shadow-[0_20px_50px_rgba(139,92,246,.22)]"
-                          : "border-violet-400/70 bg-violet-500/14 shadow-[0_14px_35px_rgba(139,92,246,.15)] hover:bg-violet-500/18"
-                      }`
-                    : isSelected
-                    ? "border-violet-400/40 bg-violet-500/15 shadow-[0_0_0_1px_rgba(167,139,250,.15)]"
-                    : "border-white/10 bg-black/20 hover:bg-black/30"
-                }`}
-              >
-                {isPopular ? (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <span className="rounded-full bg-gradient-to-r from-violet-600 to-fuchsia-500 px-3 py-1 text-xs font-bold text-white shadow-lg">
-                      MAIS VENDIDO
-                    </span>
-                  </div>
-                ) : null}
-
-                {packDiscount > 0 ? (
-                  <div className="absolute right-3 top-3 rounded-full border border-emerald-500/20 bg-emerald-500/15 px-2 py-1 text-[10px] font-bold text-emerald-300">
-                    {packDiscount}% OFF
-                  </div>
-                ) : null}
-
-                <div className="text-base font-semibold">{p.label}</div>
-
-                {"subtitle" in p && p.subtitle ? (
-                  <div className="mt-1 text-xs text-emerald-300">{p.subtitle}</div>
-                ) : null}
-
-                {packDiscount > 0 ? (
-                  <div className="mt-3 space-y-1">
-                    <div className="text-xs text-white/40 line-through">
-                      {money(packOriginal)}
-                    </div>
-                    <div className="text-lg font-bold text-white">
-                      {money(packFinal)}
-                    </div>
-                    <div className="text-xs text-emerald-300">
-                      Economiza {money(packOriginal - packFinal)}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="mt-3 text-sm text-white/60">{money(packOriginal)}</div>
-                )}
-              </button>
-            );
-          })}
-        </div>
-
-        <div className="mt-8 grid gap-6 lg:grid-cols-[1.2fr_.8fr]">
-          <div className="rounded-2xl border border-white/10 bg-black/20 p-5">
-            <div className="text-sm font-semibold text-white/80">Escolha personalizada</div>
-            <div className="mt-1 text-sm text-white/55">
-              Selecione a quantidade ideal de tokens para o seu volume de sites.
+      <section className="grid gap-5 lg:grid-cols-[1.2fr_.8fr]">
+        <div className="pl-card space-y-5">
+          <div className="pl-card-head">
+            <div>
+              <h2>Pacotes de tokens</h2>
+              <p>Os mesmos pacotes atuais, agora mais faceis de comparar.</p>
             </div>
+            <span className="pl-badge">R$ 5,00 por token</span>
+          </div>
 
-            <div className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-end">
-              <div className="w-full sm:max-w-[220px]">
-                <label className="text-xs text-white/60">Quantidade de tokens</label>
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            {packs.map((pack) => {
+              const packDiscount = getDiscountPercent(pack.qty);
+              const packOriginal = pack.qty * baseUnitPriceCents;
+              const packFinal = Math.round(packOriginal * (1 - packDiscount / 100));
+              const selected = tokens === pack.qty;
+
+              return (
+                <button
+                  key={pack.qty}
+                  type="button"
+                  disabled={loading}
+                  onClick={() => setTokens(pack.qty)}
+                  className={`relative rounded-[28px] border p-5 text-left transition hover:-translate-y-0.5 ${
+                    selected
+                      ? "border-emerald-500 bg-emerald-50 shadow-[0_18px_45px_rgba(16,185,129,.16)]"
+                      : "border-slate-200 bg-white shadow-sm hover:border-emerald-200 hover:bg-emerald-50/40"
+                  }`}
+                >
+                  {pack.popular ? (
+                    <span className="absolute right-4 top-4 rounded-full bg-emerald-600 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-white">
+                      Mais vendido
+                    </span>
+                  ) : null}
+
+                  <div className="text-lg font-black text-slate-950">{pack.label}</div>
+                  <div className="mt-1 text-xs font-semibold text-slate-500">{pack.note}</div>
+
+                  <div className="mt-5 space-y-1">
+                    {packDiscount > 0 ? (
+                      <div className="text-xs font-bold text-slate-400 line-through">
+                        {money(packOriginal)}
+                      </div>
+                    ) : null}
+                    <div className="text-2xl font-black text-slate-950">{money(packFinal)}</div>
+                    <div className="text-xs font-bold text-emerald-700">
+                      {packDiscount > 0
+                        ? `${packDiscount}% OFF, economiza ${money(packOriginal - packFinal)}`
+                        : "Sem desconto aplicado"}
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="pl-card-soft">
+            <div className="grid gap-5 lg:grid-cols-[1fr_auto] lg:items-end">
+              <div>
+                <label className="pl-label">Quantidade personalizada</label>
                 <input
+                  className="pl-input mt-2 max-w-xs"
                   type="number"
                   min={5}
                   step={1}
                   value={tokens}
-                  onChange={(e) => {
-                    const v = Number(e.target.value || 0);
-                    setTokens(v);
-                  }}
-                  className="mt-2 w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none focus:border-violet-400"
+                  onChange={(e) => setTokens(Number(e.target.value || 0))}
                 />
+                <p className="mt-2 text-xs font-semibold text-slate-500">
+                  A compra minima e de 5 tokens. Descontos entram automaticamente a partir de 25 tokens.
+                </p>
               </div>
 
               <button
+                type="button"
                 disabled={loading}
                 onClick={() => handleBuyPix(tokens)}
-                className="inline-flex h-[50px] items-center justify-center rounded-2xl bg-emerald-600 px-6 text-sm font-bold text-white transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60"
+                className="pl-btn pl-btn-primary justify-center px-8"
               >
                 {loading ? "Gerando PIX..." : "Comprar com PIX"}
               </button>
             </div>
-
-            <div className="mt-5 rounded-2xl border border-white/10 bg-white/5 p-4">
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div>
-                  <div className="text-xs text-white/50">Preço unitário base</div>
-                  <div className="mt-1 text-sm font-semibold text-white">
-                    {money(baseUnitPriceCents)}
-                  </div>
-                </div>
-
-                <div>
-                  <div className="text-xs text-white/50">Preço unitário final</div>
-                  <div className="mt-1 text-sm font-semibold text-white">
-                    {money(effectiveUnitPriceCents)}
-                  </div>
-                </div>
-
-                <div>
-                  <div className="text-xs text-white/50">Desconto aplicado</div>
-                  <div className="mt-1 text-sm font-semibold text-emerald-300">
-                    {discountPercent > 0 ? `${discountPercent}% OFF` : "Sem desconto"}
-                  </div>
-                </div>
-
-                <div>
-                  <div className="text-xs text-white/50">Você economiza</div>
-                  <div className="mt-1 text-sm font-semibold text-emerald-300">
-                    {savedCents > 0 ? money(savedCents) : "—"}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-white/10 bg-black/20 p-5">
-            <div className="text-sm font-semibold text-white/80">Resumo do pedido</div>
-
-            <div className="mt-5 space-y-3">
-              <div className="flex items-center justify-between text-sm text-white/70">
-                <span>Quantidade</span>
-                <span className="font-semibold text-white">{tokens} tokens</span>
-              </div>
-
-              <div className="flex items-center justify-between text-sm text-white/70">
-                <span>Subtotal</span>
-                <span className={discountPercent > 0 ? "line-through text-white/40" : "text-white"}>
-                  {money(originalTotalCents)}
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between text-sm text-white/70">
-                <span>Desconto</span>
-                <span className="font-semibold text-emerald-300">
-                  {discountPercent > 0 ? `-${money(savedCents)}` : "—"}
-                </span>
-              </div>
-
-              <div className="border-t border-white/10 pt-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-white/60">Total</span>
-                  <span className="text-2xl font-bold text-white">
-                    {money(discountedTotalCents)}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <button
-              disabled={loading}
-              onClick={() => handleBuyPix(tokens)}
-              className="mt-6 inline-flex w-full items-center justify-center rounded-2xl bg-violet-600 px-6 py-3 text-sm font-bold text-white transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {loading ? "Gerando PIX..." : "Gerar PIX agora"}
-            </button>
           </div>
         </div>
-      </div>
-    </div>
+
+        <aside className="pl-card flex h-full flex-col">
+          <div className="pl-card-head">
+            <div>
+              <h2>Resumo da compra</h2>
+              <p>Confira o total antes de gerar o PIX.</p>
+            </div>
+          </div>
+
+          <div className="mt-2 flex-1 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3 text-sm">
+              <span className="font-semibold text-slate-500">Quantidade</span>
+              <span className="font-black text-slate-950">{tokens} tokens</span>
+            </div>
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3 text-sm">
+              <span className="font-semibold text-slate-500">Subtotal</span>
+              <span className={discountPercent > 0 ? "font-bold text-slate-400 line-through" : "font-bold text-slate-950"}>
+                {money(originalTotalCents)}
+              </span>
+            </div>
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3 text-sm">
+              <span className="font-semibold text-slate-500">Desconto</span>
+              <span className="font-black text-emerald-700">
+                {discountPercent > 0 ? `-${money(savedCents)}` : "Sem desconto"}
+              </span>
+            </div>
+            <div className="rounded-[24px] bg-slate-950 p-5 text-white">
+              <div className="text-xs font-bold uppercase tracking-wide text-white/55">Total</div>
+              <div className="mt-1 text-3xl font-black">{money(discountedTotalCents)}</div>
+              <div className="mt-2 text-xs font-semibold text-emerald-200">
+                Preco final medio: {money(effectiveUnitPriceCents)} por token.
+              </div>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            disabled={loading}
+            onClick={() => handleBuyPix(tokens)}
+            className="pl-btn pl-btn-primary mt-5 w-full justify-center"
+          >
+            {loading ? "Gerando PIX..." : "Gerar PIX agora"}
+          </button>
+        </aside>
+      </section>
+    </main>
   );
 }

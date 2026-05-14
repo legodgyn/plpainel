@@ -1,7 +1,7 @@
- "use client";
+"use client";
 
-import Link from "next/link";
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseBrowser";
@@ -14,13 +14,26 @@ type ExtraPermissions = {
   can_use_custom_domain: boolean;
 };
 
+type NavItem = {
+  href: string;
+  label: string;
+  icon: string;
+};
+
+const emptyPermissions: ExtraPermissions = {
+  can_change_layout: false,
+  can_transfer_sites: false,
+  can_view_orders: false,
+  can_manage_suggestions: false,
+  can_use_custom_domain: false,
+};
+
 function onlyDigits(v: string) {
   return String(v || "").replace(/\D/g, "");
 }
 
 function formatBRPhone(input: string) {
   const digitsRaw = onlyDigits(input);
-
   if (!digitsRaw) return "";
 
   let digits = digitsRaw;
@@ -33,35 +46,22 @@ function formatBRPhone(input: string) {
   if (digits.length <= 6) return `(${ddd}) ${rest}`;
 
   if (digits.length === 10) {
-    const p1 = rest.slice(0, 4);
-    const p2 = rest.slice(4, 8);
-    return `(${ddd}) ${p1}-${p2}`;
+    return `(${ddd}) ${rest.slice(0, 4)}-${rest.slice(4, 8)}`;
   }
 
-  const r = digits.slice(2, 11);
-  const p1 = r.slice(0, 5);
-  const p2 = r.slice(5, 9);
-  return `(${ddd}) ${p1}-${p2}`;
+  const mobile = digits.slice(2, 11);
+  return `(${ddd}) ${mobile.slice(0, 5)}-${mobile.slice(5, 9)}`;
 }
-
-const emptyPermissions: ExtraPermissions = {
-  can_change_layout: false,
-  can_transfer_sites: false,
-  can_view_orders: false,
-  can_manage_suggestions: false,
-  can_use_custom_domain: false,
-};
 
 export default function PanelShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
 
   const [loading, setLoading] = useState(true);
-  const [email, setEmail] = useState<string>("");
+  const [email, setEmail] = useState("");
   const [extraPermissions, setExtraPermissions] =
     useState<ExtraPermissions>(emptyPermissions);
 
-  // modal whatsapp obrigatorio
   const [needsWhatsapp, setNeedsWhatsapp] = useState(false);
   const [savingWhatsapp, setSavingWhatsapp] = useState(false);
   const [profileName, setProfileName] = useState("");
@@ -75,19 +75,18 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
     return env || "teste@teste.com";
   }, []);
 
-  const isAdminMaster = useMemo(() => {
-    return String(email || "").trim().toLowerCase() === ADMIN_MASTER_EMAIL;
-  }, [email, ADMIN_MASTER_EMAIL]);
+  const isAdminMaster = useMemo(
+    () => String(email || "").trim().toLowerCase() === ADMIN_MASTER_EMAIL,
+    [email, ADMIN_MASTER_EMAIL]
+  );
 
-  const canChangeLayout =
-    isAdminMaster || extraPermissions.can_change_layout;
-  const canTransferSites =
-    isAdminMaster || extraPermissions.can_transfer_sites;
-  const canViewOrders =
-    isAdminMaster || extraPermissions.can_view_orders;
+  const canChangeLayout = isAdminMaster || extraPermissions.can_change_layout;
+  const canTransferSites = isAdminMaster || extraPermissions.can_transfer_sites;
+  const canViewOrders = isAdminMaster || extraPermissions.can_view_orders;
   const canManageSuggestions =
     isAdminMaster || extraPermissions.can_manage_suggestions;
-  const baseNav = useMemo(
+
+  const baseNav = useMemo<NavItem[]>(
     () => [
       { href: "/dashboard", label: "Dashboard", icon: "📊" },
       { href: "/loja", label: "Loja", icon: "🛍️" },
@@ -101,7 +100,8 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
     ],
     []
   );
-  const customDomainNav = useMemo(
+
+  const customDomainNav = useMemo<NavItem[]>(
     () => [
       {
         href: "/sites/custom-domain",
@@ -118,6 +118,7 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
     ],
     []
   );
+
   const customDomainGroupActive = useMemo(
     () =>
       customDomainNav.some(
@@ -126,7 +127,7 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
     [customDomainNav, pathname]
   );
 
-  const nav = useMemo(() => {
+  const nav = useMemo<NavItem[]>(() => {
     const items = [...baseNav];
 
     if (canChangeLayout) {
@@ -158,35 +159,34 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
         icon: "📈",
       });
 
-          if (canTransferSites) {
-      items.push({
-        href: "/admin/transferir-sites",
-        label: "Transferências",
-        icon: "🔄",
-      });
-    }
+      if (canTransferSites) {
+        items.push({
+          href: "/admin/transferir-sites",
+          label: "Transferências",
+          icon: "🔄",
+        });
+      }
+
       items.push({
         href: "/admin/updates",
         label: "Atualizações",
         icon: "🛠️",
       });
 
-          if (canManageSuggestions) {
-      items.push({
-        href: "/admin/sugestoes",
-        label: "Sugestões (Admin)",
-        icon: "💡",
-      });
-    }
-      
+      if (canManageSuggestions) {
+        items.push({
+          href: "/admin/sugestoes",
+          label: "Sugestões (Admin)",
+          icon: "💡",
+        });
+      }
+
       items.push({
         href: "/admin/permissoes",
         label: "Permissões Extras",
         icon: "🔐",
       });
     }
-                   
-
 
     return items;
   }, [
@@ -200,7 +200,7 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
 
   const supportLink = useMemo(() => {
     const phone = "5562999994162";
-    const text = encodeURIComponent("Olá! Preciso de suporte no plpainel.");
+    const text = encodeURIComponent("Olá! Preciso de suporte no PLPainel.");
     return `https://wa.me/${phone}?text=${text}`;
   }, []);
 
@@ -257,12 +257,7 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
 
         setProfileName(savedName);
         setWhatsapp(savedWhatsapp ? formatBRPhone(savedWhatsapp) : "");
-
-        if (!savedWhatsapp) {
-          setNeedsWhatsapp(true);
-        } else {
-          setNeedsWhatsapp(false);
-        }
+        setNeedsWhatsapp(!savedWhatsapp);
       }
 
       setLoading(false);
@@ -290,11 +285,6 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
 
     if (!name) {
       setWhatsMsg("Digite seu nome.");
-      return;
-    }
-
-    if (!digits) {
-      setWhatsMsg("Digite seu WhatsApp.");
       return;
     }
 
@@ -329,71 +319,35 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
   }
 
   return (
-    <div className="min-h-screen bg-[#0b1220]">
-      <div className="bg-gradient-to-r from-violet-600 via-fuchsia-600 to-violet-600">
-        <div className="mx-auto max-w-[1600px] px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Image
-              src="/logo.png"
-              alt="PL Painel"
-              width={200}
-              height={80}
-              className="h-16 w-40 object-contain"
-            />
-          </div>
+    <div className="min-h-screen bg-[var(--panel-bg)] text-[var(--panel-ink)]">
+      <div className="mx-auto flex max-w-[1600px] gap-6 px-4 py-6">
+        <aside className="hidden w-72 shrink-0 lg:block">
+          <div className="sticky top-6 rounded-[1.35rem] border border-[var(--panel-line)] bg-white/90 p-4 shadow-[var(--panel-shadow)]">
+            <div className="flex items-center justify-between">
+              <Image
+                src="/logo.png"
+                alt="PLPainel"
+                width={190}
+                height={76}
+                className="h-14 w-36 object-contain"
+                priority
+              />
+            </div>
 
-          <a
-            href={supportLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={[
-              "group relative inline-flex items-center gap-2 rounded-full",
-              "bg-emerald-500 px-5 py-2 text-sm font-semibold text-white",
-              "shadow-lg shadow-emerald-900/30",
-              "transition-all duration-200",
-              "hover:bg-emerald-400 hover:shadow-emerald-900/40 hover:scale-[1.03]",
-              "active:scale-[0.98]",
-              "border border-white/10",
-            ].join(" ")}
-          >
-            <span className="pointer-events-none absolute inset-0 rounded-full bg-gradient-to-b from-white/25 to-transparent opacity-70" />
-            <span className="relative flex items-center gap-2">
-              <svg
-                className="h-4 w-4"
-                viewBox="0 0 32 32"
-                fill="currentColor"
-                aria-hidden="true"
-              >
-                <path d="M19.11 17.44c-.27-.14-1.6-.79-1.85-.88-.25-.09-.43-.14-.61.14-.18.27-.7.88-.86 1.06-.16.18-.32.2-.59.07-.27-.14-1.14-.42-2.17-1.34-.8-.72-1.34-1.6-1.5-1.87-.16-.27-.02-.42.12-.55.12-.12.27-.32.41-.48.14-.16.18-.27.27-.45.09-.18.05-.34-.02-.48-.07-.14-.61-1.48-.84-2.03-.22-.53-.44-.46-.61-.47l-.52-.01c-.18 0-.48.07-.73.34-.25.27-.95.93-.95 2.27 0 1.34.98 2.63 1.12 2.81.14.18 1.93 2.95 4.68 4.13.65.28 1.16.45 1.56.58.66.21 1.26.18 1.73.11.53-.08 1.6-.65 1.83-1.28.23-.63.23-1.17.16-1.28-.07-.11-.25-.18-.52-.32z" />
-                <path d="M26.67 5.33A14.53 14.53 0 0 0 16.02 1C8.02 1 1.5 7.52 1.5 15.52c0 2.56.67 5.06 1.95 7.26L1 31l8.41-2.4a14.48 14.48 0 0 0 6.61 1.6h.01c8 0 14.52-6.52 14.52-14.52 0-3.88-1.51-7.52-4.38-10.35zM16.03 27.62h-.01c-2.23 0-4.42-.6-6.34-1.73l-.45-.27-4.99 1.42 1.46-4.87-.29-.5a12.1 12.1 0 0 1-1.85-6.14c0-6.68 5.44-12.12 12.13-12.12 3.24 0 6.29 1.26 8.58 3.55 2.29 2.29 3.55 5.34 3.55 8.58 0 6.68-5.44 12.08-12.12 12.08z" />
-              </svg>
-
-              <span>Falar com o suporte</span>
-              <span className="ml-1 text-white/90 transition-transform duration-200 group-hover:translate-x-0.5">
-                →
-              </span>
-            </span>
-          </a>
-        </div>
-      </div>
-
-      <div className="mx-auto max-w-[1600px] px-4 py-8 flex gap-6">
-        <aside className="w-64 shrink-0">
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-            <div className="flex items-center gap-3">
+            <div className="mt-5 flex items-center gap-3 rounded-2xl border border-[var(--panel-line)] bg-[#f8fbfa] p-3">
               <Image
                 src="/usuario.png"
-                alt="PL Painel"
-                width={40}
-                height={40}
-                className="h-10 w-10 rounded-xl object-cover"
+                alt="Usuário"
+                width={42}
+                height={42}
+                className="h-11 w-11 rounded-2xl object-cover"
               />
               <div className="min-w-0">
-                <div className="text-white font-semibold truncate">
+                <div className="truncate font-black text-[var(--panel-ink)]">
                   {email || "Conta"}
                 </div>
-                <div className="text-white/60 text-xs truncate">
-                  Seja bem vindo!!
+                <div className="truncate text-xs font-semibold text-[var(--panel-muted)]">
+                  Conta verificada
                 </div>
               </div>
             </div>
@@ -402,55 +356,62 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
               {nav.map((item) => {
                 const active = pathname === item.href;
                 const external = item.href.startsWith("http");
-
                 const className = [
-                  "flex items-center gap-3 rounded-xl px-3 py-2 text-sm",
+                  "flex items-center gap-3 rounded-2xl border px-3 py-2.5 text-sm font-bold transition",
                   active
-                    ? "bg-violet-600/25 border border-violet-400/30 text-white"
-                    : "text-white/75 hover:bg-white/10 border border-transparent",
+                    ? "border-emerald-300 bg-emerald-50 text-[#064533] shadow-sm"
+                    : "border-transparent text-[#466057] hover:border-[var(--panel-line)] hover:bg-[#f8fbfa]",
                 ].join(" ");
 
-                const navItem = external ? (
-                  <a
-                    key={item.href}
-                    href={item.href}
-                    target="_blank"
-                    rel="noreferrer"
-                    className={className}
-                  >
-                    <span className="w-6 text-center">{item.icon}</span>
+                const content = (
+                  <>
+                    <span className="grid h-7 w-7 place-items-center rounded-xl bg-[#eef8f3] text-sm">
+                      {item.icon}
+                    </span>
                     <span>{item.label}</span>
-                  </a>
-                ) : (
-                  <Link key={item.href} href={item.href} className={className}>
-                    <span className="w-6 text-center">{item.icon}</span>
-                    <span>{item.label}</span>
-                  </Link>
+                  </>
                 );
 
                 return (
                   <div key={item.href}>
-                    {navItem}
+                    {external ? (
+                      <a
+                        href={item.href}
+                        target="_blank"
+                        rel="noreferrer"
+                        className={className}
+                      >
+                        {content}
+                      </a>
+                    ) : (
+                      <Link href={item.href} className={className}>
+                        {content}
+                      </Link>
+                    )}
 
                     {item.href === "/sites/new" ? (
                       <details
-                        className="group mt-1 rounded-xl border border-transparent"
+                        className="group mt-1"
                         open={customDomainGroupActive}
                       >
                         <summary
                           className={[
-                            "flex cursor-pointer list-none items-center gap-3 rounded-xl px-3 py-2 text-sm",
+                            "flex cursor-pointer list-none items-center gap-3 rounded-2xl border px-3 py-2.5 text-sm font-bold transition",
                             customDomainGroupActive
-                              ? "border border-violet-400/30 bg-violet-600/25 text-white"
-                              : "border border-transparent text-white/75 hover:bg-white/10",
+                              ? "border-emerald-300 bg-emerald-50 text-[#064533]"
+                              : "border-transparent text-[#466057] hover:border-[var(--panel-line)] hover:bg-[#f8fbfa]",
                           ].join(" ")}
                         >
-                          <span className="w-6 text-center">🔗</span>
+                          <span className="grid h-7 w-7 place-items-center rounded-xl bg-[#eef8f3] text-sm">
+                            🔗
+                          </span>
                           <span className="flex-1">Domínio Próprio</span>
-                          <span className="text-xs text-white/45 transition group-open:rotate-180">▾</span>
+                          <span className="text-xs text-[var(--panel-muted)] transition group-open:rotate-180">
+                            ▾
+                          </span>
                         </summary>
 
-                        <div className="mt-1 space-y-1 pl-4">
+                        <div className="mt-1 space-y-1 pl-5">
                           {customDomainNav.map((domainItem) => {
                             const domainActive =
                               pathname === domainItem.href ||
@@ -461,13 +422,15 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
                                 key={domainItem.href}
                                 href={domainItem.href}
                                 className={[
-                                  "flex items-center gap-3 rounded-xl border px-3 py-2 text-sm",
+                                  "flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold transition",
                                   domainActive
-                                    ? "border-emerald-400/25 bg-emerald-500/15 text-white"
-                                    : "border-transparent text-white/65 hover:bg-white/10 hover:text-white",
+                                    ? "border-emerald-200 bg-emerald-50 text-[#064533]"
+                                    : "border-transparent text-[#61746b] hover:bg-[#f8fbfa] hover:text-[#10231c]",
                                 ].join(" ")}
                               >
-                                <span className="w-5 text-center text-xs">{domainItem.icon}</span>
+                                <span className="w-5 text-center text-xs">
+                                  {domainItem.icon}
+                                </span>
                                 <span>{domainItem.label}</span>
                               </Link>
                             );
@@ -480,18 +443,29 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
               })}
             </nav>
 
-            <button
-              onClick={signOut}
-              className="mt-5 w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white hover:bg-white/10"
-            >
+            <button onClick={signOut} className="pl-btn mt-5 w-full">
               Sair
             </button>
           </div>
         </aside>
 
         <main className="min-w-0 flex-1">
+          <div className="mb-5 flex items-center justify-end gap-3">
+            <Link href="/tokens" className="pl-btn pl-btn-primary">
+              Comprar Tokens
+            </Link>
+            <a
+              href={supportLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="pl-btn"
+            >
+              Falar com o suporte →
+            </a>
+          </div>
+
           {loading ? (
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-white/70">
+            <div className="pl-card p-6 text-[var(--panel-muted)]">
               Carregando painel...
             </div>
           ) : (
@@ -502,50 +476,50 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
 
       {needsWhatsapp && (
         <div className="fixed inset-0 z-[999]">
-          <div className="absolute inset-0 bg-black/75 backdrop-blur-[2px]" />
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
           <div className="absolute inset-0 flex items-center justify-center px-4">
-            <div className="w-full max-w-md rounded-3xl border border-white/10 bg-[#0b1220] p-6 shadow-[0_30px_120px_rgba(0,0,0,.65)]">
+            <div className="pl-card w-full max-w-md p-6">
               <div>
-                <div className="text-lg font-bold text-white">
+                <div className="text-lg font-black text-[var(--panel-ink)]">
                   Complete seu cadastro
                 </div>
-                <div className="mt-1 text-sm text-white/60">
+                <div className="mt-1 text-sm text-[var(--panel-muted)]">
                   Antes de continuar, preencha seu nome e WhatsApp.
                 </div>
               </div>
 
               {whatsMsg && (
-                <div className="mt-4 rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+                <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                   {whatsMsg}
                 </div>
               )}
 
               <div className="mt-5 space-y-4">
-                <div>
-                  <label className="text-xs text-white/70">Nome</label>
+                <label className="block">
+                  <span className="pl-label">Nome</span>
                   <input
                     value={profileName}
                     onChange={(e) => setProfileName(e.target.value)}
                     placeholder="Seu nome"
-                    className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 text-white outline-none focus:border-emerald-400"
+                    className="pl-input"
                   />
-                </div>
+                </label>
 
-                <div>
-                  <label className="text-xs text-white/70">WhatsApp</label>
+                <label className="block">
+                  <span className="pl-label">WhatsApp</span>
                   <input
                     value={whatsapp}
                     onChange={(e) => setWhatsapp(formatBRPhone(e.target.value))}
                     placeholder="(62) 99999-9999"
-                    className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2 text-white outline-none focus:border-emerald-400"
+                    className="pl-input"
                     autoComplete="tel"
                   />
-                </div>
+                </label>
 
                 <button
                   onClick={saveWhatsapp}
                   disabled={savingWhatsapp}
-                  className="w-full rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-emerald-500 disabled:opacity-60"
+                  className="pl-btn pl-btn-primary w-full disabled:opacity-60"
                 >
                   {savingWhatsapp ? "Salvando..." : "Salvar e continuar"}
                 </button>
@@ -557,5 +531,3 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
     </div>
   );
 }
-
-

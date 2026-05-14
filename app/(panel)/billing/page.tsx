@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
-import { useSearchParams, useRouter } from "next/navigation";
 import { trackPurchase } from "@/lib/ga";
 
 type TokenOrder = {
@@ -41,24 +42,24 @@ function translateStatus(status?: string | null) {
     case "expired":
       return "Cancelado";
     default:
-      return status ?? "—";
+      return status ?? "-";
   }
 }
 
-function statusColor(status?: string | null) {
+function statusBadge(status?: string | null) {
   switch ((status ?? "").toLowerCase()) {
     case "approved":
     case "paid":
-      return "bg-emerald-500/20 text-emerald-300 border-emerald-400/30";
+      return "pl-badge pl-badge-ok";
     case "pending":
     case "in_process":
-      return "bg-amber-500/20 text-amber-300 border-amber-400/30";
+      return "pl-badge pl-badge-warn";
     case "cancelled":
     case "rejected":
     case "expired":
-      return "bg-red-500/20 text-red-300 border-red-400/30";
+      return "pl-badge pl-badge-danger";
     default:
-      return "bg-white/10 text-white/70 border-white/10";
+      return "pl-badge";
   }
 }
 
@@ -96,7 +97,7 @@ export default function BillingPage() {
     const user = userData?.user;
 
     if (!user || userErr) {
-      setErr("Você precisa estar logado.");
+      setErr("Voce precisa estar logado.");
       setOrders([]);
       setPending(null);
       setLoading(false);
@@ -161,7 +162,6 @@ export default function BillingPage() {
     return () => window.removeEventListener("keydown", onKey);
   }, [payOpen]);
 
-  // ✅ rastrear compra aprovada sem duplicar
   useEffect(() => {
     if (!orders || orders.length === 0) return;
 
@@ -173,7 +173,6 @@ export default function BillingPage() {
     if (!paidOrder) return;
 
     const key = `purchase_tracked_${paidOrder.id}`;
-
     if (typeof window !== "undefined" && localStorage.getItem(key)) return;
 
     trackPurchase({
@@ -202,183 +201,178 @@ export default function BillingPage() {
 
   async function copy(text: string) {
     await navigator.clipboard.writeText(text);
-    alert("Código PIX copiado!");
+    alert("Codigo PIX copiado!");
   }
 
   const pendingMinutes = pending ? minutesSince(pending.created_at) : 0;
   const showQrAllowed = !!pending && pendingMinutes <= PENDING_EXPIRE_UI_MINUTES;
+  const paidCount = orders.filter((order) => ["approved", "paid"].includes(String(order.mp_status ?? order.status).toLowerCase())).length;
+  const totalPaidCents = orders.reduce((sum, order) => {
+    const status = String(order.mp_status ?? order.status).toLowerCase();
+    return ["approved", "paid"].includes(status) ? sum + order.total_cents : sum;
+  }, 0);
 
   return (
-    <div className="space-y-6">
-      <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h1 className="text-xl font-semibold text-white">Minhas Compras</h1>
-            <p className="mt-1 text-sm text-white/60">
-              Aqui você acompanha suas compras de tokens.
-            </p>
-          </div>
-
-          {!loading && pending ? (
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="rounded-full border border-amber-400/30 bg-amber-500/15 px-3 py-1 text-xs font-medium text-amber-200">
-                Você tem um pagamento pendente
-              </span>
-              <button
-                onClick={() => setPayOpen(true)}
-                className="rounded-xl bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-500"
-              >
-                Pagar agora
-              </button>
-            </div>
-          ) : null}
+    <main className="pl-page max-w-7xl space-y-6">
+      <div className="pl-page-title">
+        <div>
+          <span className="pl-badge">Historico financeiro</span>
+          <h1>Minhas Compras</h1>
+          <p>Acompanhe seus pagamentos de tokens, PIX pendentes e compras aprovadas.</p>
         </div>
+
+        <Link href="/tokens" className="pl-btn pl-btn-primary">
+          Comprar Tokens
+        </Link>
       </div>
 
       {err ? (
-        <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
           {err}
+        </div>
+      ) : null}
+
+      <section className="grid gap-4 md:grid-cols-3">
+        <div className="pl-card-soft">
+          <div className="text-sm font-bold text-slate-500">Compras aprovadas</div>
+          <div className="mt-2 text-3xl font-black text-slate-950">{paidCount}</div>
+        </div>
+        <div className="pl-card-soft">
+          <div className="text-sm font-bold text-slate-500">Total pago</div>
+          <div className="mt-2 text-3xl font-black text-slate-950">{money(totalPaidCents)}</div>
+        </div>
+        <div className="pl-card-soft">
+          <div className="text-sm font-bold text-slate-500">Pagamento pendente</div>
+          <div className="mt-2 text-3xl font-black text-slate-950">{pending ? "1" : "0"}</div>
+        </div>
+      </section>
+
+      {!loading && pending ? (
+        <div className="rounded-[28px] border border-amber-200 bg-amber-50 p-5">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <div className="font-black text-amber-900">Voce tem um PIX pendente</div>
+              <p className="mt-1 text-sm font-semibold text-amber-700">
+                Pedido de {pending.tokens} tokens no valor de {money(pending.total_cents)}.
+              </p>
+            </div>
+            <button type="button" onClick={() => setPayOpen(true)} className="pl-btn pl-btn-primary justify-center">
+              Pagar agora
+            </button>
+          </div>
         </div>
       ) : null}
 
       {payOpen && pending ? (
         <div className="fixed inset-0 z-50">
-          <div
-            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
-            onClick={closePay}
-          />
+          <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm" onClick={closePay} />
 
-          <div className="absolute left-1/2 top-1/2 w-[92vw] max-w-2xl -translate-x-1/2 -translate-y-1/2">
-            <div className="rounded-3xl border border-white/10 bg-[#0b1220]/95 shadow-2xl">
-              <div className="flex items-start justify-between gap-4 border-b border-white/10 p-5">
+          <div className="absolute left-1/2 top-1/2 w-[92vw] max-w-3xl -translate-x-1/2 -translate-y-1/2">
+            <div className="overflow-hidden rounded-[32px] border border-white/60 bg-white shadow-2xl">
+              <div className="flex items-start justify-between gap-4 border-b border-slate-100 p-6">
                 <div>
-                  <div className="text-lg font-semibold text-white">
-                    Pagamento via PIX
-                  </div>
-                  <div className="mt-1 text-sm text-white/70">
-                    {pending.tokens} tokens • {money(pending.total_cents)} • há{" "}
-                    {pendingMinutes} min
-                  </div>
-                  <div className="mt-1 text-xs text-white/55">
-                    Pedido: {pending.id}
-                  </div>
+                  <span className="pl-badge pl-badge-warn">PIX pendente</span>
+                  <h2 className="mt-3 text-2xl font-black text-slate-950">Pagamento via PIX</h2>
+                  <p className="mt-1 text-sm font-semibold text-slate-500">
+                    {pending.tokens} tokens - {money(pending.total_cents)} - ha {pendingMinutes} min
+                  </p>
+                  <p className="mt-1 text-xs font-semibold text-slate-400">Pedido: {pending.id}</p>
                 </div>
 
-                <button
-                  onClick={closePay}
-                  className="rounded-xl bg-white/10 px-3 py-2 text-sm font-semibold text-white hover:bg-white/15"
-                >
+                <button type="button" onClick={closePay} className="pl-btn">
                   Fechar
                 </button>
               </div>
 
-              <div className="p-5">
+              <div className="p-6">
                 {!showQrAllowed ? (
-                  <div className="rounded-2xl border border-amber-400/20 bg-amber-500/10 p-4 text-sm text-amber-200">
-                    Esse PIX já está antigo. Volte em <b>Comprar Tokens</b> e gere um novo.
+                  <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-800">
+                    Esse PIX ja esta antigo. Volte em <b>Comprar Tokens</b> e gere um novo.
                   </div>
                 ) : (
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-                      <div className="text-xs font-semibold text-white/70">
-                        QR Code
-                      </div>
-
+                  <div className="grid gap-5 md:grid-cols-[.85fr_1.15fr]">
+                    <div className="pl-card-soft">
+                      <div className="text-sm font-black text-slate-950">QR Code</div>
                       {pending.mp_qr_base64 ? (
                         <img
                           alt="QR Code PIX"
-                          className="mt-3 w-full rounded-2xl border border-white/10 bg-white p-3"
+                          className="mt-4 w-full rounded-[24px] border border-slate-200 bg-white p-3"
                           src={`data:image/png;base64,${pending.mp_qr_base64}`}
                         />
                       ) : (
-                        <div className="mt-3 text-sm text-white/70">
-                          Aguardando QR Code…
-                        </div>
+                        <div className="mt-4 text-sm font-semibold text-slate-500">Aguardando QR Code...</div>
                       )}
                     </div>
 
-                    <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-                      <div className="text-xs font-semibold text-white/70">
-                        PIX Copia e Cola
-                      </div>
-
+                    <div className="pl-card-soft">
+                      <div className="text-sm font-black text-slate-950">PIX copia e cola</div>
                       {pending.mp_pix_copy_paste ? (
                         <>
-                          <div className="mt-3 max-h-40 overflow-auto break-all rounded-xl border border-white/10 bg-black/30 p-3 text-xs text-white/80">
+                          <div className="mt-4 max-h-48 overflow-auto break-all rounded-[20px] border border-slate-200 bg-white p-4 text-xs font-semibold text-slate-600">
                             {pending.mp_pix_copy_paste}
                           </div>
 
                           <button
+                            type="button"
                             onClick={() => copy(pending.mp_pix_copy_paste!)}
-                            className="mt-3 w-full rounded-xl bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-500"
+                            className="pl-btn pl-btn-primary mt-4 w-full justify-center"
                           >
-                            Copiar código PIX
+                            Copiar codigo PIX
                           </button>
 
-                          <div className="mt-3 text-xs text-white/50">
-                            Assim que o pagamento for aprovado, essa janela fecha sozinha.
-                          </div>
+                          <p className="mt-3 text-xs font-semibold text-slate-500">
+                            Assim que o pagamento for aprovado, o painel atualiza automaticamente.
+                          </p>
                         </>
                       ) : (
-                        <div className="mt-3 text-sm text-white/70">
-                          Aguardando código PIX…
-                        </div>
+                        <div className="mt-4 text-sm font-semibold text-slate-500">Aguardando codigo PIX...</div>
                       )}
                     </div>
                   </div>
                 )}
               </div>
             </div>
-
-            <div className="mt-2 text-center text-xs text-white/40">
-              Dica: pressione <b>ESC</b> para fechar.
-            </div>
           </div>
         </div>
       ) : null}
 
-      <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-        <div className="text-base font-semibold text-white">Histórico de Compras</div>
+      <section className="pl-card">
+        <div className="pl-card-head">
+          <div>
+            <h2>Historico de compras</h2>
+            <p>Ultimas 50 compras registradas na sua conta.</p>
+          </div>
+        </div>
 
         <div className="mt-4 overflow-x-auto">
-          <table className="w-full text-sm text-white">
-            <thead className="text-white/70">
-              <tr className="border-b border-white/10">
-                <th className="py-3 text-left">Data</th>
-                <th className="py-3 text-left">Tokens</th>
-                <th className="py-3 text-left">Total</th>
-                <th className="py-3 text-left">Status</th>
+          <table className="pl-table">
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Tokens</th>
+                <th>Total</th>
+                <th>Status</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={4} className="py-4 text-white/60">
-                    Carregando…
-                  </td>
+                  <td colSpan={4}>Carregando...</td>
                 </tr>
               ) : orders.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="py-4 text-white/60">
-                    Nenhuma compra encontrada.
-                  </td>
+                  <td colSpan={4}>Nenhuma compra encontrada.</td>
                 </tr>
               ) : (
-                orders.map((o) => {
-                  const st = o.mp_status ?? o.status;
+                orders.map((order) => {
+                  const status = order.mp_status ?? order.status;
                   return (
-                    <tr key={o.id} className="border-b border-white/5">
-                      <td className="py-3 text-white/70">
-                        {new Date(o.created_at).toLocaleString("pt-BR")}
-                      </td>
-                      <td className="py-3">{o.tokens}</td>
-                      <td className="py-3">{money(o.total_cents)}</td>
-                      <td className="py-3">
-                        <span
-                          className={`rounded-full border px-3 py-1 text-xs font-medium ${statusColor(st)}`}
-                        >
-                          {translateStatus(st)}
-                        </span>
+                    <tr key={order.id}>
+                      <td>{new Date(order.created_at).toLocaleString("pt-BR")}</td>
+                      <td>{order.tokens}</td>
+                      <td>{money(order.total_cents)}</td>
+                      <td>
+                        <span className={statusBadge(status)}>{translateStatus(status)}</span>
                       </td>
                     </tr>
                   );
@@ -387,7 +381,7 @@ export default function BillingPage() {
             </tbody>
           </table>
         </div>
-      </div>
-    </div>
+      </section>
+    </main>
   );
 }

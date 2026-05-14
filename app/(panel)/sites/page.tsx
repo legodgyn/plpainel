@@ -18,8 +18,7 @@ type SiteRow = {
 
 function fmtDate(iso: string) {
   try {
-    const d = new Date(iso);
-    return d.toLocaleDateString("pt-BR");
+    return new Date(iso).toLocaleDateString("pt-BR");
   } catch {
     return iso;
   }
@@ -29,7 +28,6 @@ function getSiteDisplayDomain(site: SiteRow) {
   if (site.domain_mode === "custom_domain" && site.custom_domain) {
     return site.custom_domain;
   }
-
   return `${site.slug || "site"}.${site.base_domain || "plpainel.com"}`;
 }
 
@@ -39,21 +37,17 @@ function buildPublicUrl(site: SiteRow) {
   }
 
   const slug = site.slug || "site";
-
   if (typeof window === "undefined") return `/s/${slug}`;
 
   const host = window.location.hostname;
-
   const isLocal =
     host === "localhost" ||
     host === "127.0.0.1" ||
     host.endsWith(".local") ||
     host.endsWith(".localhost");
-
   const isIp = /^\d{1,3}(\.\d{1,3}){3}$/.test(host);
 
   if (isLocal || isIp) return `/s/${slug}`;
-
   return `https://${slug}.${site.base_domain || "plpainel.com"}`;
 }
 
@@ -63,7 +57,6 @@ export default function SitesPage() {
   const [q, setQ] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [sortBy, setSortBy] = useState("newest");
-
   const [items, setItems] = useState<SiteRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [msg, setMsg] = useState<string | null>(null);
@@ -136,8 +129,8 @@ export default function SitesPage() {
 
   const filtered = useMemo(() => {
     let list = [...items];
-
     const s = q.trim().toLowerCase();
+
     if (s) {
       list = list.filter((x) =>
         `${x.slug || ""} ${x.company_name || ""} ${x.base_domain || ""} ${x.custom_domain || ""}`
@@ -146,28 +139,15 @@ export default function SitesPage() {
       );
     }
 
-    if (statusFilter === "active") {
-      list = list.filter((x) => x.is_public);
-    }
-
-    if (statusFilter === "hidden") {
-      list = list.filter((x) => !x.is_public);
-    }
+    if (statusFilter === "active") list = list.filter((x) => x.is_public);
+    if (statusFilter === "hidden") list = list.filter((x) => !x.is_public);
 
     if (sortBy === "newest") {
-      list.sort(
-        (a, b) =>
-          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-      );
+      list.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     }
-
     if (sortBy === "oldest") {
-      list.sort(
-        (a, b) =>
-          new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-      );
+      list.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
     }
-
     if (sortBy === "az") {
       list.sort((a, b) =>
         String(a.company_name || a.slug || a.custom_domain || "").localeCompare(
@@ -177,7 +157,6 @@ export default function SitesPage() {
         )
       );
     }
-
     if (sortBy === "za") {
       list.sort((a, b) =>
         String(b.company_name || b.slug || b.custom_domain || "").localeCompare(
@@ -198,125 +177,97 @@ export default function SitesPage() {
   }
 
   return (
-    <div className="max-w-7xl space-y-6">
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+    <div className="pl-page max-w-7xl space-y-6">
+      <div className="pl-page-title">
         <div>
-          <h1 className="text-2xl font-semibold text-white">Meus Sites</h1>
-          <p className="mt-1 text-sm text-white/60">
-            Gerencie, filtre e acompanhe todos os seus sites em um só lugar.
-          </p>
+          <h1>Meus Sites</h1>
+          <p>Gerencie sites publicados, domínios, SSL, emails e verificações em uma tela só.</p>
         </div>
-
-        <button
-          onClick={() => router.push("/sites/new")}
-          className="rounded-xl bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-500"
-        >
-          + Criar Site
+        <button onClick={() => router.push("/sites/new")} className="pl-btn pl-btn-primary">
+          Criar novo site
         </button>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-          <div className="text-xs text-white/60">Total de sites</div>
-          <div className="mt-2 text-3xl font-bold text-white">{totalSites}</div>
+        <div className="pl-card p-5">
+          <div className="text-xs font-black uppercase text-[var(--panel-muted)]">Total de sites</div>
+          <div className="mt-2 text-3xl font-black">{totalSites}</div>
         </div>
-
-        <div className="rounded-2xl border border-emerald-500/15 bg-emerald-500/10 p-5">
-          <div className="text-xs text-emerald-200/80">Ativos</div>
-          <div className="mt-2 text-3xl font-bold text-emerald-200">
-            {activeSites}
-          </div>
+        <div className="pl-card p-5">
+          <div className="text-xs font-black uppercase text-[var(--panel-muted)]">Ativos</div>
+          <div className="mt-2 text-3xl font-black text-[var(--panel-green-2)]">{activeSites}</div>
         </div>
-
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-          <div className="text-xs text-white/60">Ocultos</div>
-          <div className="mt-2 text-3xl font-bold text-white">{hiddenSites}</div>
+        <div className="pl-card p-5">
+          <div className="text-xs font-black uppercase text-[var(--panel-muted)]">Ocultos</div>
+          <div className="mt-2 text-3xl font-black">{hiddenSites}</div>
         </div>
       </div>
 
-      <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+      <div className="pl-card p-4">
         <div className="grid gap-3 md:grid-cols-[1.5fr_.8fr_.8fr_auto]">
-          <div>
-            <label className="mb-1 block text-xs text-white/50">Pesquisar</label>
+          <label>
+            <span className="pl-label">Pesquisar</span>
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="Pesquisar por slug, nome ou domínio..."
-              className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-white outline-none transition focus:border-violet-400"
+              className="pl-input"
             />
-          </div>
-
-          <div>
-            <label className="mb-1 block text-xs text-white/50">Status</label>
+          </label>
+          <label>
+            <span className="pl-label">Status</span>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-white outline-none transition focus:border-violet-400"
+              className="pl-select"
             >
               <option value="all">Todos</option>
               <option value="active">Ativos</option>
               <option value="hidden">Ocultos</option>
             </select>
-          </div>
-
-          <div>
-            <label className="mb-1 block text-xs text-white/50">Ordenar por</label>
+          </label>
+          <label>
+            <span className="pl-label">Ordenar por</span>
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-white outline-none transition focus:border-violet-400"
+              className="pl-select"
             >
               <option value="newest">Mais recentes</option>
               <option value="oldest">Mais antigos</option>
               <option value="az">Nome A-Z</option>
               <option value="za">Nome Z-A</option>
             </select>
-          </div>
-
+          </label>
           <div className="flex items-end">
-            <button
-              onClick={clearFilters}
-              className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-white/80 hover:bg-white/10"
-            >
+            <button onClick={clearFilters} className="pl-btn w-full">
               Limpar
             </button>
           </div>
         </div>
-
-        <div className="mt-4 text-xs text-white/50">
+        <div className="mt-4 text-xs text-[var(--panel-muted)]">
           {loading ? "Carregando..." : `${filtered.length} site(s) encontrado(s)`}
         </div>
       </div>
 
       {msg && (
-        <div className="rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white/80">
+        <div className="rounded-xl border border-[var(--panel-line)] bg-white px-4 py-3 text-sm text-[var(--panel-muted)]">
           {msg}
         </div>
       )}
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
         {loading ? (
-          <>
-            {[1, 2, 3].map((i) => (
-              <div
-                key={i}
-                className="rounded-2xl border border-white/10 bg-white/5 p-5 animate-pulse"
-              >
-                <div className="h-5 w-3/4 rounded bg-white/10" />
-                <div className="mt-3 h-4 w-1/3 rounded bg-white/10" />
-                <div className="mt-4 h-4 w-2/3 rounded bg-white/10" />
-                <div className="mt-2 h-4 w-1/2 rounded bg-white/10" />
-                <div className="mt-5 flex gap-2">
-                  <div className="h-9 w-16 rounded-lg bg-white/10" />
-                  <div className="h-9 w-16 rounded-lg bg-white/10" />
-                  <div className="h-9 w-16 rounded-lg bg-white/10" />
-                </div>
-              </div>
-            ))}
-          </>
+          [1, 2, 3].map((i) => (
+            <div key={i} className="pl-card animate-pulse p-5">
+              <div className="h-5 w-3/4 rounded bg-slate-100" />
+              <div className="mt-3 h-4 w-1/3 rounded bg-slate-100" />
+              <div className="mt-4 h-4 w-2/3 rounded bg-slate-100" />
+            </div>
+          ))
         ) : filtered.length === 0 ? (
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-white/70 md:col-span-2 xl:col-span-3">
-            Nenhum site encontrado. Clique em <b>“Criar Site”</b>.
+          <div className="pl-card p-6 text-[var(--panel-muted)] md:col-span-2 xl:col-span-3">
+            Nenhum site encontrado. Clique em <b>Criar Site</b>.
           </div>
         ) : (
           filtered.map((site) => {
@@ -324,63 +275,47 @@ export default function SitesPage() {
             const displayDomain = getSiteDisplayDomain(site);
 
             return (
-              <div
-                key={site.id}
-                className="rounded-2xl border border-white/10 bg-white/5 p-5 shadow-sm transition hover:border-violet-400/20 hover:bg-white/[0.06]"
-              >
+              <div key={site.id} className="pl-card p-5 transition hover:-translate-y-0.5">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <div className="break-all text-base font-semibold text-violet-300">
+                    <div className="break-all text-base font-black text-[var(--panel-ink)]">
                       {displayDomain}
                     </div>
-
-                    <div className="mt-1 text-xs text-white/50">
+                    <div className="mt-1 text-xs text-[var(--panel-muted)]">
                       Criado em: {fmtDate(site.created_at)}
                     </div>
-
                     {site.company_name && (
-                      <div className="mt-3 line-clamp-2 text-sm font-medium text-white/85">
+                      <div className="mt-3 line-clamp-2 text-sm font-semibold text-[var(--panel-ink)]">
                         {site.company_name}
                       </div>
                     )}
                   </div>
-
-                  <span
-                    className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] border ${
-                      site.is_public
-                        ? "border-emerald-500/20 bg-emerald-500/15 text-emerald-200"
-                        : "border-white/10 bg-white/10 text-white/70"
-                    }`}
-                  >
+                  <span className={site.is_public ? "pl-badge pl-badge-ok" : "pl-badge"}>
                     {site.is_public ? "Ativo" : "Oculto"}
                   </span>
                 </div>
 
-                <div className="mt-3 text-xs text-white/45 break-all">
+                <div className="mt-3 break-all text-xs text-[var(--panel-muted)]">
                   {publicUrl}
                 </div>
 
                 <div className="mt-5 flex flex-wrap gap-2">
-                  <a
-                    href={publicUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs font-semibold text-white/80 hover:bg-black/30"
-                  >
+                  <a href={publicUrl} target="_blank" rel="noreferrer" className="pl-btn px-3 py-2 text-xs">
                     Abrir
                   </a>
-
                   <button
                     onClick={() => router.push(`/sites/${site.id}/edit`)}
-                    className="rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs font-semibold text-white/80 hover:bg-black/30"
+                    className="pl-btn px-3 py-2 text-xs"
                   >
                     Editar
                   </button>
-
                   <button
-                    onClick={() => removeSite(site.id)}
-                    className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs font-semibold text-red-200 hover:bg-red-500/15"
+                    onClick={() => router.push("/sites/template-simples")}
+                    className="pl-btn px-3 py-2 text-xs"
                   >
+                    Editar Layout
+                  </button>
+                  <button onClick={() => removeSite(site.id)} className="pl-btn pl-btn-danger px-3 py-2 text-xs">
                     Excluir
                   </button>
                 </div>

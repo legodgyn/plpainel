@@ -9,6 +9,7 @@ type Row = {
   email: string | null;
   whatsapp: string | null;
   total_label: string;
+  customer_total_label?: string | null;
   status: string;
   status_label: string;
   affiliate_code: string | null;
@@ -22,14 +23,14 @@ function fmt(iso: string) {
   }
 }
 
-function badge(status: string) {
+function badgeClass(status: string) {
   const s = String(status || "").toLowerCase();
-  if (s === "paid") return "bg-emerald-500/15 text-emerald-200 border-emerald-500/20";
-  if (s === "pending") return "bg-amber-500/15 text-amber-200 border-amber-500/20";
+  if (s === "paid") return "pl-badge pl-badge-ok";
+  if (s === "pending") return "pl-badge pl-badge-warn";
   if (s === "failed" || s === "canceled" || s === "cancelled") {
-    return "bg-red-500/15 text-red-200 border-red-500/20";
+    return "pl-badge pl-badge-danger";
   }
-  return "bg-white/10 text-white/70 border-white/10";
+  return "pl-badge";
 }
 
 function toDateInputValue(date: Date) {
@@ -41,12 +42,10 @@ function toDateInputValue(date: Date) {
 
 function parseMoneyLabelBRL(value: string) {
   if (!value) return 0;
-
   const cleaned = String(value)
     .replace(/[^\d,.-]/g, "")
     .replace(/\./g, "")
     .replace(",", ".");
-
   const n = Number(cleaned);
   return Number.isFinite(n) ? n : 0;
 }
@@ -61,9 +60,8 @@ function formatBRL(value: number) {
 export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState<Row[]>([]);
-  const [total, setTotal] = useState("—");
+  const [total, setTotal] = useState("-");
   const [msg, setMsg] = useState<string | null>(null);
-
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [affiliateFilter, setAffiliateFilter] = useState("all");
@@ -96,7 +94,7 @@ export default function AdminDashboard() {
       return;
     }
 
-    setTotal(j.total_received_label || "—");
+    setTotal(j.total_received_label || "-");
     setRows(j.orders || []);
     setLoading(false);
   }
@@ -118,7 +116,6 @@ export default function AdminDashboard() {
     const now = new Date();
     const from = new Date();
     from.setDate(now.getDate() - 7);
-
     setDateFrom(toDateInputValue(from));
     setDateTo(toDateInputValue(now));
   }
@@ -126,14 +123,12 @@ export default function AdminDashboard() {
   function setThisMonth() {
     const now = new Date();
     const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-
     setDateFrom(toDateInputValue(firstDay));
     setDateTo(toDateInputValue(now));
   }
 
   const filteredRows = useMemo(() => {
     const term = search.trim().toLowerCase();
-
     const parsedFrom = dateFrom ? new Date(`${dateFrom}T00:00:00`) : null;
     const parsedTo = dateTo ? new Date(`${dateTo}T23:59:59`) : null;
 
@@ -143,10 +138,8 @@ export default function AdminDashboard() {
       const hasAffiliate = !!o.affiliate_code;
 
       if (statusFilter !== "all" && status !== statusFilter) return false;
-
       if (affiliateFilter === "with_affiliate" && !hasAffiliate) return false;
       if (affiliateFilter === "without_affiliate" && hasAffiliate) return false;
-
       if (parsedFrom && createdAt < parsedFrom) return false;
       if (parsedTo && createdAt > parsedTo) return false;
 
@@ -159,10 +152,10 @@ export default function AdminDashboard() {
           o.status_label || "",
           o.status || "",
           o.total_label || "",
+          o.customer_total_label || "",
         ]
           .join(" ")
           .toLowerCase();
-
         if (!haystack.includes(term)) return false;
       }
 
@@ -172,7 +165,6 @@ export default function AdminDashboard() {
     result.sort((a, b) => {
       const ta = new Date(a.created_at).getTime();
       const tb = new Date(b.created_at).getTime();
-
       if (sortBy === "oldest") return ta - tb;
       return tb - ta;
     });
@@ -189,7 +181,6 @@ export default function AdminDashboard() {
     for (const row of filteredRows) {
       const status = String(row.status || "").toLowerCase();
       const amount = parseMoneyLabelBRL(row.total_label);
-
       if (status === "paid") {
         paidCount++;
         paidAmount += amount;
@@ -210,61 +201,42 @@ export default function AdminDashboard() {
   }, [filteredRows]);
 
   return (
-    <div className="space-y-6 text-white">
-      <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-        <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-          <div>
-            <h1 className="text-xl font-semibold">Compras</h1>
-            <p className="mt-1 text-sm text-white/60">
-              Visualize todas as compras realizadas na plataforma.
-            </p>
+    <div className="pl-page space-y-6">
+      <div className="pl-page-title">
+        <div>
+          <h1>Compras na Plataforma</h1>
+          <p>Visualize compras realizadas, status de pagamento, afiliados e receita filtrada.</p>
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="pl-badge">
+            Total recebido: <strong>{total}</strong>
           </div>
-
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm">
-              <div className="text-white/60">Total geral recebido</div>
-              <div className="text-lg font-bold">{total}</div>
-            </div>
-
-            <button
-              onClick={load}
-              className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold hover:bg-white/10"
-            >
-              Atualizar
-            </button>
-          </div>
+          <button onClick={load} className="pl-btn pl-btn-primary">
+            Atualizar
+          </button>
         </div>
       </div>
 
       {msg ? (
-        <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {msg}
         </div>
       ) : null}
 
-      <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-        <div className="grid gap-3 lg:grid-cols-6">
-          <div className="lg:col-span-2">
-            <label className="mb-1 block text-xs font-medium text-white/60">
-              Buscar
-            </label>
+      <div className="pl-card p-5">
+        <div className="grid gap-3 lg:grid-cols-[1.5fr_.8fr_.9fr_.8fr_.8fr_.8fr]">
+          <label>
+            <span className="pl-label">Buscar</span>
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="E-mail, WhatsApp, ID, afiliado..."
-              className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2.5 text-sm text-white outline-none focus:border-violet-400"
+              className="pl-input"
             />
-          </div>
-
-          <div>
-            <label className="mb-1 block text-xs font-medium text-white/60">
-              Status
-            </label>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2.5 text-sm text-white outline-none focus:border-violet-400"
-            >
+          </label>
+          <label>
+            <span className="pl-label">Status</span>
+            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="pl-select">
               <option value="all">Todos</option>
               <option value="paid">Pago</option>
               <option value="pending">Pendente</option>
@@ -272,186 +244,127 @@ export default function AdminDashboard() {
               <option value="canceled">Cancelado</option>
               <option value="cancelled">Cancelled</option>
             </select>
-          </div>
-
-          <div>
-            <label className="mb-1 block text-xs font-medium text-white/60">
-              Afiliado
-            </label>
-            <select
-              value={affiliateFilter}
-              onChange={(e) => setAffiliateFilter(e.target.value)}
-              className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2.5 text-sm text-white outline-none focus:border-violet-400"
-            >
+          </label>
+          <label>
+            <span className="pl-label">Afiliado</span>
+            <select value={affiliateFilter} onChange={(e) => setAffiliateFilter(e.target.value)} className="pl-select">
               <option value="all">Todos</option>
               <option value="with_affiliate">Com afiliado</option>
               <option value="without_affiliate">Sem afiliado</option>
             </select>
-          </div>
-
-          <div>
-            <label className="mb-1 block text-xs font-medium text-white/60">
-              Data inicial
-            </label>
-            <input
-              type="date"
-              value={dateFrom}
-              onChange={(e) => setDateFrom(e.target.value)}
-              className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2.5 text-sm text-white outline-none focus:border-violet-400"
-            />
-          </div>
-
-          <div>
-            <label className="mb-1 block text-xs font-medium text-white/60">
-              Data final
-            </label>
-            <input
-              type="date"
-              value={dateTo}
-              onChange={(e) => setDateTo(e.target.value)}
-              className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2.5 text-sm text-white outline-none focus:border-violet-400"
-            />
-          </div>
-        </div>
-
-        <div className="mt-3 grid gap-3 lg:grid-cols-6">
-          <div>
-            <label className="mb-1 block text-xs font-medium text-white/60">
-              Ordenar
-            </label>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2.5 text-sm text-white outline-none focus:border-violet-400"
-            >
+          </label>
+          <label>
+            <span className="pl-label">Data inicial</span>
+            <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="pl-input" />
+          </label>
+          <label>
+            <span className="pl-label">Data final</span>
+            <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="pl-input" />
+          </label>
+          <label>
+            <span className="pl-label">Ordenar</span>
+            <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="pl-select">
               <option value="newest">Mais recentes</option>
               <option value="oldest">Mais antigas</option>
             </select>
-          </div>
+          </label>
+        </div>
 
-          <div className="lg:col-span-5 flex flex-wrap items-end gap-2">
-            <button
-              onClick={setLast7Days}
-              className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-xs font-semibold text-white/80 hover:bg-white/10"
-            >
-              Últimos 7 dias
-            </button>
-
-            <button
-              onClick={setThisMonth}
-              className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-xs font-semibold text-white/80 hover:bg-white/10"
-            >
-              Este mês
-            </button>
-
-            <button
-              onClick={clearFilters}
-              className="rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs font-semibold text-red-200 hover:bg-red-500/15"
-            >
-              Limpar filtros
-            </button>
-          </div>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <button onClick={setLast7Days} className="pl-btn px-3 py-2 text-xs">
+            Últimos 7 dias
+          </button>
+          <button onClick={setThisMonth} className="pl-btn px-3 py-2 text-xs">
+            Este mês
+          </button>
+          <button onClick={clearFilters} className="pl-btn pl-btn-danger px-3 py-2 text-xs">
+            Limpar filtros
+          </button>
         </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-4">
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-          <div className="text-xs text-white/50">Pedidos filtrados</div>
-          <div className="mt-2 text-2xl font-bold">{loading ? "—" : stats.totalRows}</div>
+        <div className="pl-card p-5">
+          <div className="text-xs font-black uppercase text-[var(--panel-muted)]">Pedidos filtrados</div>
+          <div className="mt-2 text-3xl font-black">{loading ? "-" : stats.totalRows}</div>
+          <div className="mt-1 text-sm text-[var(--panel-muted)]">no período selecionado</div>
         </div>
-
-        <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4">
-          <div className="text-xs text-emerald-200/70">Pagos</div>
-          <div className="mt-2 text-2xl font-bold text-emerald-200">
-            {loading ? "—" : stats.paidCount}
-          </div>
-          <div className="mt-1 text-sm text-emerald-100/80">
-            {loading ? "—" : stats.paidAmountLabel}
-          </div>
+        <div className="pl-card p-5">
+          <div className="text-xs font-black uppercase text-[var(--panel-muted)]">Pagos</div>
+          <div className="mt-2 text-3xl font-black text-[var(--panel-green-2)]">{loading ? "-" : stats.paidCount}</div>
+          <div className="mt-1 text-sm text-[var(--panel-muted)]">{loading ? "-" : stats.paidAmountLabel}</div>
         </div>
-
-        <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4">
-          <div className="text-xs text-amber-200/70">Pendentes</div>
-          <div className="mt-2 text-2xl font-bold text-amber-200">
-            {loading ? "—" : stats.pendingCount}
-          </div>
+        <div className="pl-card p-5">
+          <div className="text-xs font-black uppercase text-[var(--panel-muted)]">Pendentes</div>
+          <div className="mt-2 text-3xl font-black text-[var(--panel-amber)]">{loading ? "-" : stats.pendingCount}</div>
+          <div className="mt-1 text-sm text-[var(--panel-muted)]">aguardando PIX</div>
         </div>
-
-        <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-4">
-          <div className="text-xs text-red-200/70">Cancelados / falhos</div>
-          <div className="mt-2 text-2xl font-bold text-red-200">
-            {loading ? "—" : stats.canceledCount}
-          </div>
+        <div className="pl-card p-5">
+          <div className="text-xs font-black uppercase text-[var(--panel-muted)]">Cancelados / falhos</div>
+          <div className="mt-2 text-3xl font-black text-[var(--panel-red)]">{loading ? "-" : stats.canceledCount}</div>
+          <div className="mt-1 text-sm text-[var(--panel-muted)]">sem crédito liberado</div>
         </div>
       </div>
 
-      <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+      <div className="pl-card p-5">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="text-white/70">
-              <tr className="border-b border-white/10">
-                <th className="py-3 text-left font-medium">Data</th>
-                <th className="py-3 text-left font-medium">E-mail</th>
-                <th className="py-3 text-left font-medium">WhatsApp</th>
-                <th className="py-3 text-left font-medium">Total</th>
-                <th className="py-3 text-left font-medium">Status</th>
-                <th className="py-3 text-left font-medium">Afiliado</th>
+          <table className="pl-table">
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>E-mail</th>
+                <th>WhatsApp</th>
+                <th>Total</th>
+                <th>Gasto do cliente</th>
+                <th>Status</th>
+                <th>Afiliado</th>
               </tr>
             </thead>
-
-            <tbody className="divide-y divide-white/5">
+            <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="py-6 text-white/60">
+                  <td colSpan={7} className="py-6 text-[var(--panel-muted)]">
                     Carregando...
                   </td>
                 </tr>
               ) : filteredRows.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-6 text-white/60">
+                  <td colSpan={7} className="py-6 text-[var(--panel-muted)]">
                     Nenhuma compra encontrada com os filtros aplicados.
                   </td>
                 </tr>
               ) : (
                 filteredRows.map((o) => (
-                  <tr key={o.id} className="hover:bg-white/5">
-                    <td className="py-3 text-white/70">{fmt(o.created_at)}</td>
-
-                    <td className="py-3">
-                      <div className="font-semibold text-white/90">{o.email || "—"}</div>
-                      <div className="text-[11px] text-white/40">{o.id}</div>
+                  <tr key={o.id} className="hover:bg-[#f8fbfa]">
+                    <td className="text-[var(--panel-muted)]">{fmt(o.created_at)}</td>
+                    <td>
+                      <div className="font-black">{o.email || "-"}</div>
+                      <div className="text-[11px] text-[var(--panel-muted)]">{o.id}</div>
                     </td>
-
-                    <td className="py-3">
+                    <td>
                       {o.whatsapp ? (
                         <a
                           href={`https://wa.me/${String(o.whatsapp).replace(/\D/g, "")}`}
                           target="_blank"
                           rel="noreferrer"
-                          className="font-semibold text-emerald-300 hover:text-emerald-200"
+                          className="font-bold text-[var(--panel-green-2)]"
                         >
                           {o.whatsapp}
                         </a>
                       ) : (
-                        <span className="text-white/50">—</span>
+                        <span className="text-[var(--panel-muted)]">-</span>
                       )}
                     </td>
-
-                    <td className="py-3">{o.total_label}</td>
-
-                    <td className="py-3">
-                      <span className={`rounded-full border px-3 py-1 text-xs ${badge(o.status)}`}>
-                        {o.status_label}
-                      </span>
+                    <td className="font-black">{o.total_label}</td>
+                    <td className="font-black">{o.customer_total_label || "-"}</td>
+                    <td>
+                      <span className={badgeClass(o.status)}>{o.status_label}</span>
                     </td>
-
-                    <td className="py-3">
+                    <td>
                       {o.affiliate_code ? (
-                        <span className="rounded-full border border-violet-500/20 bg-violet-500/10 px-3 py-1 text-xs text-violet-200">
-                          {o.affiliate_code}
-                        </span>
+                        <span className="pl-badge">{o.affiliate_code}</span>
                       ) : (
-                        <span className="text-white/50">—</span>
+                        <span className="text-[var(--panel-muted)]">sem afiliado</span>
                       )}
                     </td>
                   </tr>
