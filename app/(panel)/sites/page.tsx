@@ -309,12 +309,6 @@ export default function SitesPage() {
                   >
                     Editar
                   </button>
-                  <button
-                    onClick={() => router.push("/sites/template-simples")}
-                    className="pl-btn px-3 py-2 text-xs"
-                  >
-                    Editar Layout
-                  </button>
                   <button onClick={() => removeSite(site.id)} className="pl-btn pl-btn-danger px-3 py-2 text-xs">
                     Excluir
                   </button>

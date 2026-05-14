@@ -26,16 +26,12 @@ function normalizeTxt(input: string) {
   let raw = String(input || "").trim();
   if (!raw) return "";
 
-  // se colou meta tag por engano no campo TXT, extrai o content
   if (raw.toLowerCase().includes("<meta")) {
     const contentMatch = raw.match(/content\s*=\s*["']([^"']+)["']/i);
     raw = String(contentMatch?.[1] || "").trim();
   }
 
-  // remove aspas extras nas pontas
   raw = raw.replace(/^"+|"+$/g, "");
-
-  // evita duplicação
   raw = raw.replace(
     /^facebook-domain-verification=facebook-domain-verification=/i,
     "facebook-domain-verification="
@@ -63,7 +59,6 @@ export default function EditSitePage() {
 
   const [loading, setLoading] = useState(false);
   const [isPublic, setIsPublic] = useState(true);
-
   const [slug, setSlug] = useState("");
   const [baseDomain, setBaseDomain] = useState("");
   const [companyName, setCompanyName] = useState("");
@@ -76,7 +71,6 @@ export default function EditSitePage() {
   const [about, setAbout] = useState("");
   const [privacy, setPrivacy] = useState("");
   const [footer, setFooter] = useState("");
-
   const [metaTag, setMetaTag] = useState("");
   const [metaTxt, setMetaTxt] = useState("");
 
@@ -114,9 +108,7 @@ export default function EditSitePage() {
       setIsPublic(data.is_public ?? true);
 
       if (data.meta_verify_name && data.meta_verify_content) {
-        setMetaTag(
-          `<meta name="${data.meta_verify_name}" content="${data.meta_verify_content}" />`
-        );
+        setMetaTag(`<meta name="${data.meta_verify_name}" content="${data.meta_verify_content}" />`);
       } else {
         setMetaTag("");
       }
@@ -135,12 +127,12 @@ export default function EditSitePage() {
       metaTag.trim().toLowerCase().includes("<meta") &&
       (!parsedMeta.name || !parsedMeta.content)
     ) {
-      alert("Meta tag inválida. Cole a tag completa do Business Manager.");
+      alert("Meta tag invalida. Cole a tag completa do Business Manager.");
       return;
     }
 
     if (metaTxt.trim() && !cleanTxt.includes("facebook-domain-verification=")) {
-      alert("TXT inválido.");
+      alert("TXT invalido.");
       return;
     }
 
@@ -178,22 +170,13 @@ export default function EditSitePage() {
 
         const cfRes = await fetch("/api/cloudflare/txt", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            domain,
-            txt: cleanTxt,
-          }),
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ domain, txt: cleanTxt }),
         });
 
         const cfJson = await cfRes.json().catch(() => ({}));
-
         if (!cfRes.ok) {
-          alert(
-            cfJson?.error ||
-              "Site salvo, mas não foi possível criar o TXT no Cloudflare."
-          );
+          alert(cfJson?.error || "Site salvo, mas nao foi possivel criar o TXT no Cloudflare.");
           setLoading(false);
           return;
         }
@@ -208,157 +191,113 @@ export default function EditSitePage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-10 text-white">
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Editar Site</h1>
-        <Link href="/dashboard" className="text-sm text-white/70 hover:text-white">
-          ← Voltar para o Dashboard
+    <main className="pl-page max-w-5xl space-y-6">
+      <div className="pl-page-title">
+        <div>
+          <span className="pl-badge">Edicao</span>
+          <h1>Editar Site</h1>
+          <p>Atualize dados, Meta Tag, textos institucionais e status publico do site.</p>
+        </div>
+        <Link href="/dashboard" className="pl-btn">
+          Voltar para o Dashboard
         </Link>
       </div>
 
-      <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
-        <div className="mb-5 rounded-2xl border border-white/10 bg-black/20 p-4">
-          <div className="text-sm text-white/70">Slug</div>
-          <div className="text-lg font-semibold">{slug}</div>
-          <div className="mt-2 text-sm text-white/70">Domínio base</div>
-          <div className="text-lg font-semibold">{baseDomain || "—"}</div>
+      <section className="pl-card">
+        <div className="mb-5 rounded-[24px] border border-emerald-100 bg-emerald-50 p-4">
+          <div className="text-sm font-bold text-emerald-700">Slug</div>
+          <div className="text-lg font-black text-slate-950">{slug}</div>
+          <div className="mt-2 text-sm font-bold text-emerald-700">Dominio base</div>
+          <div className="text-lg font-black text-slate-950">{baseDomain || "-"}</div>
 
-          <div className="mt-2 text-xs text-white/60">
-            Público:{" "}
-            <span className={isPublic ? "text-emerald-300" : "text-red-300"}>
-              {isPublic ? "Sim" : "Não"}
+          <div className="mt-2 text-xs font-semibold text-slate-500">
+            Publico:{" "}
+            <span className={isPublic ? "text-emerald-700" : "text-red-600"}>
+              {isPublic ? "Sim" : "Nao"}
             </span>
           </div>
 
-          <label className="mt-3 inline-flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={isPublic}
-              onChange={(e) => setIsPublic(e.target.checked)}
-            />
-            Deixar site público
+          <label className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-slate-700">
+            <input type="checkbox" checked={isPublic} onChange={(e) => setIsPublic(e.target.checked)} />
+            Deixar site publico
           </label>
         </div>
 
         <div className="grid gap-5 md:grid-cols-2">
           <Field label="Nome da Empresa" required>
-            <input
-              value={companyName}
-              onChange={(e) => setCompanyName(e.target.value)}
-              className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 outline-none focus:border-violet-400/40"
-            />
+            <input value={companyName} onChange={(e) => setCompanyName(e.target.value)} className="pl-input" />
           </Field>
 
           <Field label="CNPJ" required>
-            <input
-              value={cnpj}
-              onChange={(e) => setCnpj(e.target.value)}
-              className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 outline-none focus:border-violet-400/40"
-            />
+            <input value={cnpj} onChange={(e) => setCnpj(e.target.value)} className="pl-input" />
           </Field>
 
           <Field label="Telefone" required>
-            <input
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 outline-none focus:border-violet-400/40"
-            />
+            <input value={phone} onChange={(e) => setPhone(e.target.value)} className="pl-input" />
           </Field>
 
           <Field label="E-mail" required>
-            <input
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 outline-none focus:border-violet-400/40"
-            />
+            <input value={email} onChange={(e) => setEmail(e.target.value)} className="pl-input" />
           </Field>
 
           <Field label="WhatsApp" required>
-            <input
-              value={whatsapp}
-              onChange={(e) => setWhatsapp(e.target.value)}
-              className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 outline-none focus:border-violet-400/40"
-            />
+            <input value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} className="pl-input" />
           </Field>
 
           <Field label="Instagram" required={false} hint="Opcional">
-            <input
-              value={instagram}
-              onChange={(e) => setInstagram(e.target.value)}
-              className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 outline-none focus:border-violet-400/40"
-            />
+            <input value={instagram} onChange={(e) => setInstagram(e.target.value)} className="pl-input" />
           </Field>
 
           <Field
-            label="Meta tag de verificação"
+            label="Meta tag de verificacao"
             required={false}
             hint='Cole a tag completa. Ex: <meta name="facebook-domain-verification" content="..." />'
           >
             <input
               value={metaTag}
               onChange={(e) => setMetaTag(e.target.value)}
-              className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 outline-none focus:border-violet-400/40"
+              className="pl-input"
               placeholder='<meta name="facebook-domain-verification" content="..." />'
             />
           </Field>
 
           <Field
-            label="TXT de verificação"
+            label="TXT de verificacao"
             required={false}
-            hint='Cole o TXT completo ou só o token. Ex: facebook-domain-verification=...'
+            hint="Cole o TXT completo ou so o token. Ex: facebook-domain-verification=..."
           >
             <input
               value={metaTxt}
               onChange={(e) => setMetaTxt(e.target.value)}
-              className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 outline-none focus:border-violet-400/40"
+              className="pl-input"
               placeholder="facebook-domain-verification=..."
             />
           </Field>
         </div>
 
         <div className="mt-6 grid gap-5">
-          <Field label="Nossa missão" required>
-            <textarea
-              value={mission}
-              onChange={(e) => setMission(e.target.value)}
-              className="min-h-[90px] w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 outline-none focus:border-violet-400/40"
-            />
+          <Field label="Nossa missao" required>
+            <textarea value={mission} onChange={(e) => setMission(e.target.value)} className="pl-textarea min-h-[90px]" />
           </Field>
 
           <Field label="Quem somos (About)" required>
-            <textarea
-              value={about}
-              onChange={(e) => setAbout(e.target.value)}
-              className="min-h-[140px] w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 outline-none focus:border-violet-400/40"
-            />
+            <textarea value={about} onChange={(e) => setAbout(e.target.value)} className="pl-textarea min-h-[140px]" />
           </Field>
 
-          <Field label="Política de Privacidade" required>
-            <textarea
-              value={privacy}
-              onChange={(e) => setPrivacy(e.target.value)}
-              className="min-h-[160px] w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 outline-none focus:border-violet-400/40"
-            />
+          <Field label="Politica de Privacidade" required>
+            <textarea value={privacy} onChange={(e) => setPrivacy(e.target.value)} className="pl-textarea min-h-[160px]" />
           </Field>
 
-          <Field label="Rodapé" required>
-            <textarea
-              value={footer}
-              onChange={(e) => setFooter(e.target.value)}
-              className="min-h-[90px] w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 outline-none focus:border-violet-400/40"
-            />
+          <Field label="Rodape" required>
+            <textarea value={footer} onChange={(e) => setFooter(e.target.value)} className="pl-textarea min-h-[90px]" />
           </Field>
         </div>
 
-        <button
-          onClick={handleSave}
-          disabled={loading}
-          className="mt-6 w-full rounded-2xl bg-violet-600 px-5 py-4 font-semibold text-white hover:bg-violet-500 disabled:opacity-60"
-        >
-          {loading ? "Salvando..." : "Salvar alterações (não consome token)"}
+        <button onClick={handleSave} disabled={loading} className="pl-btn pl-btn-primary mt-6 w-full">
+          {loading ? "Salvando..." : "Salvar alteracoes (nao consome token)"}
         </button>
-      </div>
-    </div>
+      </section>
+    </main>
   );
 }
 
@@ -374,12 +313,12 @@ function Field({
   children: React.ReactNode;
 }) {
   return (
-    <div className="space-y-2">
-      <div className="text-sm font-medium text-white/85">
-        {label} {required ? <span className="text-red-300">*</span> : null}
+    <div>
+      <div className="pl-label">
+        {label} {required ? <span className="text-red-500">*</span> : null}
       </div>
       {children}
-      {hint ? <div className="text-xs text-white/55">{hint}</div> : null}
+      {hint ? <div className="mt-2 text-xs font-semibold text-slate-500">{hint}</div> : null}
     </div>
   );
 }
