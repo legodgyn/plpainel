@@ -39,17 +39,13 @@ function getInitial(email?: string | null) {
 }
 
 function getPreview(text?: string | null) {
-  const clean = String(text || "")
-    .replace(/\s+/g, " ")
-    .trim();
-
+  const clean = String(text || "").replace(/\s+/g, " ").trim();
   return clean || "Sem conteudo.";
 }
 
 export default function DomainInboxPage() {
   const params = useParams<{ domain: string }>();
   const router = useRouter();
-
   const domain = decodeURIComponent(params.domain || "");
 
   const [emails, setEmails] = useState<EmailRow[]>([]);
@@ -95,13 +91,7 @@ export default function DomainInboxPage() {
       if (onlyCodes && !email.detected_code) return false;
       if (!needle) return true;
 
-      return [
-        email.from_email,
-        email.to_email,
-        email.subject,
-        email.body,
-        email.detected_code,
-      ]
+      return [email.from_email, email.to_email, email.subject, email.body, email.detected_code]
         .join(" ")
         .toLowerCase()
         .includes(needle);
@@ -119,91 +109,74 @@ export default function DomainInboxPage() {
   }
 
   return (
-    <main className="mx-auto max-w-7xl px-4 py-8 text-white">
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+    <main className="pl-page max-w-7xl space-y-6">
+      <div className="pl-page-title">
         <div>
-          <button
-            onClick={() => router.push("/emails")}
-            className="text-sm font-semibold text-white/55 hover:text-white"
-          >
+          <button type="button" onClick={() => router.push("/emails")} className="text-sm font-bold text-slate-500 hover:text-slate-950">
             Voltar para dominios
           </button>
-          <h1 className="mt-3 text-2xl font-bold">Caixa de entrada</h1>
-          <p className="mt-1 break-all text-sm text-white/55">
-            Recebendo emails de <span className="font-semibold text-violet-200">{domain}</span>
+          <h1 className="mt-3">Caixa de entrada</h1>
+          <p className="break-all">
+            Recebendo emails de <span className="font-black text-emerald-700">{domain}</span>
           </p>
         </div>
 
         <div className="flex flex-wrap gap-2">
-          <button
-            onClick={() => copyText(`facebook@${domain}`, "email")}
-            className="rounded-xl border border-emerald-400/20 bg-emerald-500/10 px-4 py-2 text-sm font-semibold text-emerald-100 hover:bg-emerald-500/15"
-          >
+          <button type="button" onClick={() => copyText(`facebook@${domain}`, "email")} className="pl-btn pl-btn-primary">
             Copiar facebook@{domain}
           </button>
-          <button
-            onClick={load}
-            disabled={loading}
-            className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-white/80 hover:bg-white/10 disabled:opacity-50"
-          >
+          <button type="button" onClick={load} disabled={loading} className="pl-btn disabled:opacity-50">
             {loading ? "Atualizando..." : "Atualizar"}
           </button>
         </div>
       </div>
 
       {copied ? (
-        <div className="mt-4 rounded-xl border border-emerald-400/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100">
+        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
           Copiado para a area de transferencia.
         </div>
       ) : null}
 
-      <div className="mt-6 grid gap-4 md:grid-cols-4">
-        <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
-          <div className="text-xs text-white/45">Total</div>
-          <div className="mt-1 text-3xl font-black">{emails.length}</div>
+      <section className="grid gap-4 md:grid-cols-4">
+        <div className="pl-card-soft">
+          <div className="text-sm font-bold text-slate-500">Total</div>
+          <div className="mt-2 text-3xl font-black text-slate-950">{emails.length}</div>
         </div>
-        <div className="rounded-2xl border border-emerald-400/15 bg-emerald-500/10 p-4">
-          <div className="text-xs text-emerald-100/65">Com codigo</div>
-          <div className="mt-1 text-3xl font-black text-emerald-100">
+        <div className="pl-card-soft">
+          <div className="text-sm font-bold text-slate-500">Com codigo</div>
+          <div className="mt-2 text-3xl font-black text-emerald-700">
             {emails.filter((email) => email.detected_code).length}
           </div>
         </div>
-        <div className="rounded-2xl border border-violet-400/15 bg-violet-500/10 p-4 md:col-span-2">
-          <div className="text-xs text-violet-100/65">Endereco recomendado</div>
-          <div className="mt-1 break-all text-lg font-bold text-violet-100">
-            facebook@{domain}
-          </div>
+        <div className="pl-card-soft md:col-span-2">
+          <div className="text-sm font-bold text-slate-500">Endereco recomendado</div>
+          <div className="mt-2 break-all text-xl font-black text-slate-950">facebook@{domain}</div>
         </div>
-      </div>
+      </section>
 
-      <div className="mt-6 rounded-3xl border border-white/10 bg-white/[0.03] p-4">
+      <section className="pl-card">
         <div className="grid gap-3 md:grid-cols-[1fr_auto]">
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Buscar por remetente, assunto, codigo ou conteudo..."
-            className="w-full rounded-xl border border-white/10 bg-black/25 px-4 py-3 text-sm outline-none transition focus:border-violet-400"
+            className="pl-input"
           />
           <button
+            type="button"
             onClick={() => setOnlyCodes((value) => !value)}
-            className={`rounded-xl px-4 py-3 text-sm font-semibold transition ${
-              onlyCodes
-                ? "bg-emerald-500 text-white"
-                : "border border-white/10 bg-white/5 text-white/70 hover:bg-white/10"
-            }`}
+            className={onlyCodes ? "pl-btn pl-btn-primary" : "pl-btn"}
           >
             Somente codigos
           </button>
         </div>
 
-        <div className="mt-4 grid min-h-[560px] gap-4 lg:grid-cols-[380px_1fr]">
-          <aside className="overflow-hidden rounded-2xl border border-white/10 bg-black/20">
+        <div className="mt-5 grid min-h-[560px] gap-4 lg:grid-cols-[380px_1fr]">
+          <aside className="overflow-hidden rounded-[28px] border border-slate-200 bg-white">
             {loading ? (
-              <div className="p-5 text-sm text-white/55">Carregando emails...</div>
+              <div className="p-5 text-sm font-semibold text-slate-500">Carregando emails...</div>
             ) : filteredEmails.length === 0 ? (
-              <div className="p-5 text-sm text-white/55">
-                Nenhum email encontrado para esse filtro.
-              </div>
+              <div className="p-5 text-sm font-semibold text-slate-500">Nenhum email encontrado para esse filtro.</div>
             ) : (
               <div className="max-h-[680px] overflow-y-auto">
                 {filteredEmails.map((email) => {
@@ -212,32 +185,33 @@ export default function DomainInboxPage() {
                   return (
                     <button
                       key={email.id}
+                      type="button"
                       onClick={() => setSelectedId(email.id)}
-                      className={`w-full border-b border-white/5 p-4 text-left transition last:border-b-0 ${
-                        active ? "bg-violet-500/15" : "hover:bg-white/5"
+                      className={`w-full border-b border-slate-100 p-4 text-left transition last:border-b-0 ${
+                        active ? "bg-emerald-50" : "hover:bg-slate-50"
                       }`}
                     >
                       <div className="flex items-start gap-3">
-                        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-violet-500/15 text-sm font-black text-violet-100">
+                        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-emerald-100 text-sm font-black text-emerald-700">
                           {getInitial(email.from_email)}
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center justify-between gap-3">
-                            <div className="truncate text-sm font-bold">
+                            <div className="truncate text-sm font-black text-slate-950">
                               {email.subject || "Sem assunto"}
                             </div>
-                            <div className="shrink-0 text-[11px] text-white/35">
+                            <div className="shrink-0 text-[11px] font-semibold text-slate-400">
                               {fmtDate(email.created_at)}
                             </div>
                           </div>
-                          <div className="mt-1 truncate text-xs text-white/45">
+                          <div className="mt-1 truncate text-xs font-semibold text-slate-500">
                             {email.from_email || "Remetente desconhecido"}
                           </div>
-                          <div className="mt-2 line-clamp-2 text-xs leading-5 text-white/55">
+                          <div className="mt-2 line-clamp-2 text-xs font-semibold leading-5 text-slate-500">
                             {getPreview(email.body)}
                           </div>
                           {email.detected_code ? (
-                            <div className="mt-3 inline-flex rounded-lg border border-emerald-400/20 bg-emerald-500/10 px-2.5 py-1 text-xs font-bold text-emerald-100">
+                            <div className="mt-3 inline-flex rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-black text-emerald-700">
                               Codigo {email.detected_code}
                             </div>
                           ) : null}
@@ -250,31 +224,25 @@ export default function DomainInboxPage() {
             )}
           </aside>
 
-          <section className="rounded-2xl border border-white/10 bg-black/20">
+          <section className="rounded-[28px] border border-slate-200 bg-white">
             {!selectedEmail ? (
-              <div className="flex h-full min-h-[420px] items-center justify-center p-8 text-center text-white/55">
+              <div className="flex h-full min-h-[420px] items-center justify-center p-8 text-center text-sm font-semibold text-slate-500">
                 Selecione um email para ler.
               </div>
             ) : (
               <div className="flex h-full min-h-[560px] flex-col">
-                <div className="border-b border-white/10 p-5">
+                <div className="border-b border-slate-100 p-5">
                   <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                     <div className="min-w-0">
-                      <h2 className="break-words text-xl font-black">
+                      <h2 className="break-words text-xl font-black text-slate-950">
                         {selectedEmail.subject || "Sem assunto"}
                       </h2>
-                      <div className="mt-3 grid gap-2 text-sm text-white/55">
+                      <div className="mt-3 grid gap-2 text-sm font-semibold text-slate-500">
                         <div className="break-all">
-                          De:{" "}
-                          <span className="font-semibold text-white/85">
-                            {selectedEmail.from_email || "-"}
-                          </span>
+                          De: <span className="font-black text-slate-800">{selectedEmail.from_email || "-"}</span>
                         </div>
                         <div className="break-all">
-                          Para:{" "}
-                          <span className="font-semibold text-white/85">
-                            {selectedEmail.to_email}
-                          </span>
+                          Para: <span className="font-black text-slate-800">{selectedEmail.to_email}</span>
                         </div>
                         <div>{fmtDate(selectedEmail.created_at)}</div>
                       </div>
@@ -282,8 +250,9 @@ export default function DomainInboxPage() {
 
                     {selectedEmail.detected_code ? (
                       <button
+                        type="button"
                         onClick={() => copyText(selectedEmail.detected_code || "", "codigo")}
-                        className="rounded-xl bg-emerald-500 px-4 py-3 text-sm font-black text-white hover:bg-emerald-400"
+                        className="pl-btn pl-btn-primary"
                       >
                         Copiar codigo {selectedEmail.detected_code}
                       </button>
@@ -292,18 +261,14 @@ export default function DomainInboxPage() {
                 </div>
 
                 {selectedEmail.detected_code ? (
-                  <div className="mx-5 mt-5 rounded-2xl border border-emerald-400/20 bg-emerald-500/10 p-4">
-                    <div className="text-xs font-semibold uppercase tracking-[0.14em] text-emerald-100/70">
-                      Codigo detectado
-                    </div>
-                    <div className="mt-2 text-3xl font-black text-emerald-100">
-                      {selectedEmail.detected_code}
-                    </div>
+                  <div className="mx-5 mt-5 rounded-[24px] border border-emerald-200 bg-emerald-50 p-4">
+                    <div className="text-xs font-black uppercase tracking-[0.14em] text-emerald-700">Codigo detectado</div>
+                    <div className="mt-2 text-3xl font-black text-emerald-700">{selectedEmail.detected_code}</div>
                   </div>
                 ) : null}
 
                 <div className="flex-1 p-5">
-                  <div className="min-h-[340px] whitespace-pre-wrap rounded-2xl border border-white/10 bg-white/[0.03] p-5 text-sm leading-7 text-white/80">
+                  <div className="min-h-[340px] whitespace-pre-wrap rounded-[24px] border border-slate-200 bg-slate-50 p-5 text-sm font-semibold leading-7 text-slate-700">
                     {selectedEmail.body || "Sem conteudo."}
                   </div>
                 </div>
@@ -311,7 +276,7 @@ export default function DomainInboxPage() {
             )}
           </section>
         </div>
-      </div>
+      </section>
     </main>
   );
 }
