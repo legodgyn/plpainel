@@ -323,33 +323,26 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
         <aside className="hidden w-72 shrink-0 lg:block">
           <div className="sticky top-6 rounded-[1.35rem] border border-[var(--panel-line)] bg-white/90 p-4 shadow-[var(--panel-shadow)]">
             <div className="flex items-center justify-between">
-              <Link href="/dashboard" className="relative block h-14 w-36">
-                <span className="absolute inset-0 flex items-center text-xl font-black text-[var(--panel-ink)]">
+              <Link
+                href="/dashboard"
+                className="relative block h-14 w-40 bg-contain bg-left bg-no-repeat"
+                style={{ backgroundImage: "url('/logo.png?v=20260514')" }}
+              >
+                <span className="sr-only">PLPainel</span>
+                <span className="absolute inset-0 -z-10 flex items-center text-xl font-black text-[var(--panel-ink)]">
                   PLPainel
                 </span>
-                <img
-                  src="/logo.png"
-                  alt="PLPainel"
-                  className="relative z-10 h-full w-full bg-white/90 object-contain object-left"
-                  onError={(event) => {
-                    event.currentTarget.style.display = "none";
-                  }}
-                />
               </Link>
             </div>
 
             <div className="mt-5 flex items-center gap-3 rounded-2xl border border-[var(--panel-line)] bg-[#f8fbfa] p-3">
-              <img
-                src="/usuario.png"
-                alt="Usuário"
-                width={42}
-                height={42}
-                className="h-11 w-11 rounded-2xl object-cover"
-                onError={(event) => {
-                  event.currentTarget.onerror = null;
-                  event.currentTarget.src = "/logo-icon.png";
-                }}
-              />
+              <div
+                aria-label="Usuario"
+                className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-emerald-100 bg-cover bg-center text-base font-black text-emerald-700"
+                style={{ backgroundImage: "url('/usuario.png?v=20260514')" }}
+              >
+                {(email || "P").slice(0, 1).toUpperCase()}
+              </div>
               <div className="min-w-0">
                 <div className="truncate font-black text-[var(--panel-ink)]">
                   {email || "Conta"}
