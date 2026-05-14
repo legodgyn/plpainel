@@ -131,15 +131,20 @@ async function findSite(slug: string, hostBaseDomain: string | null) {
 
   if (slug.includes(".")) {
     const cleanFullDomain = slug.toLowerCase();
-    const { data } = await supabase
-      .from("sites")
-      .select("*")
-      .eq("custom_domain", cleanFullDomain)
-      .eq("domain_mode", "custom_domain")
-      .eq("is_public", true)
-      .maybeSingle();
+    const domainCandidates = cleanFullDomain.startsWith("www.")
+      ? [cleanFullDomain, cleanFullDomain.slice(4)]
+      : [cleanFullDomain, `www.${cleanFullDomain}`];
 
-    if (data) return data;
+    for (const domainCandidate of domainCandidates) {
+      const { data } = await supabase
+        .from("sites")
+        .select("*")
+        .eq("custom_domain", domainCandidate)
+        .eq("is_public", true)
+        .maybeSingle();
+
+      if (data) return data;
+    }
 
     const [hostSlug, ...baseParts] = cleanFullDomain.split(".").filter(Boolean);
     const baseDomain = baseParts.join(".");
