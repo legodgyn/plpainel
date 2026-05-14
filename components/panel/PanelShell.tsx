@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
@@ -324,23 +323,32 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
         <aside className="hidden w-72 shrink-0 lg:block">
           <div className="sticky top-6 rounded-[1.35rem] border border-[var(--panel-line)] bg-white/90 p-4 shadow-[var(--panel-shadow)]">
             <div className="flex items-center justify-between">
-              <Image
-                src="/logo.png"
-                alt="PLPainel"
-                width={190}
-                height={76}
-                className="h-14 w-36 object-contain"
-                priority
-              />
+              <Link href="/dashboard" className="relative block h-14 w-36">
+                <span className="absolute inset-0 flex items-center text-xl font-black text-[var(--panel-ink)]">
+                  PLPainel
+                </span>
+                <img
+                  src="/logo.png"
+                  alt="PLPainel"
+                  className="relative z-10 h-full w-full bg-white/90 object-contain object-left"
+                  onError={(event) => {
+                    event.currentTarget.style.display = "none";
+                  }}
+                />
+              </Link>
             </div>
 
             <div className="mt-5 flex items-center gap-3 rounded-2xl border border-[var(--panel-line)] bg-[#f8fbfa] p-3">
-              <Image
+              <img
                 src="/usuario.png"
                 alt="Usuário"
                 width={42}
                 height={42}
                 className="h-11 w-11 rounded-2xl object-cover"
+                onError={(event) => {
+                  event.currentTarget.onerror = null;
+                  event.currentTarget.src = "/logo-icon.png";
+                }}
               />
               <div className="min-w-0">
                 <div className="truncate font-black text-[var(--panel-ink)]">
