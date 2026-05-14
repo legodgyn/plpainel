@@ -254,48 +254,6 @@ function makeFooter(opts: {
 // Page
 // =====================
 type BalanceRow = { balance: number | null };
-type TemplateType =
-  | "professional_green"
-  | "clean_institutional"
-  | "commercial_landing"
-  | "classic_simple";
-
-const templateOptions: Array<{
-  value: TemplateType;
-  title: string;
-  description: string;
-  recommended?: boolean;
-}> = [
-  {
-    value: "professional_green",
-    title: "Profissional Verde",
-    description: "Visual moderno com hero forte, seções institucionais e WhatsApp em destaque.",
-    recommended: true,
-  },
-  {
-    value: "clean_institutional",
-    title: "Institucional Limpo",
-    description: "Mais claro e direto, bom para empresas de serviço que querem leitura rápida.",
-  },
-  {
-    value: "commercial_landing",
-    title: "Landing Comercial",
-    description: "Focado em conversão, chamada para contato e prova social logo no início.",
-  },
-  {
-    value: "classic_simple",
-    title: "Clássico Simples",
-    description: "Mantém uma estrutura básica para quem prefere um site mais enxuto.",
-  },
-];
-
-const colorOptions = [
-  { name: "Verde PL", value: "#00B884" },
-  { name: "Escuro premium", value: "#10231C" },
-  { name: "Azul confiança", value: "#0B68D8" },
-  { name: "Dourado CTA", value: "#F3B23C" },
-];
-
 function getCreatedSiteId(data: unknown) {
   if (!data) return null;
 
@@ -383,8 +341,6 @@ export default function NewSitePage() {
 
   const [balance, setBalance] = useState<number | null>(null);
   const [balanceLoading, setBalanceLoading] = useState(true);
-  const [templateType, setTemplateType] = useState<TemplateType>("professional_green");
-  const [themeColor, setThemeColor] = useState("#00B884");
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
 
@@ -676,7 +632,7 @@ export default function NewSitePage() {
         }
 
         const updatePayload: Record<string, string | null> = {
-          template_type: templateType,
+          template_type: "professional_green",
           simple_title: form.fantasy_name || form.company_name.trim() || null,
         };
 
@@ -937,50 +893,7 @@ export default function NewSitePage() {
         </div>
 
         <div className="pl-card p-5 text-[var(--panel-ink)]">
-          <div className="mb-4">
-            <div className="text-sm font-black">Modelo do site</div>
-            <div className="mt-1 text-xs text-[var(--panel-muted)]">
-              Escolha o visual inicial. Depois você pode publicar direto ou editar o layout.
-            </div>
-          </div>
-
-          <div className="grid gap-3 md:grid-cols-2">
-            {templateOptions.map((option) => {
-              const active = templateType === option.value;
-
-              return (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() => setTemplateType(option.value)}
-                  className={[
-                    "rounded-2xl border p-4 text-left transition",
-                    active
-                      ? "border-emerald-300 bg-emerald-50 shadow-[0_18px_45px_rgba(0,184,132,.13)]"
-                      : "border-[var(--panel-line)] bg-white hover:border-emerald-200",
-                  ].join(" ")}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <div className="font-black">{option.title}</div>
-                      <p className="mt-1 text-xs leading-5 text-[var(--panel-muted)]">
-                        {option.description}
-                      </p>
-                    </div>
-                    {option.recommended ? (
-                      <span className="pl-badge pl-badge-ok">recomendado</span>
-                    ) : null}
-                  </div>
-                  <div className="mt-4 grid grid-cols-[1.1fr_.9fr] gap-2">
-                    <span className="h-14 rounded-xl bg-[#eaf4ef]" />
-                    <span className="h-14 rounded-xl bg-[#d9f8ec]" />
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="mt-5 grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4">
             <div>
               <label className="pl-label">Logomarca opcional</label>
               <label className="flex cursor-pointer flex-wrap items-center gap-3 rounded-2xl border border-[var(--panel-line)] bg-white p-4">
@@ -1006,31 +919,6 @@ export default function NewSitePage() {
                   className="mt-3 h-16 max-w-[180px] rounded-xl object-contain"
                 />
               ) : null}
-            </div>
-
-            <div>
-              <label className="pl-label">Cores do site</label>
-              <div className="grid grid-cols-2 gap-3">
-                {colorOptions.map((color) => (
-                  <button
-                    key={color.value}
-                    type="button"
-                    onClick={() => setThemeColor(color.value)}
-                    className={[
-                      "rounded-2xl border bg-white p-3 text-left transition",
-                      themeColor === color.value
-                        ? "border-emerald-300 shadow-[0_12px_30px_rgba(0,184,132,.12)]"
-                        : "border-[var(--panel-line)]",
-                    ].join(" ")}
-                  >
-                    <span
-                      className="block h-10 rounded-xl"
-                      style={{ background: color.value }}
-                    />
-                    <span className="mt-2 block text-xs font-black">{color.name}</span>
-                  </button>
-                ))}
-              </div>
             </div>
           </div>
         </div>
