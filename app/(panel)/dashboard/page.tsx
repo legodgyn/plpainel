@@ -288,12 +288,6 @@ export default function DashboardPage() {
                           >
                             Editar
                           </Link>
-                          <Link
-                            href="/sites/template-simples"
-                            className="pl-btn px-3 py-1.5 text-xs"
-                          >
-                            Editar Layout
-                          </Link>
                           {process.env.NODE_ENV === "development" ? (
                             <Link
                               href={publicUrl}
