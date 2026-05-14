@@ -27,6 +27,14 @@ function getSlug(host: string, base: string | undefined) {
   return host.replace(`.${base}`, "");
 }
 
+function isLocalHost(host: string) {
+  return (
+    host === "localhost" ||
+    host === "127.0.0.1" ||
+    host.endsWith(".localhost")
+  );
+}
+
 export default async function HomePage() {
   const headerList = await headers();
   const host = headerList.get("host") || "";
@@ -37,6 +45,14 @@ export default async function HomePage() {
 
   if (slug) {
     return <PublicGeneratedSite slug={slug} />;
+  }
+
+  if (!base && cleanHost && !isLocalHost(cleanHost)) {
+    const customDomainSlug = cleanHost.startsWith("www.")
+      ? cleanHost.slice(4)
+      : cleanHost;
+
+    return <PublicGeneratedSite slug={customDomainSlug} />;
   }
 
   return (
