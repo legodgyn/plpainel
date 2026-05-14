@@ -80,6 +80,7 @@ body {
     border: 1px solid var(--panel-line);
     border-radius: 1.25rem;
     background: rgba(255,255,255,.88);
+    padding: 1.25rem;
     box-shadow: var(--panel-shadow);
   }
 
@@ -87,6 +88,7 @@ body {
     border: 1px solid #d9efe6;
     border-radius: 1.25rem;
     background: var(--panel-surface-2);
+    padding: 1.25rem;
   }
 
   .pl-card-head {
@@ -94,7 +96,7 @@ body {
     align-items: flex-start;
     justify-content: space-between;
     gap: 1rem;
-    padding: 1.125rem 1.125rem .75rem;
+    padding: 0 0 1rem;
   }
 
   .pl-card-head h2 {
@@ -169,12 +171,18 @@ body {
 
   .pl-label {
     display: block;
-    margin-bottom: .35rem;
+    margin-bottom: .55rem;
     color: var(--panel-muted);
     font-size: .75rem;
     font-weight: 900;
     text-transform: uppercase;
     letter-spacing: .06em;
+  }
+
+  .pl-label + .pl-input,
+  .pl-label + .pl-select,
+  .pl-label + .pl-textarea {
+    margin-top: 0;
   }
 
   .pl-badge {
