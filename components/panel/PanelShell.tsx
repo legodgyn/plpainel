@@ -501,7 +501,7 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
           <div className="mb-5 flex flex-col gap-3 xl:flex-row xl:flex-nowrap xl:items-center xl:justify-between">
             <form
               onSubmit={submitGlobalSearch}
-              className="relative w-full min-w-0 xl:max-w-sm 2xl:max-w-md"
+              className="relative w-full min-w-0 xl:max-w-[310px] 2xl:max-w-sm"
             >
               <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm">
                 ⌕
@@ -509,37 +509,37 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
               <input
                 value={globalSearch}
                 onChange={(event) => setGlobalSearch(event.target.value)}
-                className="pl-input h-12 rounded-2xl pl-10 shadow-[var(--panel-shadow)]"
+                className="pl-input h-10 rounded-2xl py-2 pl-10 text-sm shadow-[var(--panel-shadow)]"
                 placeholder="Buscar site, domínio, email ou pedido..."
               />
             </form>
 
-            <div className="flex flex-wrap items-center gap-3 xl:flex-nowrap xl:justify-end">
+            <div className="flex flex-wrap items-center gap-2 xl:flex-nowrap xl:justify-end">
               <button
                 type="button"
                 onClick={toggleTheme}
-                className="pl-btn shrink-0 px-4"
+                className="pl-btn shrink-0 px-3 py-2 text-xs"
                 aria-label={
                   theme === "dark" ? "Ativar modo claro" : "Ativar modo escuro"
                 }
               >
                 {theme === "dark" ? "Modo claro" : "Modo escuro"}
               </button>
-              <Link href="/tokens" className="pl-btn pl-btn-primary shrink-0 px-4">
+              <Link href="/tokens" className="pl-btn pl-btn-primary shrink-0 px-3 py-2 text-xs">
                 Comprar Tokens
               </Link>
-              <span className="pl-badge shrink-0 px-4 py-3 text-sm">
+              <span className="pl-badge shrink-0 px-3 py-2 text-xs">
                 💳 {loading ? "-" : balance ?? 0} tokens
               </span>
-              <span className="pl-badge shrink-0 px-4 py-3 text-sm">
-                <span className="h-3 w-3 rounded-full bg-emerald-500" />
+              <span className="pl-badge shrink-0 px-3 py-2 text-xs">
+                <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
                 Sistemas online
               </span>
               <a
                 href={supportLink}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="pl-btn shrink-0 px-4"
+                className="pl-btn shrink-0 px-3 py-2 text-xs"
               >
                 Falar com o suporte →
               </a>
