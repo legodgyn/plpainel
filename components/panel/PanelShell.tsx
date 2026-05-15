@@ -19,6 +19,8 @@ type NavItem = {
   icon: string;
 };
 
+type PanelTheme = "light" | "dark";
+
 const emptyPermissions: ExtraPermissions = {
   can_change_layout: false,
   can_transfer_sites: false,
@@ -66,6 +68,8 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
   const [profileName, setProfileName] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
   const [whatsMsg, setWhatsMsg] = useState<string | null>(null);
+  const [theme, setTheme] = useState<PanelTheme>("light");
+  const [themeReady, setThemeReady] = useState(false);
 
   const ADMIN_MASTER_EMAIL = useMemo(() => {
     const env = (process.env.NEXT_PUBLIC_ADMIN_MASTER_EMAIL || "")
@@ -204,6 +208,26 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
   }, []);
 
   useEffect(() => {
+    const savedTheme = window.localStorage.getItem("plpainel-theme");
+    const nextTheme: PanelTheme = savedTheme === "dark" ? "dark" : "light";
+
+    setTheme(nextTheme);
+    document.documentElement.dataset.theme = nextTheme;
+    setThemeReady(true);
+  }, []);
+
+  useEffect(() => {
+    if (!themeReady) return;
+
+    document.documentElement.dataset.theme = theme;
+    window.localStorage.setItem("plpainel-theme", theme);
+
+    return () => {
+      document.documentElement.removeAttribute("data-theme");
+    };
+  }, [theme, themeReady]);
+
+  useEffect(() => {
     let alive = true;
 
     async function boot() {
@@ -317,11 +341,15 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
     router.push("/login");
   }
 
+  function toggleTheme() {
+    setTheme((current) => (current === "dark" ? "light" : "dark"));
+  }
+
   return (
     <div className="min-h-screen bg-[var(--panel-bg)] text-[var(--panel-ink)]">
       <div className="mx-auto flex max-w-[1600px] gap-6 px-4 py-6">
         <aside className="hidden w-72 shrink-0 lg:block">
-          <div className="sticky top-6 rounded-[1.35rem] border border-[var(--panel-line)] bg-white/90 p-4 shadow-[var(--panel-shadow)]">
+          <div className="sticky top-6 rounded-[1.35rem] border border-[var(--panel-line)] bg-[var(--panel-card)] p-4 shadow-[var(--panel-shadow)]">
             <div className="flex items-center justify-between">
               <Link
                 href="/dashboard"
@@ -335,7 +363,7 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
               </Link>
             </div>
 
-            <div className="mt-5 flex items-center gap-3 rounded-2xl border border-[var(--panel-line)] bg-[#f8fbfa] p-3">
+            <div className="mt-5 flex items-center gap-3 rounded-2xl border border-[var(--panel-line)] bg-[var(--panel-hover)] p-3">
               <div
                 aria-label="Usuario"
                 className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-emerald-100 bg-cover bg-center text-base font-black text-emerald-700"
@@ -360,13 +388,13 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
                 const className = [
                   "flex items-center gap-3 rounded-2xl border px-3 py-2.5 text-sm font-bold transition",
                   active
-                    ? "border-emerald-300 bg-emerald-50 text-[#064533] shadow-sm"
-                    : "border-transparent text-[#466057] hover:border-[var(--panel-line)] hover:bg-[#f8fbfa]",
+                    ? "border-[var(--panel-nav-active-line)] bg-[var(--panel-nav-active-bg)] text-[var(--panel-nav-active-text)] shadow-sm"
+                    : "border-transparent text-[var(--panel-nav-text)] hover:border-[var(--panel-line)] hover:bg-[var(--panel-hover)]",
                 ].join(" ");
 
                 const content = (
                   <>
-                    <span className="grid h-7 w-7 place-items-center rounded-xl bg-[#eef8f3] text-sm">
+                    <span className="grid h-7 w-7 place-items-center rounded-xl bg-[var(--panel-icon-bg)] text-sm">
                       {item.icon}
                     </span>
                     <span>{item.label}</span>
@@ -399,11 +427,11 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
                           className={[
                             "flex cursor-pointer list-none items-center gap-3 rounded-2xl border px-3 py-2.5 text-sm font-bold transition",
                             customDomainGroupActive
-                              ? "border-emerald-300 bg-emerald-50 text-[#064533]"
-                              : "border-transparent text-[#466057] hover:border-[var(--panel-line)] hover:bg-[#f8fbfa]",
+                              ? "border-[var(--panel-nav-active-line)] bg-[var(--panel-nav-active-bg)] text-[var(--panel-nav-active-text)]"
+                              : "border-transparent text-[var(--panel-nav-text)] hover:border-[var(--panel-line)] hover:bg-[var(--panel-hover)]",
                           ].join(" ")}
                         >
-                          <span className="grid h-7 w-7 place-items-center rounded-xl bg-[#eef8f3] text-sm">
+                          <span className="grid h-7 w-7 place-items-center rounded-xl bg-[var(--panel-icon-bg)] text-sm">
                             🔗
                           </span>
                           <span className="flex-1">Domínio Próprio</span>
@@ -425,8 +453,8 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
                                 className={[
                                   "flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold transition",
                                   domainActive
-                                    ? "border-emerald-200 bg-emerald-50 text-[#064533]"
-                                    : "border-transparent text-[#61746b] hover:bg-[#f8fbfa] hover:text-[#10231c]",
+                                    ? "border-[var(--panel-nav-active-line)] bg-[var(--panel-nav-active-bg)] text-[var(--panel-nav-active-text)]"
+                                    : "border-transparent text-[var(--panel-muted)] hover:bg-[var(--panel-hover)] hover:text-[var(--panel-ink)]",
                                 ].join(" ")}
                               >
                                 <span className="w-5 text-center text-xs">
@@ -452,6 +480,16 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
 
         <main className="min-w-0 flex-1">
           <div className="mb-5 flex items-center justify-end gap-3">
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="pl-btn"
+              aria-label={
+                theme === "dark" ? "Ativar modo claro" : "Ativar modo escuro"
+              }
+            >
+              {theme === "dark" ? "Modo claro" : "Modo escuro"}
+            </button>
             <Link href="/tokens" className="pl-btn pl-btn-primary">
               Comprar Tokens
             </Link>
