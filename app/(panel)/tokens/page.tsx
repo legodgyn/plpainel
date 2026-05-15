@@ -177,18 +177,18 @@ export default function TokensPage() {
                   onClick={() => setTokens(pack.qty)}
                   className={`relative rounded-[28px] border p-5 text-left transition hover:-translate-y-0.5 ${
                     selected
-                      ? "border-emerald-500 bg-emerald-50 shadow-[0_18px_45px_rgba(16,185,129,.16)]"
-                      : "border-slate-200 bg-white shadow-sm hover:border-emerald-200 hover:bg-emerald-50/40"
+                      ? "border-amber-400 bg-amber-50 shadow-[0_22px_55px_rgba(245,158,11,.24)] ring-2 ring-amber-200/70"
+                      : "border-slate-200 bg-white shadow-sm hover:border-amber-300 hover:bg-amber-50/50"
                   }`}
                 >
-                  <div className="flex min-h-12 items-start justify-between gap-3">
+                  <div className="flex min-h-14 items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="text-lg font-black text-slate-950">{pack.label}</div>
                       <div className="mt-1 text-xs font-semibold text-slate-500">{pack.note}</div>
                     </div>
 
                     {pack.popular ? (
-                      <span className="shrink-0 rounded-full bg-emerald-600 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-white">
+                      <span className="shrink-0 rounded-full bg-amber-500 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-slate-950 shadow-[0_8px_20px_rgba(245,158,11,.25)]">
                         Mais vendido
                       </span>
                     ) : null}
@@ -201,7 +201,7 @@ export default function TokensPage() {
                       </div>
                     ) : null}
                     <div className="text-2xl font-black text-slate-950">{money(packFinal)}</div>
-                    <div className="text-xs font-bold text-emerald-700">
+                    <div className={selected ? "text-xs font-black text-amber-700" : "text-xs font-bold text-emerald-700"}>
                       {packDiscount > 0
                         ? `${packDiscount}% OFF, economiza ${money(packOriginal - packFinal)}`
                         : "Sem desconto aplicado"}
