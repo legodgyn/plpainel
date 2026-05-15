@@ -16,8 +16,6 @@ type SiteRow = {
   meta_verify_content?: string | null;
 };
 
-type TokenRow = { balance: number | null };
-
 type AnnouncementRow = {
   id: string;
   title: string;
@@ -38,7 +36,6 @@ export default function DashboardPage() {
   }, []);
 
   const [loading, setLoading] = useState(true);
-  const [balance, setBalance] = useState<number | null>(null);
   const [sites, setSites] = useState<SiteRow[]>([]);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [maintenanceEnabled, setMaintenanceEnabled] = useState(false);
@@ -48,7 +45,6 @@ export default function DashboardPage() {
   const [showUpdatesModal, setShowUpdatesModal] = useState(false);
   const [unseenAnnouncements, setUnseenAnnouncements] = useState<AnnouncementRow[]>([]);
   const [markingViewed, setMarkingViewed] = useState(false);
-  const [query, setQuery] = useState("");
 
   const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN || "plpainel.com";
 
@@ -65,19 +61,13 @@ export default function DashboardPage() {
       if (!user || userErr) {
         if (!alive) return;
         setLoading(false);
-        setBalance(null);
         setSites([]);
         setErrorMsg("Usuario nao autenticado no dashboard.");
         return;
       }
 
-      const [tokenRes, sitesRes, settingsRes, announcementsRes, viewsRes] =
+      const [sitesRes, settingsRes, announcementsRes, viewsRes] =
         await Promise.all([
-          supabase
-            .from("user_token_balances")
-            .select("balance")
-            .eq("user_id", user.id)
-            .maybeSingle<TokenRow>(),
           supabase
             .from("sites")
             .select(
@@ -104,8 +94,6 @@ export default function DashboardPage() {
         ]);
 
       if (!alive) return;
-
-      setBalance(tokenRes.error ? 0 : tokenRes.data?.balance ?? 0);
 
       if (sitesRes.error) {
         setSites([]);
@@ -184,26 +172,7 @@ export default function DashboardPage() {
     return `https://${getDisplayDomain(site)}`;
   }
 
-  const filteredSites = useMemo(() => {
-    const term = query.trim().toLowerCase();
-    if (!term) return sites;
-
-    return sites.filter((site) =>
-      [
-        site.company_name,
-        site.slug,
-        site.custom_domain,
-        site.base_domain,
-        getDisplayDomain(site),
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase()
-        .includes(term)
-    );
-  }, [query, sites]);
-
-  const siteCards = filteredSites.slice(0, 3);
+  const siteCards = sites.slice(0, 3);
   const activitySites = sites.slice(0, 4);
   const inboxDomains = sites
     .filter((site) => site.domain_mode === "custom_domain" && site.custom_domain)
@@ -223,41 +192,6 @@ export default function DashboardPage() {
           {errorMsg}
         </div>
       ) : null}
-
-      <div className="grid gap-3 xl:grid-cols-[minmax(280px,560px)_1fr] xl:items-center">
-        <label className="relative block">
-          <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm">
-            ⌕
-          </span>
-          <input
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            className="pl-input h-12 rounded-2xl pl-10 shadow-[var(--panel-shadow)]"
-            placeholder="Buscar site, dominio, email ou pedido..."
-          />
-        </label>
-
-        <div className="flex flex-wrap items-center gap-3 xl:justify-end">
-          <Link href="/tokens" className="pl-btn pl-btn-primary">
-            Comprar Tokens
-          </Link>
-          <span className="pl-badge px-4 py-3 text-sm">
-            💳 {loading ? "-" : balance ?? 0} tokens
-          </span>
-          <span className="pl-badge px-4 py-3 text-sm">
-            <span className="h-3 w-3 rounded-full bg-emerald-500" />
-            Sistemas online
-          </span>
-          <a
-            href="https://wa.me/5562999994162?text=Ol%C3%A1!%20Preciso%20de%20suporte%20no%20PLPainel."
-            target="_blank"
-            rel="noopener noreferrer"
-            className="pl-btn"
-          >
-            Falar com suporte →
-          </a>
-        </div>
-      </div>
 
       <div className="grid gap-5 xl:grid-cols-[1.6fr_1fr]">
         <section className="pl-card overflow-hidden p-0">

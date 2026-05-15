@@ -20,6 +20,7 @@ type NavItem = {
 };
 
 type PanelTheme = "light" | "dark";
+type TokenRow = { balance: number | null };
 
 const emptyPermissions: ExtraPermissions = {
   can_change_layout: false,
@@ -70,6 +71,8 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
   const [whatsMsg, setWhatsMsg] = useState<string | null>(null);
   const [theme, setTheme] = useState<PanelTheme>("light");
   const [themeReady, setThemeReady] = useState(false);
+  const [balance, setBalance] = useState<number | null>(null);
+  const [globalSearch, setGlobalSearch] = useState("");
 
   const ADMIN_MASTER_EMAIL = useMemo(() => {
     const env = (process.env.NEXT_PUBLIC_ADMIN_MASTER_EMAIL || "")
@@ -245,15 +248,23 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
       setEmail(user.email ?? "");
       setProfileName(String(user.user_metadata?.name || "").trim());
 
-      const { data: permissionData } = await supabase
-        .from("user_extra_permissions")
-        .select(
-          "can_change_layout, can_transfer_sites, can_view_orders, can_manage_suggestions, can_use_custom_domain"
-        )
-        .eq("user_id", user.id)
-        .maybeSingle();
+      const [permissionRes, tokenRes] = await Promise.all([
+        supabase
+          .from("user_extra_permissions")
+          .select(
+            "can_change_layout, can_transfer_sites, can_view_orders, can_manage_suggestions, can_use_custom_domain"
+          )
+          .eq("user_id", user.id)
+          .maybeSingle(),
+        supabase
+          .from("user_token_balances")
+          .select("balance")
+          .eq("user_id", user.id)
+          .maybeSingle<TokenRow>(),
+      ]);
 
       if (!alive) return;
+      const permissionData = permissionRes.data;
       setExtraPermissions({
         can_change_layout: Boolean(permissionData?.can_change_layout),
         can_transfer_sites: Boolean(permissionData?.can_transfer_sites),
@@ -261,6 +272,7 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
         can_manage_suggestions: Boolean(permissionData?.can_manage_suggestions),
         can_use_custom_domain: Boolean(permissionData?.can_use_custom_domain),
       });
+      setBalance(tokenRes.error ? 0 : tokenRes.data?.balance ?? 0);
 
       const { data: profileData, error: profileError } = await supabase
         .from("profiles")
@@ -343,6 +355,13 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
 
   function toggleTheme() {
     setTheme((current) => (current === "dark" ? "light" : "dark"));
+  }
+
+  function submitGlobalSearch(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const term = globalSearch.trim();
+    router.push(term ? `/sites?search=${encodeURIComponent(term)}` : "/sites");
   }
 
   return (
@@ -479,28 +498,49 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
         </aside>
 
         <main className="min-w-0 flex-1">
-          <div className="mb-5 flex items-center justify-end gap-3">
-            <button
-              type="button"
-              onClick={toggleTheme}
-              className="pl-btn"
-              aria-label={
-                theme === "dark" ? "Ativar modo claro" : "Ativar modo escuro"
-              }
-            >
-              {theme === "dark" ? "Modo claro" : "Modo escuro"}
-            </button>
-            <Link href="/tokens" className="pl-btn pl-btn-primary">
-              Comprar Tokens
-            </Link>
-            <a
-              href={supportLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="pl-btn"
-            >
-              Falar com o suporte →
-            </a>
+          <div className="mb-5 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+            <form onSubmit={submitGlobalSearch} className="relative w-full xl:max-w-xl">
+              <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm">
+                ⌕
+              </span>
+              <input
+                value={globalSearch}
+                onChange={(event) => setGlobalSearch(event.target.value)}
+                className="pl-input h-12 rounded-2xl pl-10 shadow-[var(--panel-shadow)]"
+                placeholder="Buscar site, domínio, email ou pedido..."
+              />
+            </form>
+
+            <div className="flex flex-wrap items-center gap-3 xl:justify-end">
+              <button
+                type="button"
+                onClick={toggleTheme}
+                className="pl-btn"
+                aria-label={
+                  theme === "dark" ? "Ativar modo claro" : "Ativar modo escuro"
+                }
+              >
+                {theme === "dark" ? "Modo claro" : "Modo escuro"}
+              </button>
+              <Link href="/tokens" className="pl-btn pl-btn-primary">
+                Comprar Tokens
+              </Link>
+              <span className="pl-badge px-4 py-3 text-sm">
+                💳 {loading ? "-" : balance ?? 0} tokens
+              </span>
+              <span className="pl-badge px-4 py-3 text-sm">
+                <span className="h-3 w-3 rounded-full bg-emerald-500" />
+                Sistemas online
+              </span>
+              <a
+                href={supportLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="pl-btn"
+              >
+                Falar com o suporte →
+              </a>
+            </div>
           </div>
 
           {loading ? (
