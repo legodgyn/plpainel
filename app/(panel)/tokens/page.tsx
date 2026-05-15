@@ -181,14 +181,18 @@ export default function TokensPage() {
                       : "border-slate-200 bg-white shadow-sm hover:border-emerald-200 hover:bg-emerald-50/40"
                   }`}
                 >
-                  {pack.popular ? (
-                    <span className="absolute right-4 top-4 rounded-full bg-emerald-600 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-white">
-                      Mais vendido
-                    </span>
-                  ) : null}
+                  <div className="flex min-h-12 items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="text-lg font-black text-slate-950">{pack.label}</div>
+                      <div className="mt-1 text-xs font-semibold text-slate-500">{pack.note}</div>
+                    </div>
 
-                  <div className="text-lg font-black text-slate-950">{pack.label}</div>
-                  <div className="mt-1 text-xs font-semibold text-slate-500">{pack.note}</div>
+                    {pack.popular ? (
+                      <span className="shrink-0 rounded-full bg-emerald-600 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-white">
+                        Mais vendido
+                      </span>
+                    ) : null}
+                  </div>
 
                   <div className="mt-5 space-y-1">
                     {packDiscount > 0 ? (
