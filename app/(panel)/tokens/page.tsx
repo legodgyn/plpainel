@@ -181,17 +181,19 @@ export default function TokensPage() {
                       : "border-slate-200 bg-white shadow-sm hover:border-amber-300 hover:bg-amber-50/50"
                   }`}
                 >
-                  <div className="flex min-h-14 items-start justify-between gap-3">
+                  <div className="min-h-20 space-y-2">
+                    {pack.popular ? (
+                      <span className="inline-flex rounded-full bg-amber-500 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-slate-950 shadow-[0_8px_20px_rgba(245,158,11,.25)]">
+                        Mais vendido
+                      </span>
+                    ) : (
+                      <span className="block h-6" aria-hidden="true" />
+                    )}
+
                     <div className="min-w-0">
                       <div className="text-lg font-black text-slate-950">{pack.label}</div>
                       <div className="mt-1 text-xs font-semibold text-slate-500">{pack.note}</div>
                     </div>
-
-                    {pack.popular ? (
-                      <span className="shrink-0 rounded-full bg-amber-500 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-slate-950 shadow-[0_8px_20px_rgba(245,158,11,.25)]">
-                        Mais vendido
-                      </span>
-                    ) : null}
                   </div>
 
                   <div className="mt-5 space-y-1">
