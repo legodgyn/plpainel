@@ -32,6 +32,29 @@ const initialPermissions: Permissions = {
   can_use_custom_domain: false,
 };
 
+const permissionCards = [
+  {
+    key: "can_change_layout",
+    title: "Alterar layout",
+    description: "Libera a pagina de alteracao de layout dos sites.",
+  },
+  {
+    key: "can_transfer_sites",
+    title: "Transferir sites",
+    description: "Permite transferir sites entre usuarios da plataforma.",
+  },
+  {
+    key: "can_view_orders",
+    title: "Compras na plataforma",
+    description: "Libera a tela administrativa de pedidos e compras.",
+  },
+  {
+    key: "can_manage_suggestions",
+    title: "Sugestoes admin",
+    description: "Permite responder e gerenciar sugestoes recebidas.",
+  },
+] as const;
+
 export default function AdminPermissoesPage() {
   const supabase = useMemo(() => {
     return createClient(
@@ -44,7 +67,6 @@ export default function AdminPermissoesPage() {
   const [loadingUsers, setLoadingUsers] = useState(true);
   const [loadingPermissions, setLoadingPermissions] = useState(false);
   const [saving, setSaving] = useState(false);
-
   const [selectedUserId, setSelectedUserId] = useState("");
   const [permissions, setPermissions] = useState<Permissions>(initialPermissions);
   const [search, setSearch] = useState("");
@@ -66,21 +88,19 @@ export default function AdminPermissoesPage() {
     try {
       const token = await getToken();
       if (!token) {
-        showToast("error", "Você precisa estar logado.");
+        showToast("error", "Voce precisa estar logado.");
         return;
       }
 
       const res = await fetch("/api/admin/users-simple", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
         cache: "no-store",
       });
 
       const json = await res.json().catch(() => ({}));
 
       if (!res.ok || !json?.ok) {
-        showToast("error", json?.error || "Erro ao carregar usuários.");
+        showToast("error", json?.error || "Erro ao carregar usuarios.");
         return;
       }
 
@@ -101,16 +121,14 @@ export default function AdminPermissoesPage() {
     try {
       const token = await getToken();
       if (!token) {
-        showToast("error", "Você precisa estar logado.");
+        showToast("error", "Voce precisa estar logado.");
         return;
       }
 
       const res = await fetch(
         `/api/admin/user-extra-permissions/get?user_id=${encodeURIComponent(userId)}`,
         {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
           cache: "no-store",
         }
       );
@@ -118,11 +136,11 @@ export default function AdminPermissoesPage() {
       const json = await res.json().catch(() => ({}));
 
       if (!res.ok || !json?.ok) {
-        showToast("error", json?.error || "Erro ao carregar permissões.");
+        showToast("error", json?.error || "Erro ao carregar permissoes.");
         return;
       }
 
-      setPermissions(json.permissions);
+      setPermissions({ ...initialPermissions, ...json.permissions });
     } finally {
       setLoadingPermissions(false);
     }
@@ -142,7 +160,7 @@ export default function AdminPermissoesPage() {
 
   async function savePermissions() {
     if (!selectedUserId) {
-      showToast("error", "Selecione um usuário.");
+      showToast("error", "Selecione um usuario.");
       return;
     }
 
@@ -151,7 +169,7 @@ export default function AdminPermissoesPage() {
     try {
       const token = await getToken();
       if (!token) {
-        showToast("error", "Você precisa estar logado.");
+        showToast("error", "Voce precisa estar logado.");
         return;
       }
 
@@ -170,170 +188,192 @@ export default function AdminPermissoesPage() {
       const json = await res.json().catch(() => ({}));
 
       if (!res.ok || !json?.ok) {
-        showToast("error", json?.error || "Erro ao salvar permissões.");
+        showToast("error", json?.error || "Erro ao salvar permissoes.");
         return;
       }
 
-      showToast("success", "Permissões salvas com sucesso.");
+      showToast("success", "Permissoes salvas com sucesso.");
     } finally {
       setSaving(false);
     }
   }
 
-  const filteredUsers = users.filter((u) => {
-    const haystack = `${u.name || ""} ${u.whatsapp || ""} ${u.user_id}`.toLowerCase();
+  const filteredUsers = users.filter((user) => {
+    const haystack = `${user.name || ""} ${user.whatsapp || ""} ${user.user_id}`.toLowerCase();
     return haystack.includes(search.trim().toLowerCase());
   });
 
-  const selectedUser = users.find((u) => u.user_id === selectedUserId) || null;
+  const selectedUser = users.find((user) => user.user_id === selectedUserId) || null;
 
   return (
-    <div className="space-y-6 text-white">
+    <div className="pl-page space-y-6">
+      <div className="pl-page-title">
+        <div>
+          <span className="pl-badge">Admin</span>
+          <h1>Permissoes extras</h1>
+          <p>
+            As funcoes basicas continuam liberadas para todos. Aqui voce controla apenas acessos administrativos.
+          </p>
+        </div>
+      </div>
+
       {toast ? (
         <div
-          className={`rounded-xl border px-4 py-3 text-sm ${
+          className={`rounded-2xl border px-4 py-3 text-sm font-semibold ${
             toast.type === "success"
-              ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-200"
-              : "border-red-500/20 bg-red-500/10 text-red-200"
+              ? "border-[var(--panel-ok-line)] bg-[var(--panel-ok-bg)] text-[var(--panel-ok-text)]"
+              : "border-[var(--panel-danger-line)] bg-[var(--panel-danger-bg)] text-[var(--panel-danger-text)]"
           }`}
         >
           {toast.text}
         </div>
       ) : null}
 
-      <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
-        <h1 className="text-xl font-semibold">Permissões extras</h1>
-        <p className="mt-1 text-sm text-white/60">
-          As funções básicas continuam liberadas para todos. Aqui você controla apenas os acessos extras.
-        </p>
-      </div>
+      <div className="grid gap-5 xl:grid-cols-[390px_1fr]">
+        <section className="pl-card overflow-hidden p-0">
+          <div className="border-b border-[var(--panel-line)] p-5">
+            <h2 className="text-xl font-black">Selecionar usuario</h2>
+            <p className="mt-1 text-sm text-[var(--panel-muted)]">
+              Busque pelo nome, WhatsApp ou ID do cliente.
+            </p>
+          </div>
 
-      <div className="grid gap-6 xl:grid-cols-[380px_1fr]">
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-          <div className="text-sm font-semibold">Selecionar usuário</div>
+          <div className="p-5">
+            <input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Buscar por nome, WhatsApp ou ID..."
+              className="pl-input"
+            />
 
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar por nome, WhatsApp ou ID..."
-            className="mt-4 w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none focus:border-violet-400"
-          />
+            <div className="mt-4 max-h-[560px] space-y-2 overflow-y-auto pr-1">
+              {loadingUsers ? (
+                <div className="pl-card-soft text-sm font-semibold text-[var(--panel-muted)]">
+                  Carregando usuarios...
+                </div>
+              ) : filteredUsers.length === 0 ? (
+                <div className="pl-card-soft text-sm font-semibold text-[var(--panel-muted)]">
+                  Nenhum usuario encontrado.
+                </div>
+              ) : (
+                filteredUsers.map((user) => {
+                  const selected = selectedUserId === user.user_id;
 
-          <div className="mt-4 max-h-[520px] space-y-2 overflow-y-auto">
-            {loadingUsers ? (
-              <div className="text-sm text-white/60">Carregando usuários...</div>
-            ) : filteredUsers.length === 0 ? (
-              <div className="text-sm text-white/60">Nenhum usuário encontrado.</div>
+                  return (
+                    <button
+                      key={user.user_id}
+                      onClick={() => setSelectedUserId(user.user_id)}
+                      className={`w-full rounded-2xl border p-4 text-left transition ${
+                        selected
+                          ? "border-[var(--panel-nav-active-line)] bg-[var(--panel-nav-active-bg)] text-[var(--panel-nav-active-text)]"
+                          : "border-[var(--panel-line)] bg-[var(--panel-surface)] hover:bg-[var(--panel-hover)]"
+                      }`}
+                    >
+                      <div className="truncate font-black">{user.name || "Sem nome"}</div>
+                      <div className="mt-1 truncate text-sm font-semibold text-[var(--panel-muted)]">
+                        {user.whatsapp || "Sem WhatsApp"}
+                      </div>
+                      <div className="mt-1 break-all text-xs text-[var(--panel-muted)]">
+                        {user.user_id}
+                      </div>
+                    </button>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        </section>
+
+        <section className="pl-card overflow-hidden p-0">
+          <div className="border-b border-[var(--panel-line)] p-5">
+            <h2 className="text-xl font-black">Acessos liberados</h2>
+            <p className="mt-1 text-sm text-[var(--panel-muted)]">
+              Escolha um usuario para configurar as permissoes extras.
+            </p>
+          </div>
+
+          <div className="p-5">
+            {!selectedUserId ? (
+              <div className="pl-card-soft text-sm font-semibold text-[var(--panel-muted)]">
+                Selecione um usuario na lista para editar as permissoes.
+              </div>
+            ) : loadingPermissions ? (
+              <div className="pl-card-soft text-sm font-semibold text-[var(--panel-muted)]">
+                Carregando permissoes...
+              </div>
             ) : (
-              filteredUsers.map((user) => (
-                <button
-                  key={user.user_id}
-                  onClick={() => setSelectedUserId(user.user_id)}
-                  className={`w-full rounded-xl border px-4 py-3 text-left transition ${
-                    selectedUserId === user.user_id
-                      ? "border-violet-500/30 bg-violet-500/10"
-                      : "border-white/10 bg-black/20 hover:bg-white/5"
-                  }`}
-                >
-                  <div className="font-semibold text-white">{user.name || "Sem nome"}</div>
-                  <div className="mt-1 text-xs text-white/50">{user.whatsapp || "Sem WhatsApp"}</div>
-                  <div className="mt-1 break-all text-[11px] text-white/30">{user.user_id}</div>
-                </button>
-              ))
+              <div className="space-y-5">
+                <div className="rounded-2xl border border-[var(--panel-line)] bg-[var(--panel-hover)] p-4">
+                  <div className="text-sm font-black text-[var(--panel-muted)]">
+                    Usuario selecionado
+                  </div>
+                  <div className="mt-2 text-lg font-black">
+                    {selectedUser?.name || "Sem nome"}
+                  </div>
+                  <div className="mt-1 text-sm font-semibold text-[var(--panel-muted)]">
+                    {selectedUser?.whatsapp || "Sem WhatsApp"}
+                  </div>
+                  <div className="mt-1 break-all text-xs text-[var(--panel-muted)]">
+                    {selectedUser?.user_id}
+                  </div>
+                </div>
+
+                <div className="grid gap-3 md:grid-cols-2">
+                  {permissionCards.map((item) => {
+                    const checked = permissions[item.key];
+
+                    return (
+                      <label
+                        key={item.key}
+                        className={`flex cursor-pointer gap-3 rounded-2xl border p-4 transition ${
+                          checked
+                            ? "border-[var(--panel-ok-line)] bg-[var(--panel-ok-bg)]"
+                            : "border-[var(--panel-line)] bg-[var(--panel-surface)] hover:bg-[var(--panel-hover)]"
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={(event) =>
+                            setPermissions((prev) => ({
+                              ...prev,
+                              [item.key]: event.target.checked,
+                            }))
+                          }
+                          className="mt-1 h-4 w-4 accent-[var(--panel-green)]"
+                        />
+                        <span>
+                          <span className="block font-black">{item.title}</span>
+                          <span className="mt-1 block text-sm text-[var(--panel-muted)]">
+                            {item.description}
+                          </span>
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
+
+                <div className="flex flex-wrap gap-3 pt-2">
+                  <button
+                    onClick={savePermissions}
+                    disabled={saving}
+                    className="pl-btn pl-btn-primary"
+                  >
+                    {saving ? "Salvando..." : "Salvar permissoes"}
+                  </button>
+
+                  <button
+                    onClick={() => loadPermissions(selectedUserId)}
+                    disabled={saving}
+                    className="pl-btn"
+                  >
+                    Recarregar
+                  </button>
+                </div>
+              </div>
             )}
           </div>
-        </div>
-
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-          {!selectedUserId ? (
-            <div className="text-sm text-white/60">
-              Selecione um usuário para editar as permissões extras.
-            </div>
-          ) : loadingPermissions ? (
-            <div className="text-sm text-white/60">Carregando permissões...</div>
-          ) : (
-            <div className="space-y-6">
-              <div>
-                <div className="text-sm font-semibold">Usuário selecionado</div>
-                <div className="mt-3 rounded-xl border border-white/10 bg-black/20 p-4">
-                  <div className="font-semibold">{selectedUser?.name || "Sem nome"}</div>
-                  <div className="mt-1 text-sm text-white/60">{selectedUser?.whatsapp || "Sem WhatsApp"}</div>
-                  <div className="mt-1 break-all text-xs text-white/35">{selectedUser?.user_id}</div>
-                </div>
-              </div>
-
-              <div>
-                <div className="text-sm font-semibold">Funções extras</div>
-                <div className="mt-4 grid gap-3 md:grid-cols-2">
-                  <label className="flex items-center gap-3 rounded-xl border border-white/10 bg-black/20 p-4">
-                    <input
-                      type="checkbox"
-                      checked={permissions.can_change_layout}
-                      onChange={(e) =>
-                        setPermissions((prev) => ({
-                          ...prev,
-                          can_change_layout: e.target.checked,
-                        }))
-                      }
-                    />
-                    <div>
-                      <div className="font-semibold">Alterar layout</div>
-                      <div className="text-xs text-white/50">Libera a página de alteração de layout.</div>
-                    </div>
-                  </label>
-
-                  <label className="flex items-center gap-3 rounded-xl border border-white/10 bg-black/20 p-4">
-                    <input
-                      type="checkbox"
-                      checked={permissions.can_transfer_sites}
-                      onChange={(e) =>
-                        setPermissions((prev) => ({
-                          ...prev,
-                          can_transfer_sites: e.target.checked,
-                        }))
-                      }
-                    />
-                    <div>
-                      <div className="font-semibold">Transferir sites</div>
-                      <div className="text-xs text-white/50">Libera transferência de sites entre usuários.</div>
-                    </div>
-                  </label>
-
-                  <label className="flex items-center gap-3 rounded-xl border border-white/10 bg-black/20 p-4">
-                    <input
-                      type="checkbox"
-                      checked={permissions.can_view_orders}
-                      onChange={(e) =>
-                        setPermissions((prev) => ({
-                          ...prev,
-                          can_view_orders: e.target.checked,
-                        }))
-                      }
-                    />
-                
-                  </label>
-                </div>
-              </div>
-
-              <div className="flex gap-3">
-                <button
-                  onClick={savePermissions}
-                  disabled={saving}
-                  className="rounded-xl bg-violet-600 px-5 py-3 text-sm font-semibold text-white hover:bg-violet-500 disabled:opacity-60"
-                >
-                  {saving ? "Salvando..." : "Salvar permissões"}
-                </button>
-
-                <button
-                  onClick={() => loadPermissions(selectedUserId)}
-                  className="rounded-xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold hover:bg-white/10"
-                >
-                  Recarregar
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
+        </section>
       </div>
     </div>
   );
