@@ -231,22 +231,22 @@ function Progress({ current }: { current: number }) {
             {index > 0 ? (
               <div
                 className={`absolute right-1/2 top-4 h-0.5 w-full ${
-                  done || active ? "bg-emerald-400" : "bg-slate-200"
+                  done || active ? "bg-[var(--panel-green)]" : "bg-[var(--panel-line)]"
                 }`}
               />
             ) : null}
             <div
               className={`relative z-10 grid h-9 w-9 place-items-center rounded-full text-sm font-bold ${
                 done
-                  ? "bg-emerald-500 text-white"
+                  ? "bg-[var(--panel-green)] text-white"
                   : active
-                  ? "bg-slate-950 text-white"
-                  : "bg-slate-100 text-slate-500"
+                  ? "bg-[var(--panel-ink)] text-[var(--panel-bg)]"
+                  : "bg-[var(--panel-hover)] text-[var(--panel-muted)]"
               }`}
             >
               {done ? "✓" : n}
             </div>
-            <div className={`text-center text-[11px] ${active ? "font-black text-slate-950" : "font-semibold text-slate-400"}`}>
+            <div className={`text-center text-[11px] ${active ? "font-black text-[var(--panel-ink)]" : "font-semibold text-[var(--panel-muted)]"}`}>
               {label}
             </div>
           </div>
@@ -268,22 +268,22 @@ function DnsRow({
   extra?: string;
 }) {
   return (
-    <div className="grid gap-3 rounded-2xl border border-emerald-100 bg-white p-4 text-sm md:grid-cols-[.6fr_.8fr_1.6fr_.8fr]">
+    <div className="grid gap-3 rounded-2xl border border-[var(--panel-line)] bg-[var(--panel-surface)] p-4 text-sm md:grid-cols-[.6fr_.8fr_1.6fr_.8fr]">
       <div>
-        <div className="text-[10px] font-black uppercase text-slate-400">Tipo</div>
-        <div className="mt-1 font-black text-slate-950">{type}</div>
+        <div className="text-[10px] font-black uppercase text-[var(--panel-muted)]">Tipo</div>
+        <div className="mt-1 font-black text-[var(--panel-ink)]">{type}</div>
       </div>
       <div>
-        <div className="text-[10px] font-black uppercase text-slate-400">Nome</div>
-        <div className="mt-1 font-semibold text-slate-700">{name}</div>
+        <div className="text-[10px] font-black uppercase text-[var(--panel-muted)]">Nome</div>
+        <div className="mt-1 font-semibold text-[var(--panel-ink)]">{name}</div>
       </div>
       <div className="min-w-0">
-        <div className="text-[10px] font-black uppercase text-slate-400">Valor</div>
-        <div className="mt-1 break-all font-black text-emerald-700">{value}</div>
+        <div className="text-[10px] font-black uppercase text-[var(--panel-muted)]">Valor</div>
+        <div className="mt-1 break-all font-black text-[var(--panel-green-2)]">{value}</div>
       </div>
       <div>
-        <div className="text-[10px] font-black uppercase text-slate-400">{extra ? "Obs." : "TTL"}</div>
-        <div className="mt-1 font-semibold text-slate-600">{extra || "Auto"}</div>
+        <div className="text-[10px] font-black uppercase text-[var(--panel-muted)]">{extra ? "Obs." : "TTL"}</div>
+        <div className="mt-1 font-semibold text-[var(--panel-muted)]">{extra || "Auto"}</div>
       </div>
     </div>
   );
@@ -627,12 +627,12 @@ export default function CustomDomainWizardPage() {
     <main className="pl-page max-w-7xl space-y-6">
       <div>
         <div className="flex items-center gap-3">
-          <div className="grid h-11 w-11 place-items-center rounded-2xl border border-emerald-100 bg-emerald-50 text-emerald-700">
+          <div className="grid h-11 w-11 place-items-center rounded-2xl border border-[var(--panel-line)] bg-[var(--panel-icon-bg)] text-[var(--panel-green-2)]">
             ◇
           </div>
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-black text-slate-950">Dominio Proprio Guiado</h1>
+              <h1 className="text-3xl font-black text-[var(--panel-ink)]">Dominio Proprio Guiado</h1>
               <span className="pl-badge pl-badge-ok">
                 NOVO
               </span>
@@ -642,7 +642,7 @@ export default function CustomDomainWizardPage() {
                 </span>
               ) : null}
             </div>
-            <p className="mt-1 text-sm font-semibold text-slate-500">
+            <p className="mt-1 text-sm font-semibold text-[var(--panel-muted)]">
               Crie um site com domínio próprio, SSL e caixa de entrada no PLPainel.
             </p>
           </div>
@@ -658,7 +658,7 @@ export default function CustomDomainWizardPage() {
       ) : null}
 
       {draftActive ? (
-        <div className="flex flex-col gap-3 rounded-[28px] border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-900 md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-col gap-3 rounded-[28px] border border-[var(--panel-ok-line)] bg-[var(--panel-ok-bg)] px-4 py-3 text-sm font-semibold text-[var(--panel-ok-text)] md:flex-row md:items-center md:justify-between">
           <div>
             <b>Criação em andamento salva.</b>{" "}
             {domain ? (
@@ -685,15 +685,15 @@ export default function CustomDomainWizardPage() {
           <div className="space-y-6">
             <div>
               <h2 className="text-xl font-bold">Verificação de Tokens</h2>
-              <p className="mt-2 text-sm text-white/55">A geração de site com domínio próprio custa 1 token.</p>
+              <p className="mt-2 text-sm text-[var(--panel-muted)]">A geração de site com domínio próprio custa 1 token.</p>
             </div>
 
-            <div className="rounded-3xl border border-violet-500/15 bg-violet-500/10 p-8 text-center">
-              <div className="text-sm text-white/55">Seu saldo atual</div>
-              <div className="mt-2 text-5xl font-black text-violet-300">
+            <div className="pl-card-soft p-8 text-center">
+              <div className="text-sm text-[var(--panel-muted)]">Seu saldo atual</div>
+              <div className="mt-2 text-5xl font-black text-[var(--panel-green-2)]">
                 {loadingBalance ? "..." : balance ?? 0}
               </div>
-              <div className="mt-1 text-sm text-white/50">tokens</div>
+              <div className="mt-1 text-sm text-[var(--panel-muted)]">tokens</div>
             </div>
 
             <button
@@ -702,7 +702,7 @@ export default function CustomDomainWizardPage() {
                 setStep(2);
               }}
               disabled={loadingBalance || !balance || balance < 1}
-              className="w-full rounded-xl bg-emerald-500 px-5 py-4 font-bold text-white hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-50"
+              className="pl-btn pl-btn-primary w-full justify-center disabled:cursor-not-allowed disabled:opacity-50"
             >
               Começar
             </button>
@@ -710,7 +710,7 @@ export default function CustomDomainWizardPage() {
             {!loadingBalance && (!balance || balance < 1) ? (
               <Link
                 href="/tokens"
-                className="block rounded-xl border border-violet-400/30 bg-violet-500/10 px-4 py-3 text-center text-sm font-semibold text-violet-100"
+                className="pl-btn block text-center"
               >
                 Comprar tokens
               </Link>
@@ -721,8 +721,8 @@ export default function CustomDomainWizardPage() {
         {step === 2 ? (
           <div className="space-y-6">
             <div>
-              <h2 className="text-xl font-black text-slate-950">Buscar Empresa pelo CNPJ</h2>
-              <p className="mt-2 text-sm font-semibold text-slate-500">
+              <h2 className="text-xl font-black text-[var(--panel-ink)]">Buscar Empresa pelo CNPJ</h2>
+              <p className="mt-2 text-sm font-semibold text-[var(--panel-muted)]">
                 Informe o CNPJ e o domínio que o cliente já comprou.
               </p>
             </div>
@@ -770,7 +770,7 @@ export default function CustomDomainWizardPage() {
               </button>
             </div>
 
-            <button onClick={() => setStep(1)} className="text-sm font-semibold text-slate-500 hover:text-slate-950">
+            <button onClick={() => setStep(1)} className="text-sm font-semibold text-[var(--panel-muted)] hover:text-[var(--panel-ink)]">
               ← Voltar
             </button>
           </div>
@@ -779,15 +779,15 @@ export default function CustomDomainWizardPage() {
         {step === 3 ? (
           <div className="space-y-6">
             <div>
-              <h2 className="text-xl font-black text-slate-950">Gerar Site com IA</h2>
-              <p className="mt-2 text-sm font-semibold text-slate-500">
+              <h2 className="text-xl font-black text-[var(--panel-ink)]">Gerar Site com IA</h2>
+              <p className="mt-2 text-sm font-semibold text-[var(--panel-muted)]">
                 Revise os dados antes de criar o site. Depois você configura o DNS.
               </p>
             </div>
 
             <div className="pl-card-soft">
-              <div className="font-black text-slate-950">{form.company_name || "Empresa"}</div>
-              <div className="mt-1 text-sm font-semibold text-slate-500">{domain || "seudominio.com.br"}</div>
+              <div className="font-black text-[var(--panel-ink)]">{form.company_name || "Empresa"}</div>
+              <div className="mt-1 text-sm font-semibold text-[var(--panel-muted)]">{domain || "seudominio.com.br"}</div>
 
               <div className="mt-5 grid gap-4 md:grid-cols-2">
                 <input
@@ -832,35 +832,35 @@ export default function CustomDomainWizardPage() {
         {step === 4 ? (
           <div className="space-y-6">
             <div>
-              <h2 className="text-xl font-black text-slate-950">Conectar Dominio Proprio</h2>
-              <p className="mt-2 text-sm font-semibold text-slate-500">
+              <h2 className="text-xl font-black text-[var(--panel-ink)]">Conectar Dominio Proprio</h2>
+              <p className="mt-2 text-sm font-semibold text-[var(--panel-muted)]">
                 No DNS do domínio, crie o registro abaixo apontando para o servidor.
               </p>
             </div>
 
-            <div className="rounded-[28px] border border-emerald-100 bg-emerald-50 p-5">
-              <div className="mb-4 text-sm font-black text-emerald-900">Registros obrigatorios antes do SSL</div>
+            <div className="pl-card-soft">
+              <div className="mb-4 text-sm font-black text-[var(--panel-ink)]">Registros obrigatorios antes do SSL</div>
               <div className="space-y-3">
                 <DnsRow type="A" name="@" value={CUSTOM_DOMAIN_IP} />
                 <DnsRow type="A" name="*" value={CUSTOM_DOMAIN_IP} />
               </div>
-              <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
+              <div className="mt-4 rounded-2xl border border-[var(--panel-warn-line)] bg-[var(--panel-warn-bg)] px-4 py-3 text-sm font-semibold text-[var(--panel-warn-text)]">
                 Antes de ativar o SSL, o domínio precisa estar com o registro A @ apontando para {CUSTOM_DOMAIN_IP}.
                 O registro A * libera a criação de subdomínios depois, como loja.{domain || "seudominio.com"}.
               </div>
-              <div className="mt-3 rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm font-semibold text-sky-800">
+              <div className="mt-3 rounded-2xl border border-[var(--panel-line)] bg-[var(--panel-hover)] px-4 py-3 text-sm font-semibold text-[var(--panel-muted)]">
                 Se usar Cloudflare, deixe o proxy desligado nesse registro durante a primeira validação: nuvem cinza.
               </div>
             </div>
 
             {dnsDetails ? (
-              <div className={`rounded-2xl px-4 py-3 text-sm font-semibold ${dnsOk ? "bg-emerald-50 text-emerald-800" : "bg-amber-50 text-amber-800"}`}>
+              <div className={`rounded-2xl px-4 py-3 text-sm font-semibold ${dnsOk ? "bg-[var(--panel-ok-bg)] text-[var(--panel-ok-text)]" : "bg-[var(--panel-warn-bg)] text-[var(--panel-warn-text)]"}`}>
                 {dnsDetails}
               </div>
             ) : null}
 
             {sslDetails ? (
-              <div className={`rounded-2xl px-4 py-3 text-sm font-semibold ${sslOk ? "bg-emerald-50 text-emerald-800" : "bg-amber-50 text-amber-800"}`}>
+              <div className={`rounded-2xl px-4 py-3 text-sm font-semibold ${sslOk ? "bg-[var(--panel-ok-bg)] text-[var(--panel-ok-text)]" : "bg-[var(--panel-warn-bg)] text-[var(--panel-warn-text)]"}`}>
                 {sslDetails}
               </div>
             ) : null}
@@ -888,15 +888,15 @@ export default function CustomDomainWizardPage() {
           <div className="space-y-6">
             <div>
               <h2 className="text-xl font-bold">Ativar Email Interno</h2>
-              <p className="mt-2 text-sm text-white/55">
+              <p className="mt-2 text-sm text-[var(--panel-muted)]">
                 Configure o DNS para receber mensagens do domínio dentro da caixa de entrada do PLPainel.
               </p>
             </div>
 
-            <div className="rounded-3xl border border-violet-500/15 bg-violet-500/10 p-5">
+            <div className="pl-card-soft p-5">
               <div className="mb-4">
                 <div className="text-sm font-bold">Registros obrigatórios no DNS</div>
-                <div className="mt-1 text-xs text-white/50">
+                <div className="mt-1 text-xs text-[var(--panel-muted)]">
                   Pode ser configurado em qualquer provedor de DNS. Não precisa usar Cloudflare.
                 </div>
               </div>
@@ -907,33 +907,33 @@ export default function CustomDomainWizardPage() {
             </div>
 
             <div className="grid gap-3 md:grid-cols-3">
-              <div className="rounded-2xl border border-emerald-400/15 bg-emerald-500/10 p-4">
-                <div className="text-sm font-bold text-emerald-100">1. MX</div>
-                <div className="mt-1 text-xs text-emerald-100/70">
+              <div className="rounded-2xl border border-[var(--panel-ok-line)] bg-[var(--panel-ok-bg)] p-4">
+                <div className="text-sm font-bold text-[var(--panel-ok-text)]">1. MX</div>
+                <div className="mt-1 text-xs text-[var(--panel-muted)]">
                   Direciona o recebimento para {PANEL_MAIL_HOST}.
                 </div>
               </div>
-              <div className="rounded-2xl border border-emerald-400/15 bg-emerald-500/10 p-4">
-                <div className="text-sm font-bold text-emerald-100">2. SPF</div>
-                <div className="mt-1 text-xs text-emerald-100/70">
+              <div className="rounded-2xl border border-[var(--panel-ok-line)] bg-[var(--panel-ok-bg)] p-4">
+                <div className="text-sm font-bold text-[var(--panel-ok-text)]">2. SPF</div>
+                <div className="mt-1 text-xs text-[var(--panel-muted)]">
                   Autoriza o servidor de email do PLPainel no domínio.
                 </div>
               </div>
-              <div className="rounded-2xl border border-emerald-400/15 bg-emerald-500/10 p-4">
-                <div className="text-sm font-bold text-emerald-100">3. Inbox</div>
-                <div className="mt-1 text-xs text-emerald-100/70">
+              <div className="rounded-2xl border border-[var(--panel-ok-line)] bg-[var(--panel-ok-bg)] p-4">
+                <div className="text-sm font-bold text-[var(--panel-ok-text)]">3. Inbox</div>
+                <div className="mt-1 text-xs text-[var(--panel-muted)]">
                   As mensagens ficam salvas no painel do cliente.
                 </div>
               </div>
             </div>
 
-            <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-4 text-sm text-white/65">
+            <div className="rounded-2xl border border-[var(--panel-line)] bg-[var(--panel-hover)] px-4 py-4 text-sm text-[var(--panel-muted)]">
               Depois da propagação do DNS, emails enviados para <b>{contactEmail}</b> aparecem em{" "}
               <b>Meus Emails</b> no PLPainel. Esta etapa não cria redirecionamento para Gmail ou Outlook.
             </div>
 
             {emailDetails ? (
-              <div className={`rounded-2xl px-4 py-3 text-sm ${emailOk ? "bg-emerald-500/10 text-emerald-100" : "bg-amber-500/10 text-amber-100"}`}>
+              <div className={`rounded-2xl px-4 py-3 text-sm ${emailOk ? "bg-[var(--panel-ok-bg)] text-[var(--panel-ok-text)]" : "bg-[var(--panel-warn-bg)] text-[var(--panel-warn-text)]"}`}>
                 {emailDetails}
               </div>
             ) : null}
@@ -942,7 +942,7 @@ export default function CustomDomainWizardPage() {
               <button
                 onClick={checkPanelInbox}
                 disabled={loading}
-                className="rounded-xl border border-violet-400/30 bg-violet-500/10 px-5 py-3 font-semibold text-violet-100 hover:bg-violet-500/15 disabled:opacity-60"
+                className="pl-btn disabled:opacity-60"
               >
                 {loading ? "Verificando..." : "Verificar e Ativar Caixa"}
               </button>
@@ -954,7 +954,7 @@ export default function CustomDomainWizardPage() {
                   setStep(6);
                 }}
                 disabled={!emailOk}
-                className="rounded-xl bg-emerald-600 px-5 py-3 font-bold hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-50"
+                className="pl-btn pl-btn-primary disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Concluir
               </button>
@@ -966,7 +966,7 @@ export default function CustomDomainWizardPage() {
           <div className="space-y-6">
             <div>
               <h2 className="text-xl font-bold">Tudo pronto</h2>
-              <p className="mt-2 text-sm text-white/55">
+              <p className="mt-2 text-sm text-[var(--panel-muted)]">
                 Seu site foi criado. O domínio e o email podem levar alguns minutos para propagar.
               </p>
             </div>
@@ -976,16 +976,16 @@ export default function CustomDomainWizardPage() {
                 href={`https://${domain}`}
                 target="_blank"
                 rel="noreferrer"
-                className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-5 text-emerald-100 hover:bg-emerald-500/15"
+                className="rounded-2xl border border-[var(--panel-ok-line)] bg-[var(--panel-ok-bg)] p-5 text-[var(--panel-ok-text)] hover:opacity-90"
               >
-                <div className="text-sm text-emerald-100/70">Site</div>
+                <div className="text-sm text-[var(--panel-muted)]">Site</div>
                 <div className="mt-1 break-all font-bold">https://{domain}</div>
               </a>
               <Link
                 href={`/emails/${encodeURIComponent(domain)}`}
-                className="rounded-2xl border border-violet-500/20 bg-violet-500/10 p-5 text-violet-100 hover:bg-violet-500/15"
+                className="rounded-2xl border border-[var(--panel-line)] bg-[var(--panel-hover)] p-5 text-[var(--panel-ink)] hover:opacity-90"
               >
-                <div className="text-sm text-violet-100/70">Inbox</div>
+                <div className="text-sm text-[var(--panel-muted)]">Inbox</div>
                 <div className="mt-1 break-all font-bold">{contactEmail}</div>
               </Link>
             </div>
@@ -993,14 +993,14 @@ export default function CustomDomainWizardPage() {
             <div className="flex flex-col gap-3 md:flex-row">
               <button
                 onClick={() => router.push("/sites")}
-                className="rounded-xl bg-violet-600 px-5 py-3 font-bold hover:bg-violet-500"
+                className="pl-btn pl-btn-primary"
               >
                 Ver meus sites
               </button>
               {siteId ? (
                 <button
                   onClick={() => router.push(`/sites/${siteId}/edit`)}
-                  className="rounded-xl border border-white/10 bg-white/5 px-5 py-3 font-semibold hover:bg-white/10"
+                  className="pl-btn"
                 >
                   Editar site
                 </button>
