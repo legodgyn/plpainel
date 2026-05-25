@@ -160,6 +160,11 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
       });
       items.push({ href: "/users", label: "Usuários", icon: "👥" });
       items.push({
+        href: "/admin/tokens",
+        label: "Controle de Tokens",
+        icon: "🪙",
+      });
+      items.push({
         href: "https://bm.plpainel.com/dashboard.html",
         label: "Controle de BM's",
         icon: "📈",
