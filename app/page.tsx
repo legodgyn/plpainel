@@ -5,6 +5,9 @@ import PublicGeneratedSite from "@/app/components/PublicGeneratedSite";
 export const dynamic = "force-dynamic";
 
 const ROOT_DOMAINS = [
+  "workersdevelopers.com.br",
+  "bmworkers.com.br",
+  "workersdev.com.br",
   "plpainel.com",
   "acmpainel.com.br",
   "ehspainel.com.br",

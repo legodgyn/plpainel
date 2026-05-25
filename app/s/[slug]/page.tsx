@@ -9,6 +9,9 @@ type PageProps = {
 };
 
 const ROOT_DOMAINS = [
+  "workersdevelopers.com.br",
+  "bmworkers.com.br",
+  "workersdev.com.br",
   "plpainel.com",
   "acmpainel.com.br",
   "ehspainel.com.br",

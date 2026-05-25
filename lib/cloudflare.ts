@@ -1,4 +1,7 @@
 const ROOT_DOMAINS = [
+  "workersdevelopers.com.br",
+  "bmworkers.com.br",
+  "workersdev.com.br",
   "plpainel.com",
   "acmpainel.com.br",
   "ehspainel.com.br",
@@ -71,6 +74,12 @@ export function getSubdomainLabel(domain: string): string {
 
 export function getZoneIdByBaseDomain(baseDomain: string): string {
   switch (baseDomain) {
+    case "workersdevelopers.com.br":
+      return env("CLOUDFLARE_ZONE_ID_WORKERSDEVELOPERS");
+    case "bmworkers.com.br":
+      return env("CLOUDFLARE_ZONE_ID_BMWORKERS");
+    case "workersdev.com.br":
+      return env("CLOUDFLARE_ZONE_ID_WORKERSDEV");
     case "plpainel.com":
       return env("CLOUDFLARE_ZONE_ID_PLPAINEL");
     case "acmpainel.com.br":
