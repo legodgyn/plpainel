@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseBrowser";
 import { makeCompanyAbout, makeCompanyMission } from "@/lib/companyTexts";
 
-const CUSTOM_DOMAIN_IP = "187.77.33.45";
+const CUSTOM_DOMAIN_IP = "147.93.186.133";
 const PANEL_MAIL_HOST = "mail.plpainel.com";
 const DRAFT_KEY = "plpainel:custom-domain-draft";
 const DRAFT_VERSION = 1;
