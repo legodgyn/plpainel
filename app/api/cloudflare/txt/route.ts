@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { upsertTxtRecord } from "@/lib/cloudflare";
+import { getBaseDomain, upsertTxtRecord } from "@/lib/cloudflare";
 
 export async function POST(req: Request) {
   try {
@@ -19,13 +19,17 @@ export async function POST(req: Request) {
       );
     }
 
-    await upsertTxtRecord({
+    const baseDomain = getBaseDomain(domain);
+    const record = await upsertTxtRecord({
       domain,
       content: txt,
     });
 
     return NextResponse.json({
       success: true,
+      domain,
+      baseDomain,
+      recordId: record.id,
       message: "TXT criado/atualizado com sucesso",
     });
   } catch (err: any) {

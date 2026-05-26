@@ -61,6 +61,8 @@ export default function EditSitePage() {
   const [isPublic, setIsPublic] = useState(true);
   const [slug, setSlug] = useState("");
   const [baseDomain, setBaseDomain] = useState("");
+  const [domainMode, setDomainMode] = useState<string | null>(null);
+  const [customDomain, setCustomDomain] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [cnpj, setCnpj] = useState("");
   const [mission, setMission] = useState("");
@@ -80,7 +82,7 @@ export default function EditSitePage() {
       const { data, error } = await supabase
         .from("sites")
         .select(
-          "id, slug, base_domain, company_name, cnpj, mission, phone, email, instagram, whatsapp, about, privacy, footer, is_public, meta_verify_name, meta_verify_content, meta_txt"
+          "id, slug, base_domain, domain_mode, custom_domain, company_name, cnpj, mission, phone, email, instagram, whatsapp, about, privacy, footer, is_public, meta_verify_name, meta_verify_content, meta_txt"
         )
         .eq("id", id)
         .single();
@@ -95,6 +97,8 @@ export default function EditSitePage() {
 
       setSlug(data.slug || "");
       setBaseDomain(data.base_domain || "");
+      setDomainMode(data.domain_mode || null);
+      setCustomDomain(data.custom_domain || "");
       setCompanyName(data.company_name || "");
       setCnpj(data.cnpj || "");
       setMission(data.mission || "");
@@ -181,8 +185,19 @@ export default function EditSitePage() {
         return;
       }
 
-      if (cleanTxt && slug && baseDomain) {
-        const domain = `${slug}.${baseDomain}`;
+      if (cleanTxt) {
+        const domain =
+          domainMode === "custom_domain" && customDomain
+            ? customDomain
+            : slug && baseDomain
+              ? `${slug}.${baseDomain}`
+              : "";
+
+        if (!domain) {
+          alert("Site salvo, mas nao foi possivel identificar o dominio para criar o TXT.");
+          router.push("/dashboard");
+          return;
+        }
 
         const cfRes = await fetch("/api/cloudflare/txt", {
           method: "POST",
@@ -192,9 +207,13 @@ export default function EditSitePage() {
 
         const cfJson = await cfRes.json().catch(() => ({}));
         if (!cfRes.ok) {
-          console.warn(
-            cfJson?.error || "Site salvo, mas nao foi possivel criar o TXT no Cloudflare."
+          alert(
+            `Site salvo, mas o TXT nao foi criado na Cloudflare: ${
+              cfJson?.error || "erro desconhecido"
+            }`
           );
+          router.push("/dashboard");
+          return;
         }
       }
 

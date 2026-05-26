@@ -184,7 +184,7 @@ export async function createTxtRecord(params: {
       body: JSON.stringify({
         type: "TXT",
         name,
-        content: `"${params.content}"`,
+        content: params.content,
         ttl: params.ttl ?? 120,
       }),
     }
@@ -208,7 +208,7 @@ export async function updateDnsRecord(params: {
       body: JSON.stringify({
         type: "TXT",
         name,
-        content: `"${params.content}"`,
+        content: params.content,
         ttl: params.ttl ?? 120,
       }),
     }
