@@ -139,9 +139,23 @@ export default function EditSitePage() {
     setLoading(true);
 
     try {
-      const { error } = await supabase
-        .from("sites")
-        .update({
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+
+      if (!accessToken) {
+        alert("Sua sessao expirou. Faca login novamente para salvar.");
+        router.push("/login");
+        return;
+      }
+
+      const saveRes = await fetch("/api/sites/update", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          id,
           company_name: companyName.trim(),
           cnpj: cnpj.trim(),
           mission: mission.trim(),
@@ -156,11 +170,13 @@ export default function EditSitePage() {
           meta_verify_name: parsedMeta.name,
           meta_verify_content: parsedMeta.content,
           meta_txt: cleanTxt || null,
-        })
-        .eq("id", id);
+        }),
+      });
 
-      if (error) {
-        alert(error.message);
+      const saveJson = await saveRes.json().catch(() => ({}));
+
+      if (!saveRes.ok) {
+        alert(saveJson?.error || "Nao foi possivel salvar o site.");
         setLoading(false);
         return;
       }
@@ -176,9 +192,9 @@ export default function EditSitePage() {
 
         const cfJson = await cfRes.json().catch(() => ({}));
         if (!cfRes.ok) {
-          alert(cfJson?.error || "Site salvo, mas nao foi possivel criar o TXT no Cloudflare.");
-          setLoading(false);
-          return;
+          console.warn(
+            cfJson?.error || "Site salvo, mas nao foi possivel criar o TXT no Cloudflare."
+          );
         }
       }
 
