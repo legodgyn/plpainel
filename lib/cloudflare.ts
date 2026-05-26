@@ -260,8 +260,6 @@ export async function upsertTxtRecord(params: {
   content: string;
   ttl?: number;
 }) {
-  await ensureExactWebRecordForSubdomain(params.domain);
-
   const existing = await listDnsRecords({
     domain: params.domain,
     type: "TXT",
