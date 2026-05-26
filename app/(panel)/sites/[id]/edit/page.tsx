@@ -125,7 +125,7 @@ export default function EditSitePage() {
 
   async function handleSave() {
     const parsedMeta = parseMetaTag(metaTag);
-    const cleanTxt = normalizeTxt(metaTxt);
+    const cleanTxt = normalizeTxt(metaTxt || metaTag);
 
     if (
       metaTag.trim().toLowerCase().includes("<meta") &&
@@ -135,7 +135,7 @@ export default function EditSitePage() {
       return;
     }
 
-    if (metaTxt.trim() && !cleanTxt.includes("facebook-domain-verification=")) {
+    if ((metaTxt.trim() || metaTag.trim()) && cleanTxt && !cleanTxt.includes("facebook-domain-verification=")) {
       alert("TXT invalido.");
       return;
     }
@@ -286,7 +286,7 @@ export default function EditSitePage() {
           <Field
             label="Meta tag de verificacao"
             required={false}
-            hint='Cole a tag completa. Ex: <meta name="facebook-domain-verification" content="..." />'
+            hint='Cole a tag completa. Se o TXT ficar vazio, o painel cria o TXT na Cloudflare usando o content dessa tag.'
           >
             <input
               value={metaTag}
@@ -299,7 +299,7 @@ export default function EditSitePage() {
           <Field
             label="TXT de verificacao"
             required={false}
-            hint="Cole o TXT completo ou so o token. Ex: facebook-domain-verification=..."
+            hint="Opcional. Cole o TXT completo ou so o token se quiser sobrescrever o valor extraido da meta tag."
           >
             <input
               value={metaTxt}
