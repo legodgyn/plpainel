@@ -301,6 +301,29 @@ type FormState = {
   cnae_principal: string;
 };
 
+function isTokenError(message: string) {
+  return message === "insufficient_tokens" || message === "not_enough_tokens";
+}
+
+function humanizeCreateSiteError(message?: string | null) {
+  const raw = String(message || "").trim();
+  const normalized = raw.toLowerCase();
+
+  if (
+    normalized === "slug_already_exists" ||
+    normalized.includes("slug_already_exists") ||
+    normalized.includes("duplicate key")
+  ) {
+    return "Esse dominio ja foi criado no painel. Edite o dominio ou escolha outro CNPJ.";
+  }
+
+  if (isTokenError(normalized)) {
+    return "Voce nao possui tokens suficientes para criar um site.";
+  }
+
+  return raw || "Erro ao criar site.";
+}
+
 const initialForm: FormState = {
   slug: "",
   cnpj: "",
@@ -568,14 +591,12 @@ export default function NewSitePage() {
       });
 
       if (error) {
-        if (
-          error.message === "insufficient_tokens" ||
-          error.message === "not_enough_tokens"
-        ) {
+        const friendlyMessage = humanizeCreateSiteError(error.message);
+        if (isTokenError(String(error.message || "").toLowerCase())) {
           setInsufficientTokens(true);
-          setMsg("Você não possui tokens suficientes para criar um site.");
+          setMsg(friendlyMessage);
         } else {
-          setMsg(error.message || "Erro ao criar site.");
+          setMsg(friendlyMessage);
         }
         return;
       }
@@ -652,11 +673,11 @@ export default function NewSitePage() {
     } catch (e: any) {
       const message = e?.message || "Erro ao criar site.";
 
-      if (message === "insufficient_tokens" || message === "not_enough_tokens") {
+      if (isTokenError(String(message).toLowerCase())) {
         setInsufficientTokens(true);
-        setMsg("Você não possui tokens suficientes para criar um site.");
+        setMsg(humanizeCreateSiteError(message));
       } else {
-        setMsg(message);
+        setMsg(humanizeCreateSiteError(message));
       }
     } finally {
       setLoading(false);

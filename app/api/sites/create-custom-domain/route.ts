@@ -38,6 +38,21 @@ function slugify(input: string) {
     .slice(0, 48);
 }
 
+function humanizeCreateSiteError(message?: string | null) {
+  const raw = String(message || "").trim();
+  const normalized = raw.toLowerCase();
+
+  if (
+    normalized === "slug_already_exists" ||
+    normalized.includes("slug_already_exists") ||
+    normalized.includes("duplicate key")
+  ) {
+    return "Esse dominio ja foi criado no painel. Edite o dominio ou escolha outro CNPJ.";
+  }
+
+  return raw || "Erro ao criar site.";
+}
+
 export async function POST(req: Request) {
   try {
     const token = getBearerToken(req);
@@ -130,7 +145,7 @@ export async function POST(req: Request) {
           ok: false,
           error: insufficient
             ? "Voce nao possui tokens suficientes para criar um site."
-            : msg,
+            : humanizeCreateSiteError(msg),
           code: insufficient ? "insufficient_tokens" : "create_failed",
         },
         { status: insufficient ? 402 : 500 }
