@@ -95,7 +95,6 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
   const baseNav = useMemo<NavItem[]>(
     () => [
       { href: "/dashboard", label: "Dashboard", icon: "📊" },
-      { href: "/loja", label: "Loja", icon: "🛍️" },
       { href: "/sites", label: "Meus Sites", icon: "🌐" },
       { href: "/sites/new", label: "Criar Site", icon: "➕" },
       { href: "/tokens", label: "Comprar Tokens", icon: "💳" },
