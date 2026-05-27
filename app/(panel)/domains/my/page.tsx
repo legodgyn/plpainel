@@ -9,6 +9,7 @@ type DomainRow = {
   domain: string;
   status: string;
   assigned_at: string | null;
+  source: "available" | "connected";
 };
 
 export default function MyDomainsPage() {
@@ -27,13 +28,47 @@ export default function MyDomainsPage() {
       return;
     }
 
-    const { data } = await supabase
+    const { data: availableDomains } = await supabase
       .from("available_domains")
       .select("id, domain, status, assigned_at")
       .eq("assigned_user_id", user.id)
       .order("assigned_at", { ascending: false });
 
-    setDomains(data || []);
+    const { data: connectedSites } = await supabase
+      .from("sites")
+      .select("id, custom_domain, created_at")
+      .eq("user_id", user.id)
+      .eq("domain_mode", "custom_domain")
+      .not("custom_domain", "is", null)
+      .order("created_at", { ascending: false });
+
+    const rows = new Map<string, DomainRow>();
+
+    for (const row of availableDomains || []) {
+      const domain = String(row.domain || "").trim().toLowerCase();
+      if (!domain) continue;
+      rows.set(domain, {
+        id: row.id,
+        domain,
+        status: row.status || "ativo",
+        assigned_at: row.assigned_at || null,
+        source: "available",
+      });
+    }
+
+    for (const row of connectedSites || []) {
+      const domain = String(row.custom_domain || "").trim().toLowerCase();
+      if (!domain || rows.has(domain)) continue;
+      rows.set(domain, {
+        id: row.id,
+        domain,
+        status: "conectado",
+        assigned_at: row.created_at || null,
+        source: "connected",
+      });
+    }
+
+    setDomains([...rows.values()]);
     setLoading(false);
   }
 
@@ -63,7 +98,9 @@ export default function MyDomainsPage() {
         ) : (
           domains.map((d) => (
             <article key={d.id} className="pl-card p-5">
-              <span className="pl-badge pl-badge-ok">ativo</span>
+              <span className="pl-badge pl-badge-ok">
+                {d.source === "connected" ? "conectado" : "ativo"}
+              </span>
               <h2 className="mt-3 break-all text-xl font-black">{d.domain}</h2>
               <p className="mt-2 text-sm text-[var(--panel-muted)]">
                 Status: <strong>{d.status}</strong>

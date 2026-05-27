@@ -44,6 +44,23 @@ function normalizeTxt(input: string) {
   return raw;
 }
 
+const PLATFORM_ROOT_DOMAINS = [
+  "workersdevelopers.com.br",
+  "bmworkers.com.br",
+  "workersdev.com.br",
+  "plpainel.com",
+  "acmpainel.com.br",
+  "ehspainel.com.br",
+  "lcppainel.com.br",
+  "lcspainel.com.br",
+  "mapspainel.com.br",
+];
+
+function isPlatformDomain(domain: string) {
+  const clean = String(domain || "").trim().toLowerCase();
+  return PLATFORM_ROOT_DOMAINS.some((root) => clean === root || clean.endsWith(`.${root}`));
+}
+
 export default function EditSitePage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
@@ -199,6 +216,11 @@ export default function EditSitePage() {
           return;
         }
 
+        if (!isPlatformDomain(domain)) {
+          router.push("/dashboard");
+          return;
+        }
+
         const cfRes = await fetch("/api/cloudflare/txt", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -286,7 +308,7 @@ export default function EditSitePage() {
           <Field
             label="Meta tag de verificacao"
             required={false}
-            hint='Cole a tag completa. Se o TXT ficar vazio, o painel cria o TXT na Cloudflare usando o content dessa tag.'
+            hint='Cole a tag completa. Em dominios da plataforma, o painel tambem cria o TXT na Cloudflare.'
           >
             <input
               value={metaTag}
