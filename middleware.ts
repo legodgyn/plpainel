@@ -10,6 +10,14 @@ const ROOT_DOMAINS = [
   "lcppainel.com.br",
   "lcspainel.com.br",
   "mapspainel.com.br",
+  "fusionmix.com.br",
+  "atronix.com.br",
+  "lumixx.com.br",
+  "witchdoctor.com.br",
+  "drowranger.com.br",
+  "avryxon.com.br",
+  "zylaris.com.br",
+  "zytrenko.com.br",
 ];
 
 function cleanHost(host: string) {

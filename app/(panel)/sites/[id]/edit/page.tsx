@@ -22,45 +22,6 @@ function parseMetaTag(input: string) {
   };
 }
 
-function normalizeTxt(input: string) {
-  let raw = String(input || "").trim();
-  if (!raw) return "";
-
-  if (raw.toLowerCase().includes("<meta")) {
-    const contentMatch = raw.match(/content\s*=\s*["']([^"']+)["']/i);
-    raw = String(contentMatch?.[1] || "").trim();
-  }
-
-  raw = raw.replace(/^"+|"+$/g, "");
-  raw = raw.replace(
-    /^facebook-domain-verification=facebook-domain-verification=/i,
-    "facebook-domain-verification="
-  );
-
-  if (!/^facebook-domain-verification=/i.test(raw)) {
-    raw = `facebook-domain-verification=${raw}`;
-  }
-
-  return raw;
-}
-
-const PLATFORM_ROOT_DOMAINS = [
-  "workersdevelopers.com.br",
-  "bmworkers.com.br",
-  "workersdev.com.br",
-  "plpainel.com",
-  "acmpainel.com.br",
-  "ehspainel.com.br",
-  "lcppainel.com.br",
-  "lcspainel.com.br",
-  "mapspainel.com.br",
-];
-
-function isPlatformDomain(domain: string) {
-  const clean = String(domain || "").trim().toLowerCase();
-  return PLATFORM_ROOT_DOMAINS.some((root) => clean === root || clean.endsWith(`.${root}`));
-}
-
 export default function EditSitePage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
@@ -78,8 +39,6 @@ export default function EditSitePage() {
   const [isPublic, setIsPublic] = useState(true);
   const [slug, setSlug] = useState("");
   const [baseDomain, setBaseDomain] = useState("");
-  const [domainMode, setDomainMode] = useState<string | null>(null);
-  const [customDomain, setCustomDomain] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [cnpj, setCnpj] = useState("");
   const [mission, setMission] = useState("");
@@ -91,7 +50,6 @@ export default function EditSitePage() {
   const [privacy, setPrivacy] = useState("");
   const [footer, setFooter] = useState("");
   const [metaTag, setMetaTag] = useState("");
-  const [metaTxt, setMetaTxt] = useState("");
 
   useEffect(() => {
     async function load() {
@@ -99,7 +57,7 @@ export default function EditSitePage() {
       const { data, error } = await supabase
         .from("sites")
         .select(
-          "id, slug, base_domain, domain_mode, custom_domain, company_name, cnpj, mission, phone, email, instagram, whatsapp, about, privacy, footer, is_public, meta_verify_name, meta_verify_content, meta_txt"
+          "id, slug, base_domain, company_name, cnpj, mission, phone, email, instagram, whatsapp, about, privacy, footer, is_public, meta_verify_name, meta_verify_content"
         )
         .eq("id", id)
         .single();
@@ -114,8 +72,6 @@ export default function EditSitePage() {
 
       setSlug(data.slug || "");
       setBaseDomain(data.base_domain || "");
-      setDomainMode(data.domain_mode || null);
-      setCustomDomain(data.custom_domain || "");
       setCompanyName(data.company_name || "");
       setCnpj(data.cnpj || "");
       setMission(data.mission || "");
@@ -133,8 +89,6 @@ export default function EditSitePage() {
       } else {
         setMetaTag("");
       }
-
-      setMetaTxt(data.meta_txt || "");
     }
 
     load();
@@ -142,18 +96,12 @@ export default function EditSitePage() {
 
   async function handleSave() {
     const parsedMeta = parseMetaTag(metaTag);
-    const cleanTxt = normalizeTxt(metaTxt || metaTag);
 
     if (
       metaTag.trim().toLowerCase().includes("<meta") &&
       (!parsedMeta.name || !parsedMeta.content)
     ) {
       alert("Meta tag invalida. Cole a tag completa do Business Manager.");
-      return;
-    }
-
-    if ((metaTxt.trim() || metaTag.trim()) && cleanTxt && !cleanTxt.includes("facebook-domain-verification=")) {
-      alert("TXT invalido.");
       return;
     }
 
@@ -190,7 +138,6 @@ export default function EditSitePage() {
           is_public: isPublic,
           meta_verify_name: parsedMeta.name,
           meta_verify_content: parsedMeta.content,
-          meta_txt: cleanTxt || null,
         }),
       });
 
@@ -200,43 +147,6 @@ export default function EditSitePage() {
         alert(saveJson?.error || "Nao foi possivel salvar o site.");
         setLoading(false);
         return;
-      }
-
-      if (cleanTxt) {
-        const domain =
-          domainMode === "custom_domain" && customDomain
-            ? customDomain
-            : slug && baseDomain
-              ? `${slug}.${baseDomain}`
-              : "";
-
-        if (!domain) {
-          alert("Site salvo, mas nao foi possivel identificar o dominio para criar o TXT.");
-          router.push("/dashboard");
-          return;
-        }
-
-        if (!isPlatformDomain(domain)) {
-          router.push("/dashboard");
-          return;
-        }
-
-        const cfRes = await fetch("/api/cloudflare/txt", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ domain, txt: cleanTxt }),
-        });
-
-        const cfJson = await cfRes.json().catch(() => ({}));
-        if (!cfRes.ok) {
-          alert(
-            `Site salvo, mas o TXT nao foi criado na Cloudflare: ${
-              cfJson?.error || "erro desconhecido"
-            }`
-          );
-          router.push("/dashboard");
-          return;
-        }
       }
 
       router.push("/dashboard");
@@ -308,7 +218,7 @@ export default function EditSitePage() {
           <Field
             label="Meta tag de verificacao"
             required={false}
-            hint='Cole a tag completa. Em dominios da plataforma, o painel tambem cria o TXT na Cloudflare.'
+            hint="Cole a tag completa do Business Manager. A criacao automatica de TXT esta desativada por enquanto."
           >
             <input
               value={metaTag}
@@ -318,18 +228,6 @@ export default function EditSitePage() {
             />
           </Field>
 
-          <Field
-            label="TXT de verificacao"
-            required={false}
-            hint="Opcional. Cole o TXT completo ou so o token se quiser sobrescrever o valor extraido da meta tag."
-          >
-            <input
-              value={metaTxt}
-              onChange={(e) => setMetaTxt(e.target.value)}
-              className="pl-input"
-              placeholder="facebook-domain-verification=..."
-            />
-          </Field>
         </div>
 
         <div className="mt-6 grid gap-5">

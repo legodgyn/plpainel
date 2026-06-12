@@ -8,6 +8,14 @@ const ROOT_DOMAINS = [
   "lcppainel.com.br",
   "lcspainel.com.br",
   "mapspainel.com.br",
+  "fusionmix.com.br",
+  "atronix.com.br",
+  "lumixx.com.br",
+  "witchdoctor.com.br",
+  "drowranger.com.br",
+  "avryxon.com.br",
+  "zylaris.com.br",
+  "zytrenko.com.br",
 ] as const;
 
 type RootDomain = (typeof ROOT_DOMAINS)[number];
@@ -92,6 +100,22 @@ export function getZoneIdByBaseDomain(baseDomain: string): string {
       return env("CLOUDFLARE_ZONE_ID_LCSPAINEL");
     case "mapspainel.com.br":
       return env("CLOUDFLARE_ZONE_ID_MAPSPAINEL");
+    case "fusionmix.com.br":
+      return env("CLOUDFLARE_ZONE_ID_FUSIONMIX");
+    case "atronix.com.br":
+      return env("CLOUDFLARE_ZONE_ID_ATRONIX");
+    case "lumixx.com.br":
+      return env("CLOUDFLARE_ZONE_ID_LUMIXX");
+    case "witchdoctor.com.br":
+      return env("CLOUDFLARE_ZONE_ID_WITCHDOCTOR");
+    case "drowranger.com.br":
+      return env("CLOUDFLARE_ZONE_ID_DROWRANGER");
+    case "avryxon.com.br":
+      return env("CLOUDFLARE_ZONE_ID_AVRYXON");
+    case "zylaris.com.br":
+      return env("CLOUDFLARE_ZONE_ID_ZYLARIS");
+    case "zytrenko.com.br":
+      return env("CLOUDFLARE_ZONE_ID_ZYTRENKO");
     default:
       throw new Error(`Domínio sem zone configurada: ${baseDomain}`);
   }

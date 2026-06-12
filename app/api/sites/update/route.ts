@@ -51,7 +51,7 @@ export async function POST(req: Request) {
       { auth: { persistSession: false } }
     );
 
-    const payload = {
+    const payload: Record<string, unknown> = {
       company_name: cleanString(body.company_name),
       cnpj: cleanString(body.cnpj),
       mission: cleanString(body.mission),
@@ -65,8 +65,11 @@ export async function POST(req: Request) {
       is_public: Boolean(body.is_public),
       meta_verify_name: body.meta_verify_name ? cleanString(body.meta_verify_name) : null,
       meta_verify_content: body.meta_verify_content ? cleanString(body.meta_verify_content) : null,
-      meta_txt: body.meta_txt ? cleanString(body.meta_txt) : null,
     };
+
+    if (Object.prototype.hasOwnProperty.call(body, "meta_txt")) {
+      payload.meta_txt = body.meta_txt ? cleanString(body.meta_txt) : null;
+    }
 
     const { data, error } = await supabaseAdmin
       .from("sites")

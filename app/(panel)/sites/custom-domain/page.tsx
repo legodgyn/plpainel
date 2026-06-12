@@ -7,9 +7,8 @@ import { supabase } from "@/lib/supabaseBrowser";
 import { makeCompanyAbout, makeCompanyMission } from "@/lib/companyTexts";
 
 const CUSTOM_DOMAIN_IP = "147.93.186.133";
-const PANEL_MAIL_HOST = "mail.plpainel.com";
 const DRAFT_KEY = "plpainel:custom-domain-draft";
-const DRAFT_VERSION = 1;
+const DRAFT_VERSION = 2;
 
 type BalanceRow = { balance: number | null };
 
@@ -19,7 +18,6 @@ type FormState = {
   company_name: string;
   phone: string;
   whatsapp: string;
-  email: string;
   instagram: string;
   facebook: string;
   mission: string;
@@ -35,14 +33,12 @@ type WizardDraft = {
   siteId: string | null;
   dnsOk: boolean;
   sslOk: boolean;
-  emailOk: boolean;
   dnsDetails: string | null;
   sslDetails: string | null;
-  emailDetails: string | null;
   updatedAt: string;
 };
 
-const steps = ["Tokens", "CNPJ", "Gerar Site", "Domínio + DNS", "Email", "Concluído"];
+const steps = ["Tokens", "CNPJ", "Gerar Site", "Domínio + DNS", "Concluído"];
 
 const initialForm: FormState = {
   domain: "",
@@ -50,7 +46,6 @@ const initialForm: FormState = {
   company_name: "",
   phone: "",
   whatsapp: "",
-  email: "",
   instagram: "https://instagram.com",
   facebook: "https://facebook.com",
   mission: "",
@@ -162,7 +157,7 @@ function makeFooter(company: string, cnpj: string, email: string, phone?: string
 function safeStep(value: unknown) {
   const n = Number(value);
   if (!Number.isFinite(n)) return 1;
-  return Math.min(6, Math.max(1, Math.round(n)));
+  return Math.min(5, Math.max(1, Math.round(n)));
 }
 
 function formatDraftDate(value?: string) {
@@ -197,10 +192,8 @@ function readDraft() {
       siteId: draft.siteId || null,
       dnsOk: Boolean(draft.dnsOk),
       sslOk: Boolean(draft.sslOk),
-      emailOk: Boolean(draft.emailOk),
       dnsDetails: draft.dnsDetails || null,
       sslDetails: draft.sslDetails || null,
-      emailDetails: draft.emailDetails || null,
       updatedAt: draft.updatedAt || new Date().toISOString(),
     } satisfies WizardDraft;
   } catch {
@@ -220,7 +213,7 @@ function clearDraft() {
 
 function Progress({ current }: { current: number }) {
   return (
-    <div className="mt-8 grid grid-cols-6 gap-2">
+    <div className="mt-8 grid grid-cols-5 gap-2">
       {steps.map((label, index) => {
         const n = index + 1;
         const done = n < current;
@@ -301,10 +294,8 @@ export default function CustomDomainWizardPage() {
   const [siteId, setSiteId] = useState<string | null>(null);
   const [dnsOk, setDnsOk] = useState(false);
   const [sslOk, setSslOk] = useState(false);
-  const [emailOk, setEmailOk] = useState(false);
   const [dnsDetails, setDnsDetails] = useState<string | null>(null);
   const [sslDetails, setSslDetails] = useState<string | null>(null);
-  const [emailDetails, setEmailDetails] = useState<string | null>(null);
   const [savedDraft, setSavedDraft] = useState<WizardDraft | null>(null);
   const [draftChecked, setDraftChecked] = useState(false);
   const [draftActive, setDraftActive] = useState(false);
@@ -352,10 +343,8 @@ export default function CustomDomainWizardPage() {
     setSiteId(null);
     setDnsOk(false);
     setSslOk(false);
-    setEmailOk(false);
     setDnsDetails(null);
     setSslDetails(null);
-    setEmailDetails(null);
   }
 
   function restoreDraft(draft: WizardDraft) {
@@ -364,10 +353,8 @@ export default function CustomDomainWizardPage() {
     setSiteId(draft.siteId);
     setDnsOk(draft.dnsOk);
     setSslOk(draft.sslOk);
-    setEmailOk(draft.emailOk);
     setDnsDetails(draft.dnsDetails);
     setSslDetails(draft.sslDetails);
-    setEmailDetails(draft.emailDetails);
     setMsg(null);
     setDraftActive(true);
   }
@@ -392,10 +379,8 @@ export default function CustomDomainWizardPage() {
       siteId,
       dnsOk,
       sslOk,
-      emailOk,
       dnsDetails,
       sslDetails,
-      emailDetails,
       updatedAt: new Date().toISOString(),
     } satisfies WizardDraft;
 
@@ -410,10 +395,8 @@ export default function CustomDomainWizardPage() {
     siteId,
     dnsOk,
     sslOk,
-    emailOk,
     dnsDetails,
     sslDetails,
-    emailDetails,
   ]);
 
   async function fetchCnpj() {
@@ -473,7 +456,6 @@ export default function CustomDomainWizardPage() {
         company_name: company,
         phone,
         whatsapp: phone,
-        email: contactEmail,
         mission: makeCompanyMission(companyTextInput),
         about: makeCompanyAbout(companyTextInput),
         privacy: makePrivacy(company, formattedCnpj, contactEmail, phone),
@@ -516,7 +498,7 @@ export default function CustomDomainWizardPage() {
         body: JSON.stringify({
           ...form,
           domain,
-          email: form.email || contactEmail,
+          email: contactEmail,
         }),
       });
 
@@ -577,7 +559,7 @@ export default function CustomDomainWizardPage() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ domain, email: form.email || contactEmail }),
+        body: JSON.stringify({ domain, email: contactEmail }),
       });
       const sslJson = await sslRes.json().catch(() => ({}));
 
@@ -592,32 +574,6 @@ export default function CustomDomainWizardPage() {
       if (!sslRes.ok || !sslJson.ok) {
         setMsg(sslJson.message || "Nao foi possivel ativar o SSL agora. Tente novamente em alguns minutos.");
       }
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function checkPanelInbox() {
-    setMsg(null);
-    setEmailDetails(null);
-    setLoading(true);
-
-    try {
-      const res = await fetch("/api/dns/check-plpainel-email", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ domain }),
-      });
-      const json = await res.json().catch(() => ({}));
-
-      setEmailOk(Boolean(json.ok));
-      setEmailDetails(
-        json.ok
-          ? "Caixa de entrada configurada corretamente."
-          : `Faltando MX: ${(json.missing?.mx || []).join(", ") || "ok"} | SPF: ${
-              (json.missing?.spf || []).length ? "pendente" : "ok"
-            }`
-      );
     } finally {
       setLoading(false);
     }
@@ -643,7 +599,7 @@ export default function CustomDomainWizardPage() {
               ) : null}
             </div>
             <p className="mt-1 text-sm font-semibold text-[var(--panel-muted)]">
-              Crie um site com domínio próprio, SSL e caixa de entrada no PLPainel.
+              Crie um site com domínio próprio e SSL no PLPainel.
             </p>
           </div>
         </div>
@@ -746,14 +702,11 @@ export default function CustomDomainWizardPage() {
                     const nextDomain = cleanDomain(e.target.value);
                     setDnsOk(false);
                     setSslOk(false);
-                    setEmailOk(false);
                     setDnsDetails(null);
                     setSslDetails(null);
-                    setEmailDetails(null);
                     setForm((prev) => ({
                       ...prev,
                       domain: nextDomain,
-                      email: prev.email && prev.email !== contactEmail ? prev.email : buildEmail(nextDomain),
                     }));
                   }}
                   placeholder="seudominio.com.br"
@@ -763,7 +716,7 @@ export default function CustomDomainWizardPage() {
 
               <button
                 onClick={fetchCnpj}
-                disabled={loading}
+                
                 className="pl-btn pl-btn-primary justify-center px-6"
               >
                 {loading ? "Buscando..." : "Buscar"}
@@ -802,12 +755,6 @@ export default function CustomDomainWizardPage() {
                   placeholder="WhatsApp"
                   className="pl-input"
                 />
-                <input
-                  value={form.email}
-                  onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))}
-                  placeholder={contactEmail}
-                  className="pl-input md:col-span-2"
-                />
               </div>
             </div>
 
@@ -820,7 +767,7 @@ export default function CustomDomainWizardPage() {
               </button>
               <button
                 onClick={createSite}
-                disabled={loading}
+                
                 className="pl-btn pl-btn-primary flex-1 justify-center"
               >
                 {loading ? "Criando..." : "Gerar e Criar Site (1 token)"}
@@ -868,7 +815,7 @@ export default function CustomDomainWizardPage() {
             <div className="flex flex-col gap-3 md:flex-row">
               <button
                 onClick={setupSslFromDnsCheck}
-                disabled={loading}
+                
                 className="pl-btn"
               >
                 {loading ? "Configurando SSL..." : "Verificar DNS e Instalar SSL"}
@@ -878,7 +825,7 @@ export default function CustomDomainWizardPage() {
                 disabled={!sslOk}
                 className="pl-btn pl-btn-primary disabled:cursor-not-allowed disabled:opacity-50"
               >
-                Continuar para Email
+                Concluir
               </button>
             </div>
           </div>
@@ -887,91 +834,13 @@ export default function CustomDomainWizardPage() {
         {step === 5 ? (
           <div className="space-y-6">
             <div>
-              <h2 className="text-xl font-bold">Ativar Email Interno</h2>
-              <p className="mt-2 text-sm text-[var(--panel-muted)]">
-                Configure o DNS para receber mensagens do domínio dentro da caixa de entrada do PLPainel.
-              </p>
-            </div>
-
-            <div className="pl-card-soft p-5">
-              <div className="mb-4">
-                <div className="text-sm font-bold">Registros obrigatórios no DNS</div>
-                <div className="mt-1 text-xs text-[var(--panel-muted)]">
-                  Pode ser configurado em qualquer provedor de DNS. Não precisa usar Cloudflare.
-                </div>
-              </div>
-              <div className="space-y-3">
-                <DnsRow type="MX" name="@" value={PANEL_MAIL_HOST} extra="Prioridade 10" />
-                <DnsRow type="TXT" name="@" value="v=spf1 mx ~all" />
-              </div>
-            </div>
-
-            <div className="grid gap-3 md:grid-cols-3">
-              <div className="rounded-2xl border border-[var(--panel-ok-line)] bg-[var(--panel-ok-bg)] p-4">
-                <div className="text-sm font-bold text-[var(--panel-ok-text)]">1. MX</div>
-                <div className="mt-1 text-xs text-[var(--panel-muted)]">
-                  Direciona o recebimento para {PANEL_MAIL_HOST}.
-                </div>
-              </div>
-              <div className="rounded-2xl border border-[var(--panel-ok-line)] bg-[var(--panel-ok-bg)] p-4">
-                <div className="text-sm font-bold text-[var(--panel-ok-text)]">2. SPF</div>
-                <div className="mt-1 text-xs text-[var(--panel-muted)]">
-                  Autoriza o servidor de email do PLPainel no domínio.
-                </div>
-              </div>
-              <div className="rounded-2xl border border-[var(--panel-ok-line)] bg-[var(--panel-ok-bg)] p-4">
-                <div className="text-sm font-bold text-[var(--panel-ok-text)]">3. Inbox</div>
-                <div className="mt-1 text-xs text-[var(--panel-muted)]">
-                  As mensagens ficam salvas no painel do cliente.
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-[var(--panel-line)] bg-[var(--panel-hover)] px-4 py-4 text-sm text-[var(--panel-muted)]">
-              Depois da propagação do DNS, emails enviados para <b>{contactEmail}</b> aparecem em{" "}
-              <b>Meus Emails</b> no PLPainel. Esta etapa não cria redirecionamento para Gmail ou Outlook.
-            </div>
-
-            {emailDetails ? (
-              <div className={`rounded-2xl px-4 py-3 text-sm ${emailOk ? "bg-[var(--panel-ok-bg)] text-[var(--panel-ok-text)]" : "bg-[var(--panel-warn-bg)] text-[var(--panel-warn-text)]"}`}>
-                {emailDetails}
-              </div>
-            ) : null}
-
-            <div className="flex flex-col gap-3 md:flex-row">
-              <button
-                onClick={checkPanelInbox}
-                disabled={loading}
-                className="pl-btn disabled:opacity-60"
-              >
-                {loading ? "Verificando..." : "Verificar e Ativar Caixa"}
-              </button>
-              <button
-                onClick={() => {
-                  clearDraft();
-                  setSavedDraft(null);
-                  setDraftActive(false);
-                  setStep(6);
-                }}
-                disabled={!emailOk}
-                className="pl-btn pl-btn-primary disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                Concluir
-              </button>
-            </div>
-          </div>
-        ) : null}
-
-        {step === 6 ? (
-          <div className="space-y-6">
-            <div>
               <h2 className="text-xl font-bold">Tudo pronto</h2>
               <p className="mt-2 text-sm text-[var(--panel-muted)]">
-                Seu site foi criado. O domínio e o email podem levar alguns minutos para propagar.
+                Seu site foi criado. O dominio pode levar alguns minutos para propagar.
               </p>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-4">
               <a
                 href={`https://${domain}`}
                 target="_blank"
@@ -981,13 +850,6 @@ export default function CustomDomainWizardPage() {
                 <div className="text-sm text-[var(--panel-muted)]">Site</div>
                 <div className="mt-1 break-all font-bold">https://{domain}</div>
               </a>
-              <Link
-                href={`/emails/${encodeURIComponent(domain)}`}
-                className="rounded-2xl border border-[var(--panel-line)] bg-[var(--panel-hover)] p-5 text-[var(--panel-ink)] hover:opacity-90"
-              >
-                <div className="text-sm text-[var(--panel-muted)]">Inbox</div>
-                <div className="mt-1 break-all font-bold">{contactEmail}</div>
-              </Link>
             </div>
 
             <div className="flex flex-col gap-3 md:flex-row">
@@ -1007,8 +869,7 @@ export default function CustomDomainWizardPage() {
               ) : null}
             </div>
           </div>
-        ) : null}
-      </section>
+        ) : null}      </section>
     </main>
   );
 }

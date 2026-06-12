@@ -4,9 +4,9 @@ import { createClient } from "@supabase/supabase-js";
 export const dynamic = "force-dynamic";
 
 const ROOT_DOMAINS = [
-  "workersdevelopers.com.br",
-  "bmworkers.com.br",
-  "workersdev.com.br",
+  "avryxon.com.br",
+  "zylaris.com.br",
+  "zytrenko.com.br",
 ] as const;
 
 function getBearerToken(req: Request) {
