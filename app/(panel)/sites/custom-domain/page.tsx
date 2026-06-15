@@ -8,7 +8,7 @@ import { makeCompanyAbout, makeCompanyMission } from "@/lib/companyTexts";
 
 const CUSTOM_DOMAIN_IP = "147.93.186.133";
 const DRAFT_KEY = "plpainel:custom-domain-draft";
-const DRAFT_VERSION = 2;
+const DRAFT_VERSION = 3;
 
 type BalanceRow = { balance: number | null };
 
