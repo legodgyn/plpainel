@@ -18,6 +18,9 @@ const ROOT_DOMAINS = [
   "avryxon.com.br",
   "zylaris.com.br",
   "zytrenko.com.br",
+  "novoryn.com.br",
+  "voryxel.com.br",
+  "mavoryx.com.br",
 ];
 
 function cleanHost(host: string) {
