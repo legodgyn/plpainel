@@ -19,6 +19,9 @@ const ROOT_DOMAINS = [
   "novoryn.com.br",
   "voryxel.com.br",
   "mavoryx.com.br",
+  "monstergyn.com.br",
+  "stormgyn.com.br",
+  "stronggyn.com.br",
 ] as const;
 
 type RootDomain = (typeof ROOT_DOMAINS)[number];
@@ -125,6 +128,12 @@ export function getZoneIdByBaseDomain(baseDomain: string): string {
       return env("CLOUDFLARE_ZONE_ID_VORYXEL");
     case "mavoryx.com.br":
       return env("CLOUDFLARE_ZONE_ID_MAVORYX");
+    case "monstergyn.com.br":
+      return env("CLOUDFLARE_ZONE_ID_MONSTERGYN");
+    case "stormgyn.com.br":
+      return env("CLOUDFLARE_ZONE_ID_STORMGYN");
+    case "stronggyn.com.br":
+      return env("CLOUDFLARE_ZONE_ID_STRONGGYN");
     default:
       throw new Error(`Domínio sem zone configurada: ${baseDomain}`);
   }

@@ -25,6 +25,9 @@ const ROOT_DOMAINS = [
   "novoryn.com.br",
   "voryxel.com.br",
   "mavoryx.com.br",
+  "monstergyn.com.br",
+  "stormgyn.com.br",
+  "stronggyn.com.br",
 ];
 
 function getCleanHost(host: string) {
