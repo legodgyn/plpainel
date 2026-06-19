@@ -24,6 +24,9 @@ const ROOT_DOMAINS = [
   "monstergyn.com.br",
   "stormgyn.com.br",
   "stronggyn.com.br",
+  "123hexa.com.br",
+  "brhexa.com.br",
+  "h3xa.com.br",
 ];
 
 function cleanHost(host: string) {
