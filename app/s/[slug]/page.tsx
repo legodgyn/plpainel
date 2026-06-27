@@ -38,6 +38,9 @@ const ROOT_DOMAINS = [
   "pl01.com.br",
   "pl02.com.br",
   "pl03.com.br",
+  "lcp1.com.br",
+  "lcp2.com.br",
+  "lcp3.com.br",
 ];
 
 function onlyDigits(v: string) {
