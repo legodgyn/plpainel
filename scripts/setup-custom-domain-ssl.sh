@@ -8,6 +8,7 @@ INCLUDE_WWW="${INCLUDE_WWW:-0}"
 EXPECTED_IP="${CUSTOM_DOMAIN_A_RECORD_IP:-147.93.186.133}"
 NGINX_AVAILABLE_DIR="${NGINX_AVAILABLE_DIR:-/etc/nginx/sites-available}"
 NGINX_ENABLED_DIR="${NGINX_ENABLED_DIR:-/etc/nginx/sites-enabled}"
+LOCK_FILE="${SSL_LOCK_FILE:-/var/lock/plpainel-custom-domain-ssl.lock}"
 
 if [[ -z "$DOMAIN" ]]; then
   echo "Uso: sudo ./scripts/setup-custom-domain-ssl.sh dominio.com [email]"
@@ -24,6 +25,19 @@ if [[ "$(id -u)" -ne 0 ]]; then
   exit 1
 fi
 
+if [[ ! "$APP_PORT" =~ ^[0-9]+$ ]]; then
+  echo "APP_PORT invalida: $APP_PORT"
+  exit 1
+fi
+
+if command -v flock >/dev/null 2>&1; then
+  exec 9>"$LOCK_FILE"
+  if ! flock -n 9; then
+    echo "Outra instalacao de SSL ja esta em andamento. Tente novamente em alguns minutos."
+    exit 1
+  fi
+fi
+
 resolve_domain_ips() {
   if command -v getent >/dev/null 2>&1; then
     getent ahostsv4 "$DOMAIN" | awk '{print $1}' | sort -u
@@ -37,6 +51,23 @@ resolve_domain_ips() {
 
   if command -v host >/dev/null 2>&1; then
     host -t A "$DOMAIN" | awk '/has address/ {print $4}' | sort -u
+    return
+  fi
+}
+
+resolve_domain_aaaa() {
+  if command -v getent >/dev/null 2>&1; then
+    getent ahostsv6 "$DOMAIN" | awk '{print $1}' | sort -u
+    return
+  fi
+
+  if command -v dig >/dev/null 2>&1; then
+    dig +short AAAA "$DOMAIN" | sort -u
+    return
+  fi
+
+  if command -v host >/dev/null 2>&1; then
+    host -t AAAA "$DOMAIN" | awk '/has IPv6 address/ {print $5}' | sort -u
     return
   fi
 }
@@ -61,10 +92,18 @@ fi
 
 echo "Verificando registro A de $DOMAIN..."
 RESOLVED_IPS="$(resolve_domain_ips || true)"
-if ! printf '%s\n' "$RESOLVED_IPS" | grep -qx "$EXPECTED_IP"; then
+UNEXPECTED_IPS="$(printf '%s\n' "$RESOLVED_IPS" | awk -v expected="$EXPECTED_IP" 'NF && $0 != expected')"
+if [[ -z "$RESOLVED_IPS" ]] || [[ -n "$UNEXPECTED_IPS" ]]; then
   echo "O registro A de $DOMAIN ainda nao aponta para $EXPECTED_IP."
   echo "Encontrado: ${RESOLVED_IPS:-nenhum registro A}"
   echo "Ajuste o DNS e aguarde a propagacao antes de rodar o Certbot."
+  exit 1
+fi
+
+RESOLVED_AAAA="$(resolve_domain_aaaa || true)"
+if [[ -n "$RESOLVED_AAAA" ]]; then
+  echo "Remova o registro AAAA/IPv6 de $DOMAIN antes de emitir o SSL."
+  echo "AAAA encontrado: $RESOLVED_AAAA"
   exit 1
 fi
 
@@ -106,6 +145,9 @@ CERTBOT_ARGS=(
   --agree-tos
   --non-interactive
   --redirect
+  --keep-until-expiring
+  --preferred-challenges
+  http
 )
 
 if [[ "$INCLUDE_WWW" == "1" ]]; then
