@@ -1,15 +1,14 @@
 import { execFile } from "node:child_process";
 import path from "node:path";
 import { promisify } from "node:util";
-import { resolve4 } from "node:dns/promises";
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { checkCustomDomainDns, DEFAULT_CUSTOM_DOMAIN_IP } from "@/lib/customDomainDns";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const execFileAsync = promisify(execFile);
-const DEFAULT_CUSTOM_DOMAIN_IP = "147.93.186.133";
 
 function getBearerToken(req: Request) {
   const auth = req.headers.get("authorization") || "";
@@ -38,11 +37,49 @@ function isValidEmail(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
-function sslSetupFailureMessage(stderr: string) {
-  const text = stderr.toLowerCase();
+function cleanPort(input: unknown) {
+  const value = String(input || "").trim();
+  return /^\d+$/.test(value) ? value : "3000";
+}
+
+function sslSetupFailureMessage(stderr: string, stdout = "") {
+  const text = `${stdout}\n${stderr}`.toLowerCase();
 
   if (text.includes("password") || text.includes("sudo")) {
     return "Nao foi possivel ativar o SSL automaticamente. Nossa equipe precisa ajustar a permissao do servidor.";
+  }
+
+  if (
+    text.includes("outra instalacao de ssl") ||
+    text.includes("another instance of certbot") ||
+    text.includes("lock file")
+  ) {
+    return "Ja existe uma instalacao de SSL em andamento. Aguarde terminar e tente novamente.";
+  }
+
+  if (text.includes("too many certificates") || text.includes("rate limit")) {
+    return "O limite de emissao de certificados foi atingido para esse dominio. Aguarde antes de tentar novamente.";
+  }
+
+  if (text.includes("caa")) {
+    return "O DNS do dominio possui uma regra CAA que bloqueia a emissao pelo Let's Encrypt.";
+  }
+
+  if (text.includes("aaaa") || text.includes("ipv6")) {
+    return "Remova o registro AAAA/IPv6 do dominio antes de ativar o SSL.";
+  }
+
+  if (text.includes("registro a") || text.includes("dns problem") || text.includes("nxdomain")) {
+    return "O DNS ainda nao esta pronto para emitir o SSL. Confira se existe apenas o registro A apontando para o IP do painel.";
+  }
+
+  if (
+    text.includes("unauthorized") ||
+    text.includes("invalid response") ||
+    text.includes("timeout during connect") ||
+    text.includes("connection refused")
+  ) {
+    return "O Let's Encrypt nao conseguiu acessar o dominio pela porta 80. Confira o DNS, proxy da Cloudflare e firewall do servidor.";
   }
 
   if (
@@ -98,6 +135,9 @@ export async function POST(req: Request) {
     const domain = cleanDomain(body.domain);
     const email = cleanEmail(body.email);
     const expectedIp = String(process.env.CUSTOM_DOMAIN_A_RECORD_IP || DEFAULT_CUSTOM_DOMAIN_IP).trim();
+    const appPort = cleanPort(
+      process.env.CUSTOM_DOMAIN_APP_PORT || process.env.APP_PORT || process.env.PORT || "3000"
+    );
 
     if (!isValidDomain(domain)) {
       return NextResponse.json({ ok: false, error: "Dominio invalido." }, { status: 400 });
@@ -156,24 +196,35 @@ export async function POST(req: Request) {
       );
     }
 
-    const records = await resolve4(domain).catch(() => [] as string[]);
-    if (!records.includes(expectedIp)) {
+    const dnsCheck = await checkCustomDomainDns(domain, expectedIp);
+    if (!dnsCheck.ok) {
       return NextResponse.json({
         ok: false,
         dnsOk: false,
-        expectedIp,
-        records,
-        error: "Registro A ainda nao aponta para o IP esperado.",
+        expectedIp: dnsCheck.expectedIp,
+        records: dnsCheck.records,
+        aRecords: dnsCheck.aRecords,
+        aaaaRecords: dnsCheck.aaaaRecords,
+        error: dnsCheck.message,
+        message: dnsCheck.message,
       });
     }
 
     const scriptPath = path.join(process.cwd(), "scripts", "setup-custom-domain-ssl.sh");
-    const args = ["-n", "env", `CUSTOM_DOMAIN_A_RECORD_IP=${expectedIp}`, "bash", scriptPath, domain];
+    const args = [
+      "-n",
+      "env",
+      `CUSTOM_DOMAIN_A_RECORD_IP=${expectedIp}`,
+      `APP_PORT=${appPort}`,
+      "bash",
+      scriptPath,
+      domain,
+    ];
     if (email) args.push(email);
 
     await execFileAsync("sudo", args, {
-      timeout: 180000,
-      maxBuffer: 1024 * 1024,
+      timeout: 300000,
+      maxBuffer: 2 * 1024 * 1024,
     });
     const https = await checkHttps(domain);
 
@@ -182,7 +233,7 @@ export async function POST(req: Request) {
       dnsOk: true,
       sslOk: https.ok,
       domain,
-      records,
+      records: dnsCheck.records,
       message: https.ok
         ? "SSL instalado e HTTPS respondendo."
         : "SSL solicitado, mas o HTTPS ainda nao respondeu. Aguarde alguns instantes e tente novamente.",
@@ -190,22 +241,30 @@ export async function POST(req: Request) {
     });
   } catch (error) {
     const err = error as Error & { stdout?: string; stderr?: string; code?: string | number };
+    const stdout = err.stdout || "";
     const stderr = err.stderr || "";
+    const combinedOutput = `${stdout}\n${stderr}`.toLowerCase();
+    const dnsRelated =
+      combinedOutput.includes("registro a") ||
+      combinedOutput.includes("aaaa") ||
+      combinedOutput.includes("ipv6") ||
+      combinedOutput.includes("dns problem") ||
+      combinedOutput.includes("nxdomain");
     console.error("SSL setup failed", {
       code: err.code,
       message: err.message,
-      stdout: err.stdout,
+      stdout,
       stderr,
     });
 
     return NextResponse.json(
       {
         ok: false,
-        dnsOk: true,
+        dnsOk: !dnsRelated,
         sslOk: false,
-        message: sslSetupFailureMessage(stderr),
+        message: sslSetupFailureMessage(stderr, stdout),
       },
-      { status: 500 }
+      { status: dnsRelated ? 400 : 500 }
     );
   }
 }

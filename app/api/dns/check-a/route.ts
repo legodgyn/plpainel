@@ -1,10 +1,8 @@
-import { resolve4 } from "node:dns/promises";
 import { NextResponse } from "next/server";
+import { checkCustomDomainDns, DEFAULT_CUSTOM_DOMAIN_IP } from "@/lib/customDomainDns";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-const DEFAULT_CUSTOM_DOMAIN_IP = "147.93.186.133";
 
 function cleanDomain(input: unknown) {
   return String(input || "")
@@ -36,18 +34,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const records: string[] = await resolve4(domain).catch(() => [] as string[]);
-    const matched = records.includes(expectedIp);
-
-    return NextResponse.json({
-      ok: matched,
-      domain,
-      expectedIp,
-      records,
-      message: matched
-        ? "Registro A configurado corretamente."
-        : "Registro A ainda nao aponta para o IP esperado.",
-    });
+    return NextResponse.json(await checkCustomDomainDns(domain, expectedIp));
   } catch (err) {
     return NextResponse.json(
       {

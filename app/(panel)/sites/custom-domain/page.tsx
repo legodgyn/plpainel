@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseBrowser";
 import { makeCompanyAbout, makeCompanyMission } from "@/lib/companyTexts";
@@ -105,38 +105,6 @@ function buildEmail(domain: string) {
   return domain ? `contato@${domain}` : "contato@seudominio.com.br";
 }
 
-function fmtDateBR(iso?: string | null) {
-  if (!iso) return "";
-  try {
-    return new Date(iso).toLocaleDateString("pt-BR");
-  } catch {
-    return iso || "";
-  }
-}
-
-function makeMission(company: string) {
-  return `A missão da ${company} é desenvolver estratégias eficientes, orientadas a resultados, que fortaleçam a presença da marca e ampliem oportunidades de negócio.`;
-}
-
-function makeAbout(opts: {
-  company: string;
-  cnpj: string;
-  abertura?: string | null;
-  cidade?: string | null;
-  uf?: string | null;
-  endereco?: string | null;
-}) {
-  return `QUEM SOMOS?
-
-A ${opts.company}, registrada sob o CNPJ ${opts.cnpj}${opts.abertura ? `, foi fundada em ${fmtDateBR(opts.abertura)}` : ""}${
-    opts.cidade || opts.uf ? `, na cidade de ${opts.cidade || "-"}${opts.uf ? `/${opts.uf}` : ""}` : ""
-  }.
-
-Atuamos com atendimento responsável, comunicação clara e foco em resultados. ${
-    opts.endereco ? `Nosso endereço cadastral é ${opts.endereco}.` : ""
-  }`;
-}
-
 function makePrivacy(company: string, cnpj: string, email: string, phone?: string) {
   return `POLÍTICA DE PRIVACIDADE
 
@@ -150,7 +118,7 @@ Contato: ${email}${phone ? ` | ${phone}` : ""}
 ${company} - Todos os direitos reservados.`;
 }
 
-function makeFooter(company: string, cnpj: string, email: string, phone?: string) {
+function makeFooter(company: string, cnpj: string, phone?: string) {
   return `${company} | CNPJ: ${cnpj} | Contato: ${email}${phone ? ` | ${phone}` : ""} | ${new Date().getFullYear()} Todos os direitos reservados.`;
 }
 
@@ -299,6 +267,7 @@ export default function CustomDomainWizardPage() {
   const [savedDraft, setSavedDraft] = useState<WizardDraft | null>(null);
   const [draftChecked, setDraftChecked] = useState(false);
   const [draftActive, setDraftActive] = useState(false);
+  const sslRequestInFlight = useRef(false);
 
   const domain = useMemo(() => cleanDomain(form.domain), [form.domain]);
   const contactEmail = useMemo(() => buildEmail(domain), [domain]);
@@ -520,6 +489,9 @@ export default function CustomDomainWizardPage() {
   }
 
   async function setupSslFromDnsCheck() {
+    if (sslRequestInFlight.current) return;
+
+    sslRequestInFlight.current = true;
     setMsg(null);
     setDnsDetails(null);
     setSslDetails(null);
@@ -539,7 +511,9 @@ export default function CustomDomainWizardPage() {
         setSslOk(false);
         setSslDetails(null);
         setDnsDetails(
-          `Encontrado: ${(json.records || []).join(", ") || "nenhum registro A"}`
+          `${json.message || "DNS ainda nao esta pronto."} Encontrado: ${
+            (json.records || []).join(", ") || "nenhum registro A"
+          }${json.aaaaRecords?.length ? ` | AAAA: ${json.aaaaRecords.join(", ")}` : ""}`
         );
         return;
       }
@@ -568,13 +542,20 @@ export default function CustomDomainWizardPage() {
         sslJson.sslOk
           ? "SSL instalado e HTTPS ativo."
           : sslJson.message ||
+              sslJson.error ||
               "DNS ok, mas nao foi possivel ativar o SSL agora."
       );
 
       if (!sslRes.ok || !sslJson.ok) {
-        setMsg(sslJson.message || "Nao foi possivel ativar o SSL agora. Tente novamente em alguns minutos.");
+        setMsg(sslJson.message || sslJson.error || "Nao foi possivel ativar o SSL agora. Tente novamente em alguns minutos.");
       }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Nao foi possivel ativar o SSL agora.";
+      setSslOk(false);
+      setSslDetails("Nao foi possivel comunicar com o servidor de SSL. Tente novamente em alguns minutos.");
+      setMsg(message);
     } finally {
+      sslRequestInFlight.current = false;
       setLoading(false);
     }
   }
@@ -815,8 +796,8 @@ export default function CustomDomainWizardPage() {
             <div className="flex flex-col gap-3 md:flex-row">
               <button
                 onClick={setupSslFromDnsCheck}
-                
-                className="pl-btn"
+                disabled={loading}
+                className="pl-btn disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {loading ? "Configurando SSL..." : "Verificar DNS e Instalar SSL"}
               </button>
