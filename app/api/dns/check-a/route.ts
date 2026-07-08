@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const DEFAULT_CUSTOM_DOMAIN_IP = "147.93.186.133";
+const DEFAULT_CUSTOM_DOMAIN_IP = "179.197.64.7";
 
 function cleanDomain(input: unknown) {
   return String(input || "")

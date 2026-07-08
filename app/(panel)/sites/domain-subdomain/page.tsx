@@ -846,7 +846,7 @@ export default function DomainSubdomainSitePage() {
                 )}
               </select>
               <p className="mt-2 text-xs font-semibold text-slate-500">
-                Para os subdomínios funcionarem, deixe no DNS um registro A com nome * apontando para 147.93.186.133.
+                Para os subdomínios funcionarem, deixe no DNS um registro A com nome * apontando para 179.197.64.7.
               </p>
             </div>
 

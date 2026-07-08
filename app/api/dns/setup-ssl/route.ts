@@ -9,7 +9,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const execFileAsync = promisify(execFile);
-const DEFAULT_CUSTOM_DOMAIN_IP = "147.93.186.133";
+const DEFAULT_CUSTOM_DOMAIN_IP = "179.197.64.7";
 
 function getBearerToken(req: Request) {
   const auth = req.headers.get("authorization") || "";
