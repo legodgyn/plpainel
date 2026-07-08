@@ -31,6 +31,9 @@ const ROOT_DOMAINS = [
   "lcp1.com.br",
   "lcp2.com.br",
   "lcp3.com.br",
+  "lcp4.com.br",
+  "lcp5.com.br",
+  "lcp6.com.br",
 ] as const;
 
 type RootDomain = (typeof ROOT_DOMAINS)[number];
@@ -161,6 +164,12 @@ export function getZoneIdByBaseDomain(baseDomain: string): string {
       return env("CLOUDFLARE_ZONE_ID_LCP2");
     case "lcp3.com.br":
       return env("CLOUDFLARE_ZONE_ID_LCP3");
+    case "lcp4.com.br":
+      return env("CLOUDFLARE_ZONE_ID_LCP4");
+    case "lcp5.com.br":
+      return env("CLOUDFLARE_ZONE_ID_LCP5");
+    case "lcp6.com.br":
+      return env("CLOUDFLARE_ZONE_ID_LCP6");
     default:
       throw new Error(`Domínio sem zone configurada: ${baseDomain}`);
   }
