@@ -38,6 +38,11 @@ function isValidEmail(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
+function shouldIncludeWww(domain: string) {
+  const parts = domain.split(".").filter(Boolean);
+  return parts.length === 2 || (parts.length === 3 && parts[2] === "br");
+}
+
 function sslSetupFailureMessage(stderr: string) {
   const text = stderr.toLowerCase();
 
@@ -167,8 +172,40 @@ export async function POST(req: Request) {
       });
     }
 
+    const wwwDomain = `www.${domain}`;
+    const wwwRequired = shouldIncludeWww(domain);
+    const wwwRecords = wwwRequired
+      ? await resolve4(wwwDomain).catch(() => [] as string[])
+      : [];
+    const includeWww = wwwRequired && wwwRecords.includes(expectedIp);
+
+    if (wwwRequired && !includeWww) {
+      return NextResponse.json({
+        ok: false,
+        dnsOk: false,
+        expectedIp,
+        records,
+        wwwDomain,
+        wwwRecords,
+        error: "Registro www ainda nao aponta para o IP esperado.",
+      });
+    }
+
+    await supabaseAdmin
+      .from("sites")
+      .update({ is_public: true })
+      .eq("id", ownedSiteId);
+
     const scriptPath = path.join(process.cwd(), "scripts", "setup-custom-domain-ssl.sh");
-    const args = ["-n", "env", `CUSTOM_DOMAIN_A_RECORD_IP=${expectedIp}`, "bash", scriptPath, domain];
+    const args = [
+      "-n",
+      "env",
+      `CUSTOM_DOMAIN_A_RECORD_IP=${expectedIp}`,
+      `INCLUDE_WWW=${includeWww ? "1" : "0"}`,
+      "bash",
+      scriptPath,
+      domain,
+    ];
     if (email) args.push(email);
 
     await execFileAsync("sudo", args, {
@@ -176,17 +213,23 @@ export async function POST(req: Request) {
       maxBuffer: 1024 * 1024,
     });
     const https = await checkHttps(domain);
+    const wwwHttps = includeWww ? await checkHttps(wwwDomain) : null;
+    const sslOk = https.ok && (!includeWww || Boolean(wwwHttps?.ok));
 
     return NextResponse.json({
       ok: true,
       dnsOk: true,
-      sslOk: https.ok,
+      sslOk,
       domain,
+      wwwDomain,
+      includeWww,
       records,
-      message: https.ok
+      wwwRecords,
+      message: sslOk
         ? "SSL instalado e HTTPS respondendo."
         : "SSL solicitado, mas o HTTPS ainda nao respondeu. Aguarde alguns instantes e tente novamente.",
       https,
+      wwwHttps,
     });
   } catch (error) {
     const err = error as Error & { stdout?: string; stderr?: string; code?: string | number };

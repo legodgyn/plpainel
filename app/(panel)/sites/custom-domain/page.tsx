@@ -539,12 +539,17 @@ export default function CustomDomainWizardPage() {
         setSslOk(false);
         setSslDetails(null);
         setDnsDetails(
-          `Encontrado: ${(json.records || []).join(", ") || "nenhum registro A"}`
+          json.message ||
+            `Encontrado em @: ${(json.records || []).join(", ") || "nenhum registro A"}${
+              json.wwwRequired
+                ? ` | Encontrado em www: ${(json.wwwRecords || []).join(", ") || "nenhum registro"}`
+                : ""
+            }`
         );
         return;
       }
 
-      setDnsDetails("Domínio apontando corretamente. Configurando SSL...");
+      setDnsDetails("Domínio e www apontando corretamente. Configurando SSL...");
 
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData.session?.access_token;
@@ -789,10 +794,20 @@ export default function CustomDomainWizardPage() {
               <div className="mb-4 text-sm font-black text-[var(--panel-ink)]">Registros obrigatorios antes do SSL</div>
               <div className="space-y-3">
                 <DnsRow type="A" name="@" value={CUSTOM_DOMAIN_IP} />
-                <DnsRow type="A" name="*" value={CUSTOM_DOMAIN_IP} />
+                <DnsRow
+                  type="A ou CNAME"
+                  name="www"
+                  value={`A: ${CUSTOM_DOMAIN_IP} ou CNAME: ${domain || "seudominio.com"}`}
+                />
+                <DnsRow
+                  type="A"
+                  name="*"
+                  value={CUSTOM_DOMAIN_IP}
+                  extra="Opcional p/ subdominios"
+                />
               </div>
               <div className="mt-4 rounded-2xl border border-[var(--panel-warn-line)] bg-[var(--panel-warn-bg)] px-4 py-3 text-sm font-semibold text-[var(--panel-warn-text)]">
-                Antes de ativar o SSL, o domínio precisa estar com o registro A @ apontando para {CUSTOM_DOMAIN_IP}.
+                Antes de ativar o SSL, o domínio precisa estar com @ e www apontando para {CUSTOM_DOMAIN_IP}.
                 O registro A * libera a criação de subdomínios depois, como loja.{domain || "seudominio.com"}.
               </div>
               <div className="mt-3 rounded-2xl border border-[var(--panel-line)] bg-[var(--panel-hover)] px-4 py-3 text-sm font-semibold text-[var(--panel-muted)]">

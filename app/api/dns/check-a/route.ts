@@ -20,6 +20,11 @@ function isValidDomain(domain: string) {
   return /^(?!-)(?:[a-z0-9-]{1,63}\.)+[a-z]{2,63}$/.test(domain);
 }
 
+function shouldCheckWww(domain: string) {
+  const parts = domain.split(".").filter(Boolean);
+  return parts.length === 2 || (parts.length === 3 && parts[2] === "br");
+}
+
 export async function POST(req: Request) {
   try {
     const body = await req.json().catch(() => ({}));
@@ -37,16 +42,30 @@ export async function POST(req: Request) {
     }
 
     const records: string[] = await resolve4(domain).catch(() => [] as string[]);
-    const matched = records.includes(expectedIp);
+    const rootOk = records.includes(expectedIp);
+    const wwwRequired = shouldCheckWww(domain);
+    const wwwDomain = `www.${domain}`;
+    const wwwRecords: string[] = wwwRequired
+      ? await resolve4(wwwDomain).catch(() => [] as string[])
+      : [];
+    const wwwOk = !wwwRequired || wwwRecords.includes(expectedIp);
+    const matched = rootOk && wwwOk;
 
     return NextResponse.json({
       ok: matched,
       domain,
+      wwwDomain,
       expectedIp,
       records,
+      rootOk,
+      wwwRequired,
+      wwwRecords,
+      wwwOk,
       message: matched
-        ? "Registro A configurado corretamente."
-        : "Registro A ainda nao aponta para o IP esperado.",
+        ? "Registros DNS configurados corretamente."
+        : !rootOk
+        ? "Registro A @ ainda nao aponta para o IP esperado."
+        : "Registro www ainda nao aponta para o IP esperado.",
     });
   } catch (err) {
     return NextResponse.json(
