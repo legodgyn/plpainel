@@ -40,6 +40,9 @@ const ROOT_DOMAINS = [
   "lcp4.com.br",
   "lcp5.com.br",
   "lcp6.com.br",
+  "lcp7.com.br",
+  "lcp8.com.br",
+  "lcp9.com.br",
 ];
 
 function getCleanHost(host: string) {
