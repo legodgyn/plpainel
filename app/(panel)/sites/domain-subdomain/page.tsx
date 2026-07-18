@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseBrowser";
 import { makeCompanyAbout, makeCompanyMission } from "@/lib/companyTexts";
+import { getVerificationTemplateType } from "@/lib/siteThemes";
 
 // =====================
 // Helpers
@@ -763,6 +764,36 @@ export default function DomainSubdomainSitePage() {
             `Site criado em ${fullDomain}, mas nao foi possivel ativar o SSL automaticamente. Verifique o DNS wildcard e tente novamente.`
         );
         return;
+      }
+
+      const createdSiteId = getCreatedSiteId(data) || normalizeJson?.siteId || null;
+      if (createdSiteId) {
+        await supabase
+          .from("sites")
+          .update({
+            template_type: getVerificationTemplateType(createdSiteId || fullDomain),
+            simple_title: form.fantasy_name || form.company_name.trim() || null,
+          })
+          .eq("id", createdSiteId)
+          .eq("user_id", user.id);
+
+        await supabase
+          .from("sites")
+          .update({
+            opened_at: form.opened_at,
+            address_full: form.address_full || null,
+            cep: form.cep || null,
+            city: form.city || null,
+            uf: form.uf || null,
+            porte: form.porte || null,
+            natureza: form.natureza || null,
+            situacao: form.situacao || null,
+            tipo: form.tipo || null,
+            capital: form.capital || null,
+            cnae_principal: form.cnae_principal || null,
+          })
+          .eq("id", createdSiteId)
+          .eq("user_id", user.id);
       }
 
       setBalance((prev) => (typeof prev === "number" ? Math.max(0, prev - 1) : prev));

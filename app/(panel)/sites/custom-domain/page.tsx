@@ -24,6 +24,17 @@ type FormState = {
   about: string;
   privacy: string;
   footer: string;
+  opened_at: string | null;
+  address_full: string;
+  cep: string;
+  city: string;
+  uf: string;
+  porte: string;
+  natureza: string;
+  situacao: string;
+  tipo: string;
+  capital: string;
+  cnae_principal: string;
 };
 
 type WizardDraft = {
@@ -52,6 +63,17 @@ const initialForm: FormState = {
   about: "",
   privacy: "",
   footer: "",
+  opened_at: null,
+  address_full: "",
+  cep: "",
+  city: "",
+  uf: "",
+  porte: "",
+  natureza: "",
+  situacao: "",
+  tipo: "",
+  capital: "",
+  cnae_principal: "",
 };
 
 function onlyDigits(value: string) {
@@ -150,8 +172,31 @@ Contato: ${email}${phone ? ` | ${phone}` : ""}
 ${company} - Todos os direitos reservados.`;
 }
 
-function makeFooter(company: string, cnpj: string, email: string, phone?: string) {
-  return `${company} | CNPJ: ${cnpj} | Contato: ${email}${phone ? ` | ${phone}` : ""} | ${new Date().getFullYear()} Todos os direitos reservados.`;
+function makeFooter(opts: {
+  company: string;
+  cnpj: string;
+  abertura?: string | null;
+  porte?: string | null;
+  natureza?: string | null;
+  situacao?: string | null;
+  tipo?: string | null;
+  capital?: string | null;
+  endereco?: string | null;
+  cep?: string | null;
+  email?: string | null;
+  phone?: string | null;
+}) {
+  const { company, cnpj, abertura, porte, natureza, situacao, tipo, capital, endereco, cep, email, phone } = opts;
+
+  return `${company} CNPJ: ${cnpj} | Data de Abertura: ${
+    abertura ? fmtDateBR(abertura) : "-"
+  } | Porte: ${porte || "-"} | Natureza Juridica: ${
+    natureza || "-"
+  } | Situacao Cadastral: ${situacao || "-"} | Tipo: ${tipo || "-"} | Capital Social: ${
+    capital || "-"
+  } | Endereco: ${endereco || "-"} | CEP: ${cep || "-"} | Contato: ${
+    email || "-"
+  }${phone ? ` ${phone}` : ""} | © ${new Date().getFullYear()} ${company}. Todos os direitos reservados.`;
 }
 
 function safeStep(value: unknown) {
@@ -426,12 +471,22 @@ export default function CustomDomainWizardPage() {
       const fantasyName = data.nome_fantasia || data.fantasia || null;
       const phone = formatBRPhone(String(data.ddd_telefone_1 || data.telefone || ""));
       const formattedCnpj = formatCNPJ(String(data.cnpj || digits));
+      const abertura = data.data_inicio_atividade || data.data_abertura || null;
+      const cidade = data.municipio || data.cidade || "";
+      const uf = data.uf || "";
+      const cep = data.cep || "";
+      const porte = data.porte || "";
+      const natureza = data.natureza_juridica || data.natureza || "";
+      const situacao = data.descricao_situacao_cadastral || data.situacao_cadastral || "";
+      const tipo = data.identificador_matriz_filial === 1 ? "MATRIZ" : data.descricao_identificador_matriz_filial || "";
+      const capital = data.capital_social ? String(data.capital_social) : "";
       const address = [
         data.logradouro,
         data.numero ? `, ${data.numero}` : "",
         data.bairro ? ` - ${data.bairro}` : "",
-        data.municipio ? `, ${data.municipio}` : "",
-        data.uf ? `/${data.uf}` : "",
+        cidade ? `, ${cidade}` : "",
+        uf ? `/${uf}` : "",
+        cep ? `, CEP ${cep}` : "",
       ]
         .join("")
         .trim();
@@ -441,11 +496,11 @@ export default function CustomDomainWizardPage() {
         legalName: company,
         fantasyName,
         cnpj: formattedCnpj,
-        openedAt: data.data_inicio_atividade || data.data_abertura || null,
-        city: data.municipio || data.cidade || null,
-        state: data.uf || null,
-        size: data.porte || null,
-        legalNature: data.natureza_juridica || data.natureza || null,
+        openedAt: abertura,
+        city: cidade || null,
+        state: uf || null,
+        size: porte || null,
+        legalNature: natureza || null,
         mainActivity: cnaePrincipal || null,
         address: address || null,
       };
@@ -459,7 +514,31 @@ export default function CustomDomainWizardPage() {
         mission: makeCompanyMission(companyTextInput),
         about: makeCompanyAbout(companyTextInput),
         privacy: makePrivacy(company, formattedCnpj, contactEmail, phone),
-        footer: makeFooter(company, formattedCnpj, contactEmail, phone),
+        footer: makeFooter({
+          company,
+          cnpj: formattedCnpj,
+          abertura,
+          porte,
+          natureza,
+          situacao,
+          tipo,
+          capital,
+          endereco: address,
+          cep,
+          email: contactEmail,
+          phone,
+        }),
+        opened_at: abertura,
+        address_full: address,
+        cep,
+        city: cidade,
+        uf,
+        porte,
+        natureza,
+        situacao,
+        tipo,
+        capital,
+        cnae_principal: cnaePrincipal,
       }));
 
       setStep(3);

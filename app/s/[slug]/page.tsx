@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import type { CSSProperties } from "react";
 import { headers } from "next/headers";
 import { createClient } from "@supabase/supabase-js";
 
@@ -158,6 +159,108 @@ function buildOrganizationJsonLd(input: {
   }
 
   return JSON.stringify(jsonLd).replace(/</g, "\\u003c");
+}
+
+const publicThemes = [
+  {
+    name: "verification_green",
+    ink: "#10201c",
+    muted: "#5f706b",
+    line: "#d9e7e1",
+    soft: "#f1faf6",
+    heroA: "#08735f",
+    heroB: "#11a37f",
+    dark: "#0f2e29",
+    accent: "#f5b84b",
+  },
+  {
+    name: "verification_blue",
+    ink: "#111f2d",
+    muted: "#607083",
+    line: "#d9e5ef",
+    soft: "#eef7fb",
+    heroA: "#174c66",
+    heroB: "#2d8caf",
+    dark: "#0d2938",
+    accent: "#f0b64f",
+  },
+  {
+    name: "verification_wine",
+    ink: "#25151c",
+    muted: "#735d66",
+    line: "#eadbe1",
+    soft: "#fff3f6",
+    heroA: "#7a1f42",
+    heroB: "#b93564",
+    dark: "#351522",
+    accent: "#f2bd5b",
+  },
+  {
+    name: "verification_graphite",
+    ink: "#171b20",
+    muted: "#69717a",
+    line: "#dde2e6",
+    soft: "#f4f7f8",
+    heroA: "#26323d",
+    heroB: "#52616f",
+    dark: "#111920",
+    accent: "#d7b56d",
+  },
+  {
+    name: "verification_gold",
+    ink: "#211b10",
+    muted: "#756a59",
+    line: "#eadfca",
+    soft: "#fff8ea",
+    heroA: "#7b5315",
+    heroB: "#c38a27",
+    dark: "#2d210f",
+    accent: "#2fb184",
+  },
+] as const;
+
+function getPublicTheme(templateType: string, seed: string) {
+  const found = publicThemes.find((theme) => theme.name === templateType);
+  if (found) return found;
+
+  let hash = 0;
+  for (let i = 0; i < seed.length; i += 1) {
+    hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
+  }
+
+  return publicThemes[hash % publicThemes.length];
+}
+
+function makeWhoWeAreText(input: {
+  companyName: string;
+  cnpj: string;
+  openedAt: string;
+  city: string;
+  uf: string;
+  legalNature: string;
+  porte: string;
+}) {
+  const location = [input.city, input.uf].filter(Boolean).join(" / ");
+  return `${input.companyName}, registrada sob o CNPJ ${input.cnpj}${
+    input.openedAt ? `, com inicio de atividades em ${fmtDateBR(input.openedAt)}` : ""
+  }${location ? `, localizada em ${location}` : ""}. ${
+    input.porte ? `Empresa de porte ${input.porte}` : "Empresa"
+  }${input.legalNature ? `, constituida como ${input.legalNature}` : ""}, com atendimento profissional e canais oficiais de relacionamento.`;
+}
+
+function makeActivityText(companyName: string, officialActivity: string) {
+  if (officialActivity) {
+    return `Conforme cadastro publico, a atividade principal da ${companyName} esta relacionada a ${officialActivity}.`;
+  }
+
+  return `A ${companyName} atua com atendimento profissional, organizacao, suporte e relacionamento direto com clientes e parceiros.`;
+}
+
+function makeCommitmentText(companyName: string, city: string, uf: string) {
+  const location = [city, uf].filter(Boolean).join(" / ");
+  return `A ${companyName} mantem compromisso com atendimento claro, privacidade das informacoes recebidas e transparencia nas relacoes com clientes${
+    location ? ` em ${location} e regiao` : ""
+  }.`;
 }
 
 function extractMetaContent(input?: string | null) {
@@ -457,6 +560,8 @@ type ModernPublicSiteProps = {
   uf: string;
   companyStatus: string;
   legalNature: string;
+  porte: string;
+  templateType: string;
   igUrl: string | null;
   waCta: string | null;
 };
@@ -480,13 +585,24 @@ function ModernPublicSite({
   uf,
   companyStatus,
   legalNature,
+  porte,
+  templateType,
   igUrl,
   waCta,
 }: ModernPublicSiteProps) {
+  const theme = getPublicTheme(templateType, displayDomain || company_name);
+  const themeStyle = {
+    "--public-ink": theme.ink,
+    "--public-muted": theme.muted,
+    "--public-line": theme.line,
+    "--public-soft": theme.soft,
+    "--public-hero-a": theme.heroA,
+    "--public-hero-b": theme.heroB,
+    "--public-dark": theme.dark,
+    "--public-accent": theme.accent,
+  } as CSSProperties;
   const description = compactText(
-    mission ||
-      about ||
-      `${company_name} - pagina oficial com dados cadastrais, canais de contato e informacoes institucionais.`
+    mission || about || `${company_name} - pagina oficial com dados cadastrais, canais de contato e informacoes institucionais.`
   );
   const jsonLd = buildOrganizationJsonLd({
     companyName: company_name,
@@ -501,207 +617,57 @@ function ModernPublicSite({
     state: uf,
     igUrl,
   });
+  const whoWeAreText = makeWhoWeAreText({ companyName: company_name, cnpj, openedAt, city, uf, legalNature, porte });
+  const activityText = makeActivityText(company_name, officialActivity);
+  const commitmentText = makeCommitmentText(company_name, city, uf);
+  const fallbackFooter = `${company_name} CNPJ: ${cnpj} | ${displayDomain} | © ${new Date().getFullYear()} ${company_name}. Todos os direitos reservados.`;
+  const privacyText = privacy || `Esta politica descreve como a ${company_name} trata informacoes enviadas voluntariamente por visitantes, clientes e interessados por meio dos canais oficiais de contato.\n\nPodemos receber nome, telefone, WhatsApp, email, mensagem enviada e outras informacoes fornecidas espontaneamente durante o atendimento.\n\nOs dados sao utilizados para responder solicitacoes, prestar atendimento, enviar retorno comercial, organizar contatos e cumprir obrigacoes legais quando aplicavel.\n\nAs informacoes nao sao vendidas. O titular pode solicitar informacoes, atualizacao, correcao ou exclusao de seus dados pelos canais oficiais exibidos nesta pagina.`;
+  const termsText = `Esta pagina tem finalidade institucional, informativa e comercial. O visitante deve utilizar as informacoes e canais disponibilizados de forma licita, respeitosa e relacionada aos servicos, produtos, atendimento ou informacoes da empresa.\n\nA ${company_name} busca manter os dados cadastrais, canais de contato, descricoes e informacoes comerciais atualizados. Eventuais informacoes podem ser corrigidas, complementadas ou alteradas a qualquer momento.\n\nO contato por WhatsApp, telefone, email ou redes sociais deve ser usado para solicitacoes reais, atendimento comercial, suporte, duvidas ou continuidade de relacionamento iniciado pelo visitante.\n\nEsta pagina pode direcionar para ferramentas externas, como WhatsApp, Instagram, telefone e email. Cada plataforma pode possuir regras, politicas e condicoes proprias.`;
 
   return (
-    <main className="min-h-screen bg-white text-slate-900">
+    <main className="min-h-screen bg-[#fbfdfc] text-[var(--public-ink)]" style={themeStyle}>
       <PublicCriticalCss />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: jsonLd }}
-      />
-      <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/90 backdrop-blur">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />
+
+      <header className="sticky top-0 z-50 border-b border-[var(--public-line)] bg-white/95 backdrop-blur">
         <div className="mx-auto flex min-h-[74px] w-full max-w-6xl flex-col gap-4 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
           <a href="#home" className="flex min-w-0 items-center gap-3">
-            {logo_url ? (
-              <img src={logo_url} alt={company_name} className="h-11 w-11 rounded-xl object-contain" />
-            ) : (
-              <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-teal-700 to-emerald-500 text-lg font-black text-white shadow-[0_10px_20px_rgba(16,185,129,.24)]">
-                {(company_name?.[0] || "E").toUpperCase()}
-              </div>
-            )}
-            <div className="min-w-0 leading-tight">
-              <strong className="block truncate text-sm text-slate-950">{company_name}</strong>
-              <span className="mt-1 block truncate text-xs text-slate-500">Pagina oficial da empresa</span>
-            </div>
+            {logo_url ? <img src={logo_url} alt={company_name} className="h-12 w-12 rounded-lg object-contain" /> : <div className="grid h-12 w-12 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-[var(--public-hero-a)] to-[var(--public-hero-b)] text-lg font-black text-white shadow-[0_10px_20px_rgba(16,32,28,.18)]">{(company_name?.[0] || "E").toUpperCase()}</div>}
+            <div className="min-w-0 leading-tight"><strong className="block truncate text-sm text-[var(--public-ink)]">{company_name}</strong><span className="mt-1 block truncate text-xs text-[var(--public-muted)]">Pagina oficial da empresa</span></div>
           </a>
-
           <nav className="flex flex-wrap items-center gap-2 sm:justify-end">
-            <a href="#home" className="rounded-xl px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">Home</a>
-            <a href="#sobre" className="rounded-xl px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">Sobre</a>
-            <a href="#servicos" className="rounded-xl px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">Serviços</a>
-            <a href="#dados" className="rounded-xl px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">Dados oficiais</a>
-            {waCta ? (
-              <a href={waCta} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center justify-center rounded-xl bg-gradient-to-br from-teal-700 to-emerald-500 px-4 text-sm font-extrabold text-white shadow-[0_12px_25px_rgba(16,185,129,.24)]">
-                Contato
-              </a>
-            ) : null}
+            <a href="#home" className="rounded-lg px-3 py-2 text-sm font-semibold text-[var(--public-muted)] hover:bg-[var(--public-soft)]">Home</a>
+            <a href="#sobre" className="rounded-lg px-3 py-2 text-sm font-semibold text-[var(--public-muted)] hover:bg-[var(--public-soft)]">Sobre</a>
+            <a href="#dados" className="rounded-lg px-3 py-2 text-sm font-semibold text-[var(--public-muted)] hover:bg-[var(--public-soft)]">Dados oficiais</a>
+            <a href="#contato" className="rounded-lg px-3 py-2 text-sm font-semibold text-[var(--public-muted)] hover:bg-[var(--public-soft)]">Contato</a>
+            {waCta ? <a href={waCta} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center justify-center rounded-lg bg-[var(--public-hero-a)] px-4 text-sm font-extrabold text-white">Contato</a> : null}
           </nav>
         </div>
       </header>
 
-      <section id="home" className="bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,.24),transparent_24rem),linear-gradient(90deg,#0f766e_0%,#059669_56%,#34d399_100%)] px-4 py-16 text-white">
-        <div className="mx-auto max-w-6xl text-center">
-          <h1 className="mx-auto max-w-4xl text-3xl font-black leading-tight tracking-normal sm:text-5xl">
-            {company_name}
-          </h1>
-          <p className="mx-auto mt-4 max-w-3xl text-base leading-8 text-white/90 sm:text-lg">
-            {mission || "Atendimento profissional, qualidade e confiança em uma página oficial com informações claras sobre a empresa."}
-          </p>
-          <div className="mt-7 flex flex-wrap justify-center gap-3">
-            <a href="#servicos" className="inline-flex min-h-11 items-center justify-center rounded-xl bg-white px-5 text-sm font-extrabold text-teal-700">
-              Ver serviços
-            </a>
-            {waCta ? (
-              <a href={waCta} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center justify-center rounded-xl border border-white/40 bg-white/10 px-5 text-sm font-extrabold text-white">
-                Chamar no WhatsApp
-              </a>
-            ) : null}
-          </div>
-        </div>
-      </section>
-
-      <section className="px-4 py-10">
-        <div className="mx-auto grid max-w-6xl gap-5 lg:grid-cols-3">
-          <article id="sobre" className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_12px_28px_rgba(15,23,42,.08)]">
-            <h3 className="text-lg font-black">Quem somos</h3>
-            <p className="mt-3 whitespace-pre-line text-sm leading-7 text-slate-500">
-              {about || "Esta empresa atua com atendimento profissional, comunicação clara e foco em qualidade."}
-            </p>
-          </article>
-
-          <article id="servicos" className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_12px_28px_rgba(15,23,42,.08)]">
-            <h3 className="text-lg font-black">O que fazemos</h3>
-            <ul className="mt-3 list-disc space-y-1 pl-5 text-sm leading-7 text-slate-500">
-              <li>{company_name}</li>
-              <li>{officialActivity || "Atendimento profissional"}</li>
-              <li>Canais oficiais de contato</li>
-              <li>Informacoes cadastrais publicas</li>
-            </ul>
-          </article>
-
-          <article id="contato" className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_12px_28px_rgba(15,23,42,.08)]">
-            <h3 className="text-lg font-black">Contato</h3>
-            <div className="mt-3 grid gap-3 text-sm font-bold text-slate-900">
-              {phone ? <div className="flex items-center gap-3"><span className="grid h-8 w-8 place-items-center rounded-xl bg-emerald-50 text-teal-700">☎</span>{phone}</div> : null}
-              {email ? <div className="flex items-center gap-3"><span className="grid h-8 w-8 place-items-center rounded-xl bg-emerald-50 text-teal-700">@</span><span className="break-all">{email}</span></div> : null}
-              {whatsapp ? <div className="flex items-center gap-3"><span className="grid h-8 w-8 place-items-center rounded-xl bg-emerald-50 text-teal-700">W</span>{whatsapp}</div> : null}
-              {waCta ? <a href={waCta} target="_blank" rel="noreferrer" className="flex items-center gap-3"><span className="grid h-8 w-8 place-items-center rounded-xl bg-emerald-50 text-teal-700">→</span>Chamar no WhatsApp</a> : null}
-              {igUrl ? <a href={igUrl} target="_blank" rel="noreferrer" className="flex items-center gap-3"><span className="grid h-8 w-8 place-items-center rounded-xl bg-emerald-50 text-teal-700">◎</span>Instagram</a> : null}
-            </div>
-          </article>
-        </div>
-      </section>
-
-      <section id="dados" className="bg-emerald-50 px-4 py-10">
+      <section id="home" className="border-b border-[var(--public-line)] bg-[linear-gradient(115deg,var(--public-hero-a),var(--public-hero-b))] px-4 py-14 text-white">
         <div className="mx-auto max-w-6xl">
-          <h2 className="mb-4 text-2xl font-black">Dados oficiais</h2>
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_8px_20px_rgba(15,23,42,.06)]">
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <div>
-                <small className="block text-xs font-black uppercase tracking-wide text-slate-500">Razão Social</small>
-                <div className="mt-2 text-sm font-black leading-5">{company_name}</div>
-              </div>
-              <div>
-                <small className="block text-xs font-black uppercase tracking-wide text-slate-500">CNPJ</small>
-                <div className="mt-2 text-sm font-black leading-5">{cnpj}</div>
-              </div>
-              <div>
-                <small className="block text-xs font-black uppercase tracking-wide text-slate-500">Domínio</small>
-                <div className="mt-2 break-all text-sm font-black leading-5">{displayDomain}</div>
-              </div>
-              <div>
-                <small className="block text-xs font-black uppercase tracking-wide text-slate-500">Atividade</small>
-                <div className="mt-2 text-sm font-black leading-5">{officialActivity || "Atendimento profissional"}</div>
-              </div>
-            </div>
-
-            <div className="mt-5 grid gap-4 border-t border-slate-100 pt-5 sm:grid-cols-2 lg:grid-cols-4">
-              {openedAt ? (
-                <div>
-                  <small className="block text-xs font-black uppercase tracking-wide text-slate-500">Abertura</small>
-                  <div className="mt-2 text-sm font-black leading-5">{fmtDateBR(openedAt)}</div>
-                </div>
-              ) : null}
-              {companyStatus ? (
-                <div>
-                  <small className="block text-xs font-black uppercase tracking-wide text-slate-500">Situacao</small>
-                  <div className="mt-2 text-sm font-black leading-5">{companyStatus}</div>
-                </div>
-              ) : null}
-              {legalNature ? (
-                <div>
-                  <small className="block text-xs font-black uppercase tracking-wide text-slate-500">Natureza Juridica</small>
-                  <div className="mt-2 text-sm font-black leading-5">{legalNature}</div>
-                </div>
-              ) : null}
-              {city || uf ? (
-                <div>
-                  <small className="block text-xs font-black uppercase tracking-wide text-slate-500">Localidade</small>
-                  <div className="mt-2 text-sm font-black leading-5">{[city, uf].filter(Boolean).join(" / ")}</div>
-                </div>
-              ) : null}
-            </div>
-
-            {registeredAddress ? (
-              <div className="mt-5 rounded-xl border border-emerald-100 bg-emerald-50 p-4">
-                <small className="block text-xs font-black uppercase tracking-wide text-teal-700">Endereco cadastral</small>
-                <div className="mt-2 text-sm font-black leading-6 text-slate-900">{registeredAddress}</div>
-              </div>
-            ) : null}
-          </div>
+          <span className="inline-flex rounded-full border border-white/35 bg-white/15 px-3 py-2 text-xs font-black uppercase">Pagina oficial</span>
+          <h1 className="mt-5 max-w-5xl text-3xl font-black leading-tight tracking-normal sm:text-5xl">{company_name}</h1>
+          <p className="mt-4 max-w-3xl text-base leading-8 text-white/90 sm:text-lg">{mission || "Atendimento profissional com informacoes claras, canais oficiais de contato e compromisso com privacidade e transparencia."}</p>
+          <div className="mt-7 flex flex-wrap gap-3"><a href="#dados" className="inline-flex min-h-11 items-center justify-center rounded-lg bg-white px-5 text-sm font-extrabold text-[var(--public-hero-a)]">Ver dados oficiais</a>{waCta ? <a href={waCta} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center justify-center rounded-lg border border-white/40 bg-white/10 px-5 text-sm font-extrabold text-white">Chamar no WhatsApp</a> : null}</div>
+          <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4"><div className="rounded-lg border border-white/25 bg-white/10 p-4"><small className="text-xs font-black uppercase text-white/70">CNPJ</small><b className="mt-1 block break-all text-sm">{cnpj}</b></div><div className="rounded-lg border border-white/25 bg-white/10 p-4"><small className="text-xs font-black uppercase text-white/70">Situacao</small><b className="mt-1 block text-sm">{companyStatus || "Ativa"}</b></div><div className="rounded-lg border border-white/25 bg-white/10 p-4"><small className="text-xs font-black uppercase text-white/70">Localidade</small><b className="mt-1 block text-sm">{[city, uf].filter(Boolean).join(" / ") || "-"}</b></div><div className="rounded-lg border border-white/25 bg-white/10 p-4"><small className="text-xs font-black uppercase text-white/70">Dominio</small><b className="mt-1 block break-all text-sm">{displayDomain}</b></div></div>
         </div>
       </section>
 
-      {mission ? (
-        <section className="px-4 py-10">
-          <div className="mx-auto max-w-6xl">
-            <h2 className="mb-4 text-2xl font-black">Nossa missão</h2>
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_12px_28px_rgba(15,23,42,.08)]">
-              <p className="whitespace-pre-line text-sm leading-8 text-slate-700">{mission}</p>
-            </div>
-          </div>
-        </section>
-      ) : null}
+      <section className="px-4 py-10"><div className="mx-auto grid max-w-6xl gap-5 lg:grid-cols-3"><article id="sobre" className="rounded-lg border border-[var(--public-line)] bg-white p-5 shadow-[0_12px_28px_rgba(16,32,28,.08)]"><h3 className="text-lg font-black">Quem somos</h3><p className="mt-3 text-sm leading-7 text-[var(--public-muted)]">{whoWeAreText}</p></article><article className="rounded-lg border border-[var(--public-line)] bg-white p-5 shadow-[0_12px_28px_rgba(16,32,28,.08)]"><h3 className="text-lg font-black">Atividade principal</h3><p className="mt-3 text-sm leading-7 text-[var(--public-muted)]">{activityText}</p></article><article className="rounded-lg border border-[var(--public-line)] bg-white p-5 shadow-[0_12px_28px_rgba(16,32,28,.08)]"><h3 className="text-lg font-black">Compromisso</h3><p className="mt-3 text-sm leading-7 text-[var(--public-muted)]">{commitmentText}</p></article></div></section>
 
-      <footer className="bg-teal-950 px-4 py-8 text-white/85">
-        <div className="mx-auto grid max-w-6xl gap-5 sm:grid-cols-[1.5fr_.8fr]">
-          <div>
-            <div className="mb-2 font-black text-white">{company_name}</div>
-            <div className="mb-3 text-xs font-bold text-white/70">
-              CNPJ: {cnpj} {displayDomain ? `| ${displayDomain}` : ""}
-            </div>
-            <div className="whitespace-pre-line text-sm leading-7 text-white/70">{footer}</div>
-          </div>
-          <div className="grid content-start gap-3 sm:justify-end">
-            {privacy ? <a href="#privacy-modal" className="text-sm font-bold text-white/90">Política de Privacidade</a> : null}
-            <a href="#home" className="text-sm font-bold text-white/90">Voltar ao topo</a>
-          </div>
-        </div>
-      </footer>
+      <section id="dados" className="border-y border-[var(--public-line)] bg-[var(--public-soft)] px-4 py-10"><div className="mx-auto max-w-6xl"><h2 className="mb-4 text-2xl font-black">Dados oficiais</h2><div className="rounded-lg border border-[var(--public-line)] bg-white p-5 shadow-[0_8px_20px_rgba(16,32,28,.06)]"><div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"><div><small className="block text-xs font-black uppercase tracking-wide text-[var(--public-muted)]">Razao Social</small><div className="mt-2 text-sm font-black leading-5">{company_name}</div></div><div><small className="block text-xs font-black uppercase tracking-wide text-[var(--public-muted)]">CNPJ</small><div className="mt-2 text-sm font-black leading-5">{cnpj}</div></div><div><small className="block text-xs font-black uppercase tracking-wide text-[var(--public-muted)]">Dominio</small><div className="mt-2 break-all text-sm font-black leading-5">{displayDomain}</div></div><div><small className="block text-xs font-black uppercase tracking-wide text-[var(--public-muted)]">Atividade</small><div className="mt-2 text-sm font-black leading-5">{officialActivity || "Atendimento profissional"}</div></div></div><div className="mt-5 grid gap-4 border-t border-slate-100 pt-5 sm:grid-cols-2 lg:grid-cols-4">{openedAt ? <div><small className="block text-xs font-black uppercase tracking-wide text-[var(--public-muted)]">Abertura</small><div className="mt-2 text-sm font-black leading-5">{fmtDateBR(openedAt)}</div></div> : null}{companyStatus ? <div><small className="block text-xs font-black uppercase tracking-wide text-[var(--public-muted)]">Situacao</small><div className="mt-2 text-sm font-black leading-5">{companyStatus}</div></div> : null}{legalNature ? <div><small className="block text-xs font-black uppercase tracking-wide text-[var(--public-muted)]">Natureza Juridica</small><div className="mt-2 text-sm font-black leading-5">{legalNature}</div></div> : null}{porte ? <div><small className="block text-xs font-black uppercase tracking-wide text-[var(--public-muted)]">Porte</small><div className="mt-2 text-sm font-black leading-5">{porte}</div></div> : null}{city || uf ? <div><small className="block text-xs font-black uppercase tracking-wide text-[var(--public-muted)]">Localidade</small><div className="mt-2 text-sm font-black leading-5">{[city, uf].filter(Boolean).join(" / ")}</div></div> : null}</div>{registeredAddress ? <div className="mt-5 rounded-lg border border-[var(--public-line)] bg-[var(--public-soft)] p-4"><small className="block text-xs font-black uppercase tracking-wide text-[var(--public-hero-a)]">Endereco cadastral</small><div className="mt-2 text-sm font-black leading-6 text-slate-900">{registeredAddress}</div></div> : null}</div></div></section>
 
-      {privacy ? (
-        <div
-          id="privacy-modal"
-          className="invisible fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/70 p-5 opacity-0 transition target:visible target:opacity-100"
-        >
-          <a href="#home" className="absolute inset-0" aria-label="Fechar política de privacidade" />
-          <div className="relative max-h-[80vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white p-7 shadow-[0_30px_60px_rgba(0,0,0,.25)]">
-            <a
-              href="#home"
-              aria-label="Fechar"
-              className="absolute right-4 top-3 text-2xl font-bold text-slate-500 hover:text-slate-900"
-            >
-              ×
-            </a>
-            <h2 className="pr-8 text-2xl font-black text-slate-950">Política de Privacidade</h2>
-            <p className="mt-4 whitespace-pre-line text-sm leading-8 text-slate-700">{privacy}</p>
-          </div>
-        </div>
-      ) : null}
+      <section id="contato" className="bg-[var(--public-dark)] px-4 py-10 text-white"><div className="mx-auto grid max-w-6xl gap-5 md:grid-cols-2"><div><h2 className="text-2xl font-black">Canais oficiais de contato</h2><div className="mt-5 grid gap-3 text-sm font-bold">{whatsapp ? <div className="rounded-lg border border-white/15 bg-white/10 p-4">WhatsApp: {whatsapp}</div> : null}{phone ? <div className="rounded-lg border border-white/15 bg-white/10 p-4">Telefone: {phone}</div> : null}{email ? <div className="break-all rounded-lg border border-white/15 bg-white/10 p-4">Email: {email}</div> : null}{igUrl ? <a href={igUrl} target="_blank" rel="noreferrer" className="rounded-lg border border-white/15 bg-white/10 p-4">Instagram</a> : null}</div></div><div className="rounded-lg border border-white/15 bg-white/10 p-5 text-sm leading-7 text-white/80"><b className="text-white">Atendimento oficial</b><br />Entre em contato pelos canais informados nesta pagina para solicitar informacoes, atendimento comercial, suporte ou retorno da equipe responsavel.</div></div></section>
+
+      <footer className="bg-[#071b18] px-4 py-8 text-white/80"><div className="mx-auto grid max-w-6xl gap-5 sm:grid-cols-[1.5fr_.8fr]"><div><div className="mb-2 font-black text-white">{company_name}</div><div className="whitespace-pre-line text-sm leading-7 text-white/70">{footer || fallbackFooter}</div></div><div className="grid content-start gap-3 sm:justify-end"><a href="#privacy-modal" className="text-sm font-bold text-white/90">Politica de Privacidade</a><a href="#terms-modal" className="text-sm font-bold text-white/90">Termos de Uso</a><a href="#home" className="text-sm font-bold text-white/90">Voltar ao topo</a></div></div></footer>
+
+      <div id="privacy-modal" className="invisible fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/70 p-5 opacity-0 transition target:visible target:opacity-100"><a href="#home" className="absolute inset-0" aria-label="Fechar politica de privacidade" /><div className="relative max-h-[82vh] w-full max-w-3xl overflow-y-auto rounded-lg bg-white p-7 shadow-[0_30px_60px_rgba(0,0,0,.25)]"><a href="#home" aria-label="Fechar" className="absolute right-4 top-3 text-2xl font-bold text-slate-500 hover:text-slate-900">×</a><h2 className="pr-8 text-2xl font-black text-slate-950">Politica de Privacidade</h2><p className="mt-4 whitespace-pre-line text-sm leading-8 text-slate-700">{privacyText}</p></div></div>
+      <div id="terms-modal" className="invisible fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/70 p-5 opacity-0 transition target:visible target:opacity-100"><a href="#home" className="absolute inset-0" aria-label="Fechar termos de uso" /><div className="relative max-h-[82vh] w-full max-w-3xl overflow-y-auto rounded-lg bg-white p-7 shadow-[0_30px_60px_rgba(0,0,0,.25)]"><a href="#home" aria-label="Fechar" className="absolute right-4 top-3 text-2xl font-bold text-slate-500 hover:text-slate-900">×</a><h2 className="pr-8 text-2xl font-black text-slate-950">Termos de Uso</h2><p className="mt-4 whitespace-pre-line text-sm leading-8 text-slate-700">{termsText}</p></div></div>
     </main>
   );
 }
-
 export async function generateMetadata(props: PageProps): Promise<Metadata> {
   const { slug, host, hostBaseDomain } = await resolveSiteContext(props);
 
@@ -786,6 +752,7 @@ export default async function PublicSitePage(props: PageProps) {
   const uf = firstText(data.uf, data.state);
   const companyStatus = firstText(data.situacao, data.situacao_cadastral);
   const legalNature = firstText(data.natureza, data.natureza_juridica);
+  const porte = firstText(data.porte);
   const custom_domain = (data.custom_domain as string | null) || "";
   const domain_mode = (data.domain_mode as string | null) || "";
   const base_domain =
@@ -875,225 +842,12 @@ export default async function PublicSitePage(props: PageProps) {
       uf={uf}
       companyStatus={companyStatus}
       legalNature={legalNature}
+      porte={porte}
+      templateType={template_type}
       igUrl={igUrl}
       waCta={waCta}
     />
   );
 
-  return (
-    <main className="public-site min-h-screen bg-[#F5F0FA] text-slate-900">
-      <PublicCriticalCss />
-      <header className="border-b border-purple-200 bg-white/90 backdrop-blur">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4">
-          <div className="flex items-center gap-3">
-            <div className="grid h-9 w-9 place-items-center rounded-full border border-purple-200 bg-purple-50 text-purple-900">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                <path
-                  d="M14 9a3 3 0 10-6 0v1H6a2 2 0 00-2 2v8h16v-8a2 2 0 00-2-2h-2V9z"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </div>
-            <div className="leading-tight">
-              <div className="text-xs text-slate-500">Página pública</div>
-              <div className="text-sm font-semibold text-slate-900">
-                {displayDomain}
-              </div>
-            </div>
-          </div>
 
-          <button
-            type="button"
-            disabled
-            className="cursor-not-allowed rounded-md bg-purple-800 px-4 py-2 text-sm font-semibold text-white opacity-70"
-          >
-            LOGIN
-          </button>
-        </div>
-      </header>
-
-      <section className="mx-auto max-w-5xl px-4 pb-8 pt-10">
-        <div className="rounded-2xl border border-purple-200 bg-white shadow-sm">
-          <div className="p-7 sm:p-10">
-            <div className="flex flex-col items-center text-center">
-              <div className="grid h-[180px] w-[180px] place-items-center rounded-full bg-purple-800 text-white shadow-sm">
-                <span className="text-6xl font-extrabold">
-                  {(company_name?.[0] || "E").toUpperCase()}
-                </span>
-              </div>
-
-              <h1 className="mt-6 text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">
-                {company_name}
-              </h1>
-
-              <div className="mt-2 text-sm text-slate-700 sm:text-base">
-                <span className="font-semibold text-slate-900">CNPJ:</span> {cnpj}
-              </div>
-
-              {mission ? (
-                <div className="mt-8 w-full max-w-3xl rounded-xl border border-purple-200 bg-white p-6 text-left">
-                  <div className="text-xs font-extrabold tracking-widest text-purple-700">
-                    NOSSA MISSÃO
-                  </div>
-                  <div className="mt-3 whitespace-pre-line text-sm font-semibold leading-relaxed text-slate-800 sm:text-base">
-                    {mission}
-                  </div>
-                </div>
-              ) : null}
-
-              <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
-                {waCta ? (
-                  <a
-                    href={waCta || undefined}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="rounded-md bg-purple-800 px-6 py-3 text-sm font-extrabold text-white hover:bg-purple-900"
-                  >
-                    CONVERSAR AGORA
-                  </a>
-                ) : null}
-
-                {igUrl ? (
-                  <a
-                    href={igUrl || undefined}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="rounded-md border border-purple-300 bg-purple-50 px-6 py-3 text-sm font-extrabold text-purple-900 hover:bg-purple-100"
-                  >
-                    INSTAGRAM
-                  </a>
-                ) : null}
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-5xl px-4 pb-14">
-        <div className="grid gap-6 md:grid-cols-[1.4fr_.6fr]">
-          <div className="rounded-2xl border border-purple-200 bg-white p-6 shadow-sm sm:p-7">
-            <h2 className="text-lg font-extrabold text-slate-900">QUEM SOMOS?</h2>
-            <div className="mt-4 whitespace-pre-line leading-relaxed text-slate-800">
-              {about || "—"}
-            </div>
-          </div>
-
-          <div className="space-y-6">
-            <div className="rounded-2xl border border-purple-200 bg-white p-6 shadow-sm sm:p-7">
-              <h3 className="text-sm font-extrabold tracking-widest text-purple-700">
-                CONTATO
-              </h3>
-
-              <div className="mt-4 space-y-2 text-sm text-slate-800">
-                {phone ? (
-                  <div className="flex items-start justify-between gap-3">
-                    <span className="text-slate-500">Telefone</span>
-                    <span className="text-right font-semibold">{phone}</span>
-                  </div>
-                ) : null}
-
-                {email ? (
-                  <div className="flex items-start justify-between gap-3">
-                    <span className="text-slate-500">E-mail</span>
-                    <span className="text-right font-semibold">{email}</span>
-                  </div>
-                ) : null}
-
-                {whatsapp ? (
-                  <div className="flex items-start justify-between gap-3">
-                    <span className="text-slate-500">WhatsApp</span>
-                    <span className="text-right font-semibold">{whatsapp}</span>
-                  </div>
-                ) : null}
-              </div>
-
-              {waCta ? (
-                <a
-                  href={waCta || undefined}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="mt-5 block rounded-md bg-purple-800 px-5 py-3 text-center text-sm font-extrabold text-white hover:bg-purple-900"
-                >
-                  FALAR NO WHATSAPP
-                </a>
-              ) : null}
-            </div>
-
-            <div className="rounded-2xl border border-purple-200 bg-white p-6 text-center shadow-sm sm:p-7">
-              <div className="mx-auto grid h-14 w-14 place-items-center rounded-full border border-purple-200 bg-purple-50 text-purple-900">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                  <path
-                    d="M7 2h10a5 5 0 015 5v10a5 5 0 01-5 5H7a5 5 0 01-5-5V7a5 5 0 015-5z"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                  />
-                  <path
-                    d="M12 16a4 4 0 100-8 4 4 0 000 8z"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                  />
-                  <path
-                    d="M17.5 6.5h.01"
-                    stroke="currentColor"
-                    strokeWidth="3"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              </div>
-
-              <div className="mt-3 text-sm font-extrabold text-slate-900">
-                INSTAGRAM
-              </div>
-
-              <a
-                href={igUrl || "#"}
-                target="_blank"
-                rel="noreferrer"
-                className={`mt-4 inline-flex items-center justify-center rounded-md px-5 py-3 text-sm font-extrabold ${
-                  igUrl
-                    ? "border border-purple-300 bg-purple-50 text-purple-900 hover:bg-purple-100"
-                    : "pointer-events-none bg-slate-100 text-slate-400"
-                }`}
-              >
-                ACESSAR
-              </a>
-            </div>
-          </div>
-        </div>
-
-        {privacy ? (
-          <div className="mt-6">
-            <div className="rounded-2xl border border-purple-200 bg-white p-6 shadow-sm sm:p-7">
-              <div className="text-xs font-extrabold tracking-widest text-purple-700">
-                POLÍTICA DE PRIVACIDADE
-              </div>
-              <div className="mt-3 whitespace-pre-line text-sm font-semibold leading-relaxed text-slate-800 sm:text-base">
-                {privacy}
-              </div>
-            </div>
-          </div>
-        ) : null}
-      </section>
-
-      <footer className="border-t border-purple-200 bg-white">
-        <div className="mx-auto max-w-5xl px-4 py-10">
-          <div className="whitespace-pre-line text-sm text-slate-700">{footer}</div>
-
-          <div className="mt-6">
-            <a
-              href="https://policies.google.com/privacy?hl=pt-BR"
-              target="_blank"
-              rel="noreferrer"
-              className="text-sm font-semibold text-purple-900 underline underline-offset-4"
-            >
-              Políticas de privacidade
-            </a>
-          </div>
-        </div>
-      </footer>
-    </main>
-  );
 }

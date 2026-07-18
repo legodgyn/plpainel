@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { getVerificationTemplateType } from "@/lib/siteThemes";
 
 export const dynamic = "force-dynamic";
 
@@ -174,12 +175,31 @@ export async function POST(req: Request) {
         domain_mode: "custom_domain",
         custom_domain: domain,
         is_public: true,
+        template_type: getVerificationTemplateType(site.id || domain),
+        simple_title: body.fantasy_name || body.company_name || null,
       })
       .eq("id", site.id);
 
     if (updateError) {
       return NextResponse.json({ ok: false, error: updateError.message }, { status: 500 });
     }
+
+    await supabaseAdmin
+      .from("sites")
+      .update({
+        opened_at: body.opened_at || null,
+        address_full: body.address_full || null,
+        cep: body.cep || null,
+        city: body.city || null,
+        uf: body.uf || null,
+        porte: body.porte || null,
+        natureza: body.natureza || null,
+        situacao: body.situacao || null,
+        tipo: body.tipo || null,
+        capital: body.capital || null,
+        cnae_principal: body.cnae_principal || null,
+      })
+      .eq("id", site.id);
 
     return NextResponse.json({
       ok: true,
