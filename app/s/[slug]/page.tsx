@@ -72,6 +72,94 @@ function waWithText(waUrl: string | null, text: string) {
   return `${waUrl}?text=${encodeURIComponent(text)}`;
 }
 
+function firstText(...values: Array<unknown>) {
+  for (const value of values) {
+    const text = String(value || "").trim();
+    if (text) return text;
+  }
+  return "";
+}
+
+function compactText(input?: string | null, maxLength = 160) {
+  const text = String(input || "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (text.length <= maxLength) return text;
+  return `${text.slice(0, maxLength - 1).trim()}...`;
+}
+
+function fmtDateBR(value?: string | null) {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+
+  try {
+    return new Date(raw).toLocaleDateString("pt-BR");
+  } catch {
+    return raw;
+  }
+}
+
+function extractRegisteredAddress(...values: Array<string | null | undefined>) {
+  for (const value of values) {
+    const raw = String(value || "").trim();
+    if (!raw) continue;
+
+    const match = raw.match(/endere[cç]o cadastral:\s*([^\n]+)/i);
+    if (match?.[1]) return match[1].replace(/\.$/, "").trim();
+  }
+
+  return "";
+}
+
+function buildOrganizationJsonLd(input: {
+  companyName: string;
+  cnpj: string;
+  description: string;
+  displayDomain: string;
+  phone: string;
+  email: string;
+  whatsapp: string;
+  address: string;
+  city: string;
+  state: string;
+  igUrl: string | null;
+}) {
+  const sameAs = [input.igUrl].filter(Boolean);
+  const jsonLd: Record<string, unknown> = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: input.companyName,
+    taxID: input.cnpj,
+    url: `https://${input.displayDomain}`,
+    description: input.description,
+  };
+
+  if (input.phone) jsonLd.telephone = input.phone;
+  if (input.email) jsonLd.email = input.email;
+  if (input.whatsapp) {
+    jsonLd.contactPoint = [
+      {
+        "@type": "ContactPoint",
+        contactType: "customer support",
+        telephone: input.whatsapp,
+      },
+    ];
+  }
+  if (sameAs.length) jsonLd.sameAs = sameAs;
+  if (input.address || input.city || input.state) {
+    jsonLd.address = {
+      "@type": "PostalAddress",
+      streetAddress: input.address || undefined,
+      addressLocality: input.city || undefined,
+      addressRegion: input.state || undefined,
+      addressCountry: "BR",
+    };
+  }
+
+  return JSON.stringify(jsonLd).replace(/</g, "\\u003c");
+}
+
 function extractMetaContent(input?: string | null) {
   const raw = String(input || "").trim();
   if (!raw) return null;
@@ -356,12 +444,19 @@ type ModernPublicSiteProps = {
   mission: string;
   phone: string;
   email: string;
+  whatsapp: string;
   about: string;
   privacy: string | null;
   footer: string;
   logo_url: string;
   displayDomain: string;
   officialActivity: string;
+  registeredAddress: string;
+  openedAt: string;
+  city: string;
+  uf: string;
+  companyStatus: string;
+  legalNature: string;
   igUrl: string | null;
   waCta: string | null;
 };
@@ -372,18 +467,48 @@ function ModernPublicSite({
   mission,
   phone,
   email,
+  whatsapp,
   about,
   privacy,
   footer,
   logo_url,
   displayDomain,
   officialActivity,
+  registeredAddress,
+  openedAt,
+  city,
+  uf,
+  companyStatus,
+  legalNature,
   igUrl,
   waCta,
 }: ModernPublicSiteProps) {
+  const description = compactText(
+    mission ||
+      about ||
+      `${company_name} - pagina oficial com dados cadastrais, canais de contato e informacoes institucionais.`
+  );
+  const jsonLd = buildOrganizationJsonLd({
+    companyName: company_name,
+    cnpj,
+    description,
+    displayDomain,
+    phone,
+    email,
+    whatsapp,
+    address: registeredAddress,
+    city,
+    state: uf,
+    igUrl,
+  });
+
   return (
     <main className="min-h-screen bg-white text-slate-900">
       <PublicCriticalCss />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: jsonLd }}
+      />
       <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/90 backdrop-blur">
         <div className="mx-auto flex min-h-[74px] w-full max-w-6xl flex-col gap-4 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
           <a href="#home" className="flex min-w-0 items-center gap-3">
@@ -396,7 +521,7 @@ function ModernPublicSite({
             )}
             <div className="min-w-0 leading-tight">
               <strong className="block truncate text-sm text-slate-950">{company_name}</strong>
-              <span className="mt-1 block truncate text-xs text-slate-500">Atendimento profissional</span>
+              <span className="mt-1 block truncate text-xs text-slate-500">Pagina oficial da empresa</span>
             </div>
           </a>
 
@@ -448,9 +573,9 @@ function ModernPublicSite({
             <h3 className="text-lg font-black">O que fazemos</h3>
             <ul className="mt-3 list-disc space-y-1 pl-5 text-sm leading-7 text-slate-500">
               <li>{company_name}</li>
-              <li>Atendimento profissional</li>
-              <li>Qualidade e confiança</li>
-              <li>Suporte e agilidade</li>
+              <li>{officialActivity || "Atendimento profissional"}</li>
+              <li>Canais oficiais de contato</li>
+              <li>Informacoes cadastrais publicas</li>
             </ul>
           </article>
 
@@ -459,6 +584,7 @@ function ModernPublicSite({
             <div className="mt-3 grid gap-3 text-sm font-bold text-slate-900">
               {phone ? <div className="flex items-center gap-3"><span className="grid h-8 w-8 place-items-center rounded-xl bg-emerald-50 text-teal-700">☎</span>{phone}</div> : null}
               {email ? <div className="flex items-center gap-3"><span className="grid h-8 w-8 place-items-center rounded-xl bg-emerald-50 text-teal-700">@</span><span className="break-all">{email}</span></div> : null}
+              {whatsapp ? <div className="flex items-center gap-3"><span className="grid h-8 w-8 place-items-center rounded-xl bg-emerald-50 text-teal-700">W</span>{whatsapp}</div> : null}
               {waCta ? <a href={waCta} target="_blank" rel="noreferrer" className="flex items-center gap-3"><span className="grid h-8 w-8 place-items-center rounded-xl bg-emerald-50 text-teal-700">→</span>Chamar no WhatsApp</a> : null}
               {igUrl ? <a href={igUrl} target="_blank" rel="noreferrer" className="flex items-center gap-3"><span className="grid h-8 w-8 place-items-center rounded-xl bg-emerald-50 text-teal-700">◎</span>Instagram</a> : null}
             </div>
@@ -488,6 +614,40 @@ function ModernPublicSite({
                 <div className="mt-2 text-sm font-black leading-5">{officialActivity || "Atendimento profissional"}</div>
               </div>
             </div>
+
+            <div className="mt-5 grid gap-4 border-t border-slate-100 pt-5 sm:grid-cols-2 lg:grid-cols-4">
+              {openedAt ? (
+                <div>
+                  <small className="block text-xs font-black uppercase tracking-wide text-slate-500">Abertura</small>
+                  <div className="mt-2 text-sm font-black leading-5">{fmtDateBR(openedAt)}</div>
+                </div>
+              ) : null}
+              {companyStatus ? (
+                <div>
+                  <small className="block text-xs font-black uppercase tracking-wide text-slate-500">Situacao</small>
+                  <div className="mt-2 text-sm font-black leading-5">{companyStatus}</div>
+                </div>
+              ) : null}
+              {legalNature ? (
+                <div>
+                  <small className="block text-xs font-black uppercase tracking-wide text-slate-500">Natureza Juridica</small>
+                  <div className="mt-2 text-sm font-black leading-5">{legalNature}</div>
+                </div>
+              ) : null}
+              {city || uf ? (
+                <div>
+                  <small className="block text-xs font-black uppercase tracking-wide text-slate-500">Localidade</small>
+                  <div className="mt-2 text-sm font-black leading-5">{[city, uf].filter(Boolean).join(" / ")}</div>
+                </div>
+              ) : null}
+            </div>
+
+            {registeredAddress ? (
+              <div className="mt-5 rounded-xl border border-emerald-100 bg-emerald-50 p-4">
+                <small className="block text-xs font-black uppercase tracking-wide text-teal-700">Endereco cadastral</small>
+                <div className="mt-2 text-sm font-black leading-6 text-slate-900">{registeredAddress}</div>
+              </div>
+            ) : null}
           </div>
         </div>
       </section>
@@ -507,6 +667,9 @@ function ModernPublicSite({
         <div className="mx-auto grid max-w-6xl gap-5 sm:grid-cols-[1.5fr_.8fr]">
           <div>
             <div className="mb-2 font-black text-white">{company_name}</div>
+            <div className="mb-3 text-xs font-bold text-white/70">
+              CNPJ: {cnpj} {displayDomain ? `| ${displayDomain}` : ""}
+            </div>
             <div className="whitespace-pre-line text-sm leading-7 text-white/70">{footer}</div>
           </div>
           <div className="grid content-start gap-3 sm:justify-end">
@@ -548,6 +711,10 @@ export async function generateMetadata(props: PageProps): Promise<Metadata> {
 
   const data = await findSite(slug, hostBaseDomain);
   const title = (data?.company_name as string | null) || "Site público";
+  const description = compactText(
+    ((data?.mission as string | null) || (data?.about as string | null) || "").trim() ||
+      `${title} - pagina oficial com dados cadastrais e canais de contato.`
+  );
 
   const cleanHost = getCleanHost(host);
   const publicUrl = `https://${cleanHost}/`;
@@ -559,12 +726,14 @@ export async function generateMetadata(props: PageProps): Promise<Metadata> {
 
   return {
     title,
+    description,
     alternates: {
       canonical: publicUrl,
     },
     openGraph: {
       url: publicUrl,
       title,
+      description,
       type: "website",
     },
     verification:
@@ -609,6 +778,14 @@ export default async function PublicSitePage(props: PageProps) {
     (data.cnae_principal as string | null) ||
     (data.natureza as string | null) ||
     "";
+  const registeredAddress =
+    firstText(data.address_full, data.endereco, data.address) ||
+    extractRegisteredAddress(about, footer);
+  const openedAt = firstText(data.opened_at, data.data_abertura, data.abertura);
+  const city = firstText(data.city, data.municipio, data.cidade);
+  const uf = firstText(data.uf, data.state);
+  const companyStatus = firstText(data.situacao, data.situacao_cadastral);
+  const legalNature = firstText(data.natureza, data.natureza_juridica);
   const custom_domain = (data.custom_domain as string | null) || "";
   const domain_mode = (data.domain_mode as string | null) || "";
   const base_domain =
@@ -622,10 +799,32 @@ export default async function PublicSitePage(props: PageProps) {
   const igUrl = normalizeInstagram(instagram);
   const waUrl = normalizeWhatsApp(whatsapp);
   const waCta = waWithText(waUrl, "Olá, gostaria de mais informações.");
+  const siteDescription = compactText(
+    mission ||
+      about ||
+      `${company_name} - pagina oficial com dados cadastrais, canais de contato e informacoes institucionais.`
+  );
+  const pageJsonLd = buildOrganizationJsonLd({
+    companyName: company_name,
+    cnpj,
+    description: siteDescription,
+    displayDomain,
+    phone,
+    email,
+    whatsapp,
+    address: registeredAddress,
+    city,
+    state: uf,
+    igUrl,
+  });
 
   if (template_type === "simple") {
     return (
       <main className="min-h-screen bg-black text-white">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: pageJsonLd }}
+        />
         <div className="mx-auto flex max-w-5xl flex-col items-center px-4 py-12 sm:py-16">
           {logo_url ? (
             <img
@@ -648,6 +847,7 @@ export default async function PublicSitePage(props: PageProps) {
 
         <footer className="mt-16 w-full bg-blue-700 px-6 py-8 text-center text-sm text-white">
           <div className="mx-auto max-w-5xl whitespace-pre-line leading-7">
+            <div className="mb-3 font-semibold">CNPJ: {cnpj} | {displayDomain}</div>
             {footer}
           </div>
         </footer>
@@ -662,12 +862,19 @@ export default async function PublicSitePage(props: PageProps) {
       mission={mission}
       phone={phone}
       email={email}
+      whatsapp={whatsapp}
       about={about}
       privacy={privacy}
       footer={footer}
       logo_url={logo_url}
       displayDomain={displayDomain}
       officialActivity={officialActivity}
+      registeredAddress={registeredAddress}
+      openedAt={openedAt}
+      city={city}
+      uf={uf}
+      companyStatus={companyStatus}
+      legalNature={legalNature}
       igUrl={igUrl}
       waCta={waCta}
     />
