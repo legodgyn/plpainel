@@ -48,6 +48,9 @@ const ROOT_DOMAINS = [
   "lcp7.com.br",
   "lcp8.com.br",
   "lcp9.com.br",
+  "acm1.com.br",
+  "acm2.com.br",
+  "acm3.com.br",
 ];
 
 function onlyDigits(v: string) {
