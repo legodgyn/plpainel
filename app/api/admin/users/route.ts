@@ -45,6 +45,37 @@ function waLink(phone?: string | null) {
   return `https://wa.me/${digits.startsWith("55") ? digits : `55${digits}`}`;
 }
 
+async function listAuthUsers(supabaseAdmin: any) {
+  const users: Array<{
+    id: string;
+    email: string | null;
+    created_at: string | null;
+  }> = [];
+  const perPage = 1000;
+
+  for (let page = 1; page <= 20; page += 1) {
+    const { data, error } = await supabaseAdmin.auth.admin.listUsers({
+      page,
+      perPage,
+    });
+
+    if (error) throw new Error(error.message);
+
+    const batch = data?.users || [];
+    users.push(
+      ...batch.map((user: any) => ({
+        id: user.id,
+        email: user.email || null,
+        created_at: user.created_at || null,
+      }))
+    );
+
+    if (batch.length < perPage) break;
+  }
+
+  return users;
+}
+
 export async function GET(req: Request) {
   try {
     const supabaseAdmin = createClient(
@@ -80,15 +111,34 @@ export async function GET(req: Request) {
         created_at: string | null;
       }>) || [];
 
-    const userIds = Array.from(
-      new Set(profileRows.map((p) => p.user_id).filter(Boolean))
-    );
+    const authUsers = await listAuthUsers(supabaseAdmin);
+
+    const profileByUser = new Map<string, (typeof profileRows)[number]>();
+    for (const profile of profileRows) {
+      if (profile.user_id) profileByUser.set(profile.user_id, profile);
+    }
 
     const emailByUser = new Map<string, string | null>();
+    const createdAtByUser = new Map<string, string | null>();
+
+    for (const user of authUsers) {
+      emailByUser.set(user.id, user.email);
+      createdAtByUser.set(user.id, user.created_at);
+    }
+
+    const userIds = Array.from(
+      new Set([
+        ...authUsers.map((user) => user.id),
+        ...profileRows.map((p) => p.user_id).filter(Boolean),
+      ])
+    );
+
+    const missingEmailIds = userIds.filter((uid) => !emailByUser.has(uid));
     await Promise.all(
-      userIds.map(async (uid) => {
+      missingEmailIds.map(async (uid) => {
         const { data } = await supabaseAdmin.auth.admin.getUserById(uid);
         emailByUser.set(uid, data?.user?.email || null);
+        createdAtByUser.set(uid, data?.user?.created_at || null);
       })
     );
 
@@ -132,19 +182,20 @@ export async function GET(req: Request) {
       }
     }
 
-    const out = profileRows
-      .map((p) => {
-        const spent = spentByUser.get(p.user_id) || 0;
-        const tokenBalance = tokensByUser.get(p.user_id) || 0;
+    const out = userIds
+      .map((userId) => {
+        const profile = profileByUser.get(userId);
+        const spent = spentByUser.get(userId) || 0;
+        const tokenBalance = tokensByUser.get(userId) || 0;
 
         return {
-          user_id: p.user_id,
-          created_at: p.created_at,
-          email: emailByUser.get(p.user_id) || null,
-          name: p.name || null,
-          whatsapp: p.whatsapp || null,
-          whatsapp_link: waLink(p.whatsapp),
-          affiliate_code: affiliateByUser.get(p.user_id) || null,
+          user_id: userId,
+          created_at: profile?.created_at || createdAtByUser.get(userId) || null,
+          email: emailByUser.get(userId) || null,
+          name: profile?.name || null,
+          whatsapp: profile?.whatsapp || null,
+          whatsapp_link: waLink(profile?.whatsapp),
+          affiliate_code: affiliateByUser.get(userId) || null,
           total_spent_cents: spent,
           total_spent_label: money(spent),
           token_balance: tokenBalance,
