@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabaseBrowser";
 
 type Row = {
@@ -69,16 +69,16 @@ export default function AdminDashboard() {
   const [dateTo, setDateTo] = useState("");
   const [sortBy, setSortBy] = useState("newest");
 
-  async function load() {
+  const load = useCallback(async (silent = false) => {
     setMsg(null);
-    setLoading(true);
+    if (!silent) setLoading(true);
 
     const { data: auth } = await supabase.auth.getSession();
     const token = auth?.session?.access_token;
 
     if (!token) {
       setMsg("Você precisa estar logado.");
-      setLoading(false);
+      if (!silent) setLoading(false);
       return;
     }
 
@@ -90,18 +90,28 @@ export default function AdminDashboard() {
     const j = await r.json().catch(() => ({}));
     if (!r.ok || !j?.ok) {
       setMsg(j?.error || "Erro ao carregar compras.");
-      setLoading(false);
+      if (!silent) setLoading(false);
       return;
     }
 
     setTotal(j.total_received_label || "-");
     setRows(j.orders || []);
-    setLoading(false);
-  }
+    if (!silent) setLoading(false);
+  }, []);
 
   useEffect(() => {
     load();
-  }, []);
+  }, [load]);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === "visible") {
+        load(true);
+      }
+    }, 15000);
+
+    return () => window.clearInterval(timer);
+  }, [load]);
 
   function clearFilters() {
     setSearch("");
@@ -211,7 +221,7 @@ export default function AdminDashboard() {
           <div className="pl-badge">
             Total recebido: <strong>{total}</strong>
           </div>
-          <button onClick={load} className="pl-btn pl-btn-primary">
+          <button onClick={() => load()} className="pl-btn pl-btn-primary">
             Atualizar
           </button>
         </div>
