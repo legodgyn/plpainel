@@ -259,10 +259,15 @@ export default function AffiliatePaymentsPage() {
       .slice(0, 5);
   }, [rows]);
 
+  const filterButtonClass = (active: boolean) =>
+    active
+      ? "pl-btn pl-btn-primary px-4 py-2 text-sm"
+      : "pl-btn px-4 py-2 text-sm";
+
   if (checkingAdmin) {
     return (
-      <main className="mx-auto w-full max-w-7xl px-4 py-8 text-white">
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-white/70">
+      <main className="pl-page mx-auto w-full max-w-7xl px-4 py-8">
+        <div className="pl-card p-6 text-[var(--panel-muted)]">
           Verificando acesso...
         </div>
       </main>
@@ -270,64 +275,64 @@ export default function AffiliatePaymentsPage() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-7xl px-4 py-8 text-white">
+    <main className="pl-page mx-auto w-full max-w-7xl px-4 py-8">
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Pagamentos de Afiliados</h1>
-          <p className="mt-1 text-sm text-white/60">
+          <h1 className="text-2xl font-black text-[var(--panel-ink)]">Pagamentos de Afiliados</h1>
+          <p className="mt-1 text-sm font-semibold text-[var(--panel-muted)]">
             Gerencie pedidos de saque, chaves PIX e pagamentos dos afiliados.
           </p>
         </div>
 
         <button
           onClick={load}
-          className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold hover:bg-white/10"
+          className="pl-btn px-4 py-2 text-sm"
         >
           Atualizar
         </button>
       </div>
 
       {msg ? (
-        <div className="mb-5 rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">
+        <div className="mb-5 rounded-xl border border-[var(--panel-ok-line)] bg-[var(--panel-ok-bg)] px-4 py-3 text-sm font-semibold text-[var(--panel-ok-text)]">
           {msg}
         </div>
       ) : null}
 
       <div className="mb-6 grid gap-4 lg:grid-cols-4">
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-          <div className="text-sm text-white/60">Total a pagar</div>
-          <div className="mt-2 text-3xl font-bold text-amber-300">
+        <div className="pl-card-soft p-5">
+          <div className="text-sm font-bold text-[var(--panel-muted)]">Total a pagar</div>
+          <div className="mt-2 text-3xl font-black text-[var(--panel-warn-text)]">
             {money(totals.pending)}
           </div>
         </div>
 
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-          <div className="text-sm text-white/60">Total pago</div>
-          <div className="mt-2 text-3xl font-bold text-emerald-300">
+        <div className="pl-card-soft p-5">
+          <div className="text-sm font-bold text-[var(--panel-muted)]">Total pago</div>
+          <div className="mt-2 text-3xl font-black text-[var(--panel-ok-text)]">
             {money(totals.paid)}
           </div>
         </div>
 
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-          <div className="text-sm text-white/60">Total geral</div>
-          <div className="mt-2 text-3xl font-bold text-white">
+        <div className="pl-card-soft p-5">
+          <div className="text-sm font-bold text-[var(--panel-muted)]">Total geral</div>
+          <div className="mt-2 text-3xl font-black text-[var(--panel-ink)]">
             {money(totals.total)}
           </div>
         </div>
 
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-          <div className="text-sm text-white/60">Pedidos</div>
-          <div className="mt-2 text-3xl font-bold text-white">
+        <div className="pl-card-soft p-5">
+          <div className="text-sm font-bold text-[var(--panel-muted)]">Pedidos</div>
+          <div className="mt-2 text-3xl font-black text-[var(--panel-ink)]">
             {rows.length}
           </div>
         </div>
       </div>
 
-      <div className="mb-6 rounded-2xl border border-white/10 bg-white/5 p-5">
-        <div className="mb-4 text-sm font-semibold text-white">Ranking de afiliados</div>
+      <div className="pl-card mb-6 p-5">
+        <div className="mb-4 text-sm font-black text-[var(--panel-ink)]">Ranking de afiliados</div>
 
         {ranking.length === 0 ? (
-          <div className="text-sm text-white/50">Nenhum afiliado com solicitações ainda.</div>
+          <div className="text-sm font-semibold text-[var(--panel-muted)]">Nenhum afiliado com solicitações ainda.</div>
         ) : (
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
             {ranking.map((item, index) => {
@@ -341,14 +346,14 @@ export default function AffiliatePaymentsPage() {
               return (
                 <div
                   key={item.user_id}
-                  className="rounded-2xl border border-white/10 bg-black/20 p-4"
+                  className="rounded-2xl border border-[var(--panel-line)] bg-[var(--panel-surface)] p-4"
                 >
-                  <div className="text-xs text-white/50">#{index + 1} no ranking</div>
-                  <div className="mt-2 truncate font-semibold text-white">
+                  <div className="text-xs font-semibold text-[var(--panel-muted)]">#{index + 1} no ranking</div>
+                  <div className="mt-2 truncate font-black text-[var(--panel-ink)]">
                     {item.name}
                   </div>
-                  <div className="mt-1 text-xs text-white/50">{item.code}</div>
-                  <div className="mt-3 text-xl font-bold text-amber-300">
+                  <div className="mt-1 text-xs font-semibold text-[var(--panel-muted)]">{item.code}</div>
+                  <div className="mt-3 text-xl font-black text-[var(--panel-warn-text)]">
                     {money(item.total)}
                   </div>
 
@@ -357,12 +362,12 @@ export default function AffiliatePaymentsPage() {
                       href={autoWa}
                       target="_blank"
                       rel="noreferrer"
-                      className="mt-4 inline-flex rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-500"
+                      className="pl-btn pl-btn-primary mt-4 px-3 py-2 text-xs"
                     >
                       WhatsApp automático
                     </a>
                   ) : (
-                    <div className="mt-4 text-xs text-white/40">
+                    <div className="mt-4 text-xs font-semibold text-[var(--panel-muted)]">
                       Sem WhatsApp
                     </div>
                   )}
@@ -376,63 +381,51 @@ export default function AffiliatePaymentsPage() {
       <div className="mb-4 flex flex-wrap gap-2">
         <button
           onClick={() => setFilter("all")}
-          className={`rounded-xl px-4 py-2 text-sm font-semibold ${
-            filter === "all"
-              ? "bg-violet-600 text-white"
-              : "border border-white/10 bg-white/5 text-white/80 hover:bg-white/10"
-          }`}
+          className={filterButtonClass(filter === "all")}
         >
           Todos
         </button>
 
         <button
           onClick={() => setFilter("pending")}
-          className={`rounded-xl px-4 py-2 text-sm font-semibold ${
-            filter === "pending"
-              ? "bg-violet-600 text-white"
-              : "border border-white/10 bg-white/5 text-white/80 hover:bg-white/10"
-          }`}
+          className={filterButtonClass(filter === "pending")}
         >
           Pendentes
         </button>
 
         <button
           onClick={() => setFilter("paid")}
-          className={`rounded-xl px-4 py-2 text-sm font-semibold ${
-            filter === "paid"
-              ? "bg-violet-600 text-white"
-              : "border border-white/10 bg-white/5 text-white/80 hover:bg-white/10"
-          }`}
+          className={filterButtonClass(filter === "paid")}
         >
           Pagos
         </button>
       </div>
 
-      <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+      <div className="pl-card p-5">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="text-white/60">
-              <tr className="border-b border-white/10">
-                <th className="pb-3 text-left font-medium">Data</th>
-                <th className="pb-3 text-left font-medium">Afiliado</th>
-                <th className="pb-3 text-left font-medium">WhatsApp</th>
-                <th className="pb-3 text-left font-medium">Chave PIX</th>
-                <th className="pb-3 text-left font-medium">Valor</th>
-                <th className="pb-3 text-left font-medium">Status</th>
-                <th className="pb-3 text-left font-medium">Ações</th>
+            <thead className="text-[var(--panel-muted)]">
+              <tr className="border-b border-[var(--panel-line)]">
+                <th className="pb-3 text-left font-black">Data</th>
+                <th className="pb-3 text-left font-black">Afiliado</th>
+                <th className="pb-3 text-left font-black">WhatsApp</th>
+                <th className="pb-3 text-left font-black">Chave PIX</th>
+                <th className="pb-3 text-left font-black">Valor</th>
+                <th className="pb-3 text-left font-black">Status</th>
+                <th className="pb-3 text-left font-black">Ações</th>
               </tr>
             </thead>
 
-            <tbody className="divide-y divide-white/5">
+            <tbody className="divide-y divide-[var(--panel-line)]">
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="py-6 text-white/60">
+                  <td colSpan={7} className="py-6 font-semibold text-[var(--panel-muted)]">
                     Carregando...
                   </td>
                 </tr>
               ) : filteredRows.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-6 text-white/60">
+                  <td colSpan={7} className="py-6 font-semibold text-[var(--panel-muted)]">
                     Nenhum pagamento encontrado.
                   </td>
                 </tr>
@@ -450,57 +443,57 @@ export default function AffiliatePaymentsPage() {
                   );
 
                   return (
-                    <tr key={r.id} className="hover:bg-white/5">
-                      <td className="py-3 text-white/70">{fmtDate(r.created_at)}</td>
+                    <tr key={r.id} className="hover:bg-[var(--panel-hover)]">
+                      <td className="py-3 font-semibold text-[var(--panel-muted)]">{fmtDate(r.created_at)}</td>
 
                       <td className="py-3">
-                        <div className="font-semibold text-white/90">
+                        <div className="font-black text-[var(--panel-ink)]">
                           {r.profile?.name || r.affiliate?.code || "Afiliado"}
                         </div>
-                        <div className="text-[11px] text-white/40">
+                        <div className="text-[11px] font-semibold text-[var(--panel-muted)]">
                           {r.affiliate?.code ? `Código: ${r.affiliate.code}` : "Sem código"}
                         </div>
                       </td>
 
                       <td className="py-3">
                         {r.profile?.whatsapp ? (
-                          <span className="font-semibold text-emerald-300">
+                          <span className="font-black text-[var(--panel-ok-text)]">
                             {r.profile.whatsapp}
                           </span>
                         ) : (
-                          <span className="text-white/40">—</span>
+                          <span className="font-semibold text-[var(--panel-muted)]">—</span>
                         )}
                       </td>
 
                       <td className="py-3">
                         {r.pix_key ? (
                           <div className="flex items-center gap-2">
-                            <span className="max-w-[220px] truncate text-white/90">
+                            <span className="max-w-[220px] truncate font-semibold text-[var(--panel-ink)]">
                               {r.pix_key}
                             </span>
                             <button
                               onClick={() => copyPixKey(r.pix_key)}
-                              className="rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-xs hover:bg-white/10"
+                              className="pl-btn px-2 py-1 text-xs"
                             >
                               Copiar
                             </button>
                           </div>
                         ) : (
-                          <span className="text-white/40">—</span>
+                          <span className="font-semibold text-[var(--panel-muted)]">—</span>
                         )}
                       </td>
 
-                      <td className="py-3 font-semibold text-white">
+                      <td className="py-3 font-black text-[var(--panel-ink)]">
                         {money(Number(r.amount || 0))}
                       </td>
 
                       <td className="py-3">
                         {paid ? (
-                          <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-xs text-emerald-200">
+                          <span className="pl-badge pl-badge-ok py-1">
                             Pago
                           </span>
                         ) : (
-                          <span className="rounded-full border border-amber-500/20 bg-amber-500/10 px-3 py-1 text-xs text-amber-200">
+                          <span className="pl-badge pl-badge-warn py-1">
                             Pendente
                           </span>
                         )}
@@ -513,7 +506,7 @@ export default function AffiliatePaymentsPage() {
                               href={whatsappAuto}
                               target="_blank"
                               rel="noreferrer"
-                              className="rounded-lg bg-emerald-600 px-3 py-1 text-xs font-semibold text-white hover:bg-emerald-500"
+                              className="pl-btn pl-btn-primary px-3 py-1 text-xs"
                             >
                               WhatsApp automático
                             </a>
@@ -523,7 +516,7 @@ export default function AffiliatePaymentsPage() {
                             <button
                               onClick={() => markAsPaid(r.id)}
                               disabled={updatingId === r.id}
-                              className="rounded-lg bg-violet-600 px-3 py-1 text-xs font-semibold text-white hover:bg-violet-500 disabled:opacity-60"
+                              className="pl-btn pl-btn-primary px-3 py-1 text-xs disabled:opacity-60"
                             >
                               {updatingId === r.id ? "Salvando..." : "Marcar pago"}
                             </button>
