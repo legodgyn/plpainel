@@ -171,17 +171,17 @@ export default function AdminTransferSitesPage() {
 
   return (
 
-    <div className="space-y-6 text-white">
+    <div className="pl-page space-y-6">
 
-      <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
-        <h1 className="text-xl font-semibold">Transferir Sites</h1>
-        <p className="text-sm text-white/60 mt-1">
+      <div className="pl-card p-6">
+        <h1 className="text-2xl font-black text-[var(--panel-ink)]">Transferir Sites</h1>
+        <p className="mt-1 text-sm font-semibold text-[var(--panel-muted)]">
           Selecione usuário de origem, escolha os sites e transfira para outro usuário.
         </p>
       </div>
 
       {msg && (
-        <div className="rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm">
+        <div className="rounded-xl border border-[var(--panel-line)] bg-[var(--panel-hover)] px-4 py-3 text-sm font-semibold text-[var(--panel-ink)]">
           {msg}
         </div>
       )}
@@ -190,9 +190,9 @@ export default function AdminTransferSitesPage() {
 
         {/* ORIGEM */}
 
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+        <div className="pl-card p-5">
 
-          <div className="text-sm font-semibold mb-2">
+          <div className="mb-2 text-sm font-black text-[var(--panel-ink)]">
             Usuário de origem
           </div>
 
@@ -200,7 +200,7 @@ export default function AdminTransferSitesPage() {
             placeholder="Buscar usuário..."
             value={searchFrom}
             onChange={(e) => setSearchFrom(e.target.value)}
-            className="w-full mb-3 rounded-xl bg-black/30 border border-white/10 px-4 py-3"
+            className="pl-input mb-3"
           />
 
           <select
@@ -209,7 +209,7 @@ export default function AdminTransferSitesPage() {
               setFromUser(e.target.value);
               loadSites(e.target.value);
             }}
-            className="w-full rounded-xl bg-black/40 border border-white/10 px-4 py-3 text-white"
+            className="pl-select"
           >
             <option value="">Selecione</option>
 
@@ -217,21 +217,20 @@ export default function AdminTransferSitesPage() {
               <option
                 key={u.id}
                 value={u.id}
-                className="bg-[#0f172a] text-white"
               >
                 {u.email}
               </option>
             ))}
           </select>
 
-          <div className="mt-6 text-sm font-semibold mb-2">
+          <div className="mb-2 mt-6 text-sm font-black text-[var(--panel-ink)]">
             Sites do usuário
           </div>
 
           <div className="space-y-2 max-h-80 overflow-y-auto">
 
             {loadingSites && (
-              <div className="text-white/60 text-sm">
+              <div className="text-sm font-semibold text-[var(--panel-muted)]">
                 Carregando sites...
               </div>
             )}
@@ -241,7 +240,7 @@ export default function AdminTransferSitesPage() {
 
                 <label
                   key={s.id}
-                  className="flex items-center gap-3 rounded-xl bg-black/40 px-3 py-2 hover:bg-black/60"
+                  className="flex items-center gap-3 rounded-xl border border-[var(--panel-line)] bg-[var(--panel-surface)] px-3 py-2 text-[var(--panel-ink)] transition hover:bg-[var(--panel-hover)]"
                 >
 
                   <input
@@ -250,7 +249,7 @@ export default function AdminTransferSitesPage() {
                     onChange={() => toggleSite(s.id)}
                   />
 
-                  <span className="text-sm">
+                  <span className="text-sm font-semibold">
                     {s.slug}
                   </span>
 
@@ -264,9 +263,9 @@ export default function AdminTransferSitesPage() {
 
         {/* DESTINO */}
 
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+        <div className="pl-card p-5">
 
-          <div className="text-sm font-semibold mb-2">
+          <div className="mb-2 text-sm font-black text-[var(--panel-ink)]">
             Usuário de destino
           </div>
 
@@ -274,13 +273,13 @@ export default function AdminTransferSitesPage() {
             placeholder="Buscar usuário..."
             value={searchTo}
             onChange={(e) => setSearchTo(e.target.value)}
-            className="w-full mb-3 rounded-xl bg-black/30 border border-white/10 px-4 py-3"
+            className="pl-input mb-3"
           />
 
           <select
             value={toUser}
             onChange={(e) => setToUser(e.target.value)}
-            className="w-full rounded-xl bg-black/40 border border-white/10 px-4 py-3 text-white"
+            className="pl-select"
           >
             <option value="">Selecione</option>
 
@@ -288,7 +287,6 @@ export default function AdminTransferSitesPage() {
               <option
                 key={u.id}
                 value={u.id}
-                className="bg-[#0f172a] text-white"
               >
                 {u.email}
               </option>
@@ -298,7 +296,7 @@ export default function AdminTransferSitesPage() {
           <button
             onClick={handleTransfer}
             disabled={saving}
-            className="mt-6 w-full rounded-xl bg-violet-600 py-3 font-semibold hover:bg-violet-500"
+            className="pl-btn pl-btn-primary mt-6 w-full disabled:opacity-60"
           >
             {saving ? 'Transferindo...' : 'Transferir Sites'}
           </button>
