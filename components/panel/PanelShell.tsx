@@ -167,11 +167,6 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
         label: "Sites por Dominio",
         icon: "#",
       });
-      items.push({
-        href: "https://bm.plpainel.com/dashboard.html",
-        label: "Controle de BM's",
-        icon: "📈",
-      });
 
       if (canTransferSites) {
         items.push({
