@@ -115,17 +115,28 @@ async function listAuthUsers(supabaseAdmin: any) {
   return users;
 }
 
-async function listAllRows(supabaseAdmin: any, table: string, select: string) {
+async function listAllRows(
+  supabaseAdmin: any,
+  table: string,
+  select: string,
+  options: { orderByCreatedAt?: boolean } = {}
+) {
   const pageSize = 1000;
   const all: any[] = [];
+  const orderByCreatedAt = options.orderByCreatedAt !== false;
 
   for (let from = 0; from < 50000; from += pageSize) {
     const to = from + pageSize - 1;
-    const { data, error } = await supabaseAdmin
+    let query = supabaseAdmin
       .from(table)
       .select(select)
-      .order("created_at", { ascending: false })
       .range(from, to);
+
+    if (orderByCreatedAt) {
+      query = query.order("created_at", { ascending: false });
+    }
+
+    const { data, error } = await query;
 
     if (error) throw new Error(error.message);
 
@@ -176,15 +187,12 @@ async function getUsers(supabaseAdmin: any) {
 
   const tokensByUser = new Map<string, number>();
   if (userIds.length) {
-    const { data: balances, error: balancesErr } = await supabaseAdmin
-      .from("user_token_balances")
-      .select("user_id,balance")
-      .in("user_id", userIds);
-
-    if (balancesErr) throw new Error(balancesErr.message);
+    const balances = await listAllRows(supabaseAdmin, "user_token_balances", "user_id,balance", {
+      orderByCreatedAt: false,
+    });
 
     for (const row of balances || []) {
-      tokensByUser.set(row.user_id, Number(row.balance || 0));
+      if (row.user_id) tokensByUser.set(row.user_id, Number(row.balance || 0));
     }
   }
 
