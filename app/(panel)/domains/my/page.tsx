@@ -16,9 +16,12 @@ export default function MyDomainsPage() {
   const router = useRouter();
   const [domains, setDomains] = useState<DomainRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [removingDomain, setRemovingDomain] = useState<string | null>(null);
+  const [msg, setMsg] = useState<string | null>(null);
 
-  async function load() {
+  async function load(options?: { clearMessage?: boolean }) {
     setLoading(true);
+    if (options?.clearMessage !== false) setMsg(null);
     const { data: auth } = await supabase.auth.getUser();
     const user = auth.user;
 
@@ -76,6 +79,52 @@ export default function MyDomainsPage() {
     load();
   }, []);
 
+  async function removeDomain(row: DomainRow) {
+    const ok = window.confirm(
+      `Remover ${row.domain} da sua conta?\n\nOs sites que usam esse domínio voltarão para o domínio padrão da plataforma. Nenhum site será apagado.`
+    );
+
+    if (!ok) return;
+
+    setRemovingDomain(row.domain);
+    setMsg(null);
+
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+
+      if (!token) {
+        router.push("/login");
+        return;
+      }
+
+      const res = await fetch("/api/domains/remove", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ domain: row.domain }),
+      });
+
+      const json = await res.json().catch(() => ({}));
+
+      if (!res.ok || !json.ok) {
+        setMsg(json.error || "Nao foi possivel remover o dominio.");
+        return;
+      }
+
+      setMsg(
+        json.affectedSites
+          ? `Dominio removido. ${json.affectedSites} site(s) voltaram para o dominio padrao.`
+          : "Dominio removido da sua conta."
+      );
+      await load({ clearMessage: false });
+    } finally {
+      setRemovingDomain(null);
+    }
+  }
+
   return (
     <main className="pl-page max-w-6xl space-y-6">
       <div className="pl-page-title">
@@ -87,6 +136,12 @@ export default function MyDomainsPage() {
           Conectar domínio próprio
         </button>
       </div>
+
+      {msg ? (
+        <div className="rounded-xl border border-[var(--panel-line)] bg-[var(--panel-hover)] px-4 py-3 text-sm font-semibold text-[var(--panel-ink)]">
+          {msg}
+        </div>
+      ) : null}
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {loading ? (
@@ -111,6 +166,14 @@ export default function MyDomainsPage() {
               <div className="mt-5 flex flex-wrap gap-2">
                 <button onClick={() => router.push("/sites/domain-subdomain")} className="pl-btn px-3 py-2 text-xs">
                   Criar subdomínio
+                </button>
+                <button
+                  type="button"
+                  onClick={() => removeDomain(d)}
+                  disabled={removingDomain === d.domain}
+                  className="pl-btn pl-btn-danger px-3 py-2 text-xs disabled:opacity-60"
+                >
+                  {removingDomain === d.domain ? "Removendo..." : "Remover"}
                 </button>
               </div>
             </article>
