@@ -183,47 +183,47 @@ export default function AdminUpdatesPage() {
   }
 
   return (
-    <div className="space-y-6 text-white">
-      <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
-        <h1 className="text-xl font-semibold">Atualizações e Manutenção</h1>
-        <p className="mt-1 text-sm text-white/60">
+    <div className="pl-page space-y-6 text-[var(--panel-ink)]">
+      <div className="pl-card p-6">
+        <h1 className="text-2xl font-black text-[var(--panel-ink)]">Atualizações e Manutenção</h1>
+        <p className="mt-1 text-sm font-semibold text-[var(--panel-muted)]">
           Publique novidades do sistema e ative avisos de manutenção para os usuários.
         </p>
       </div>
 
       {msg ? (
-        <div className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white/80">
+        <div className="rounded-xl border border-[var(--panel-line)] bg-[var(--panel-hover)] px-4 py-3 text-sm font-semibold text-[var(--panel-ink)]">
           {msg}
         </div>
       ) : null}
 
       <div className="grid gap-6 xl:grid-cols-2">
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-          <div className="text-sm font-semibold">Nova atualização</div>
+        <div className="pl-card p-5">
+          <div className="text-sm font-black text-[var(--panel-ink)]">Nova atualização</div>
 
           <div className="mt-4 space-y-4">
             <div>
-              <label className="text-xs text-white/60">Título</label>
+              <label className="pl-label">Título</label>
               <input
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Ex: Nova atualização no sistema"
-                className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none focus:border-violet-400"
+                className="pl-input"
               />
             </div>
 
             <div>
-              <label className="text-xs text-white/60">Conteúdo</label>
+              <label className="pl-label">Conteúdo</label>
               <textarea
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 rows={8}
                 placeholder="Descreva aqui o que mudou..."
-                className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none focus:border-violet-400"
+                className="pl-textarea"
               />
             </div>
 
-            <label className="flex items-center gap-3 text-sm text-white/80">
+            <label className="flex items-center gap-3 text-sm font-semibold text-[var(--panel-muted)]">
               <input
                 type="checkbox"
                 checked={isPublished}
@@ -235,18 +235,18 @@ export default function AdminUpdatesPage() {
             <button
               onClick={handleCreateAnnouncement}
               disabled={savingAnnouncement}
-              className="rounded-xl bg-violet-600 px-5 py-3 text-sm font-semibold text-white hover:bg-violet-500 disabled:opacity-60"
+              className="pl-btn pl-btn-primary disabled:opacity-60"
             >
               {savingAnnouncement ? "Publicando..." : "Publicar atualização"}
             </button>
           </div>
         </div>
 
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-          <div className="text-sm font-semibold">Modo manutenção</div>
+        <div className="pl-card p-5">
+          <div className="text-sm font-black text-[var(--panel-ink)]">Modo manutenção</div>
 
           <div className="mt-4 space-y-4">
-            <label className="flex items-center gap-3 text-sm text-white/80">
+            <label className="flex items-center gap-3 text-sm font-semibold text-[var(--panel-muted)]">
               <input
                 type="checkbox"
                 checked={maintenanceEnabled}
@@ -256,19 +256,19 @@ export default function AdminUpdatesPage() {
             </label>
 
             <div>
-              <label className="text-xs text-white/60">Mensagem</label>
+              <label className="pl-label">Mensagem</label>
               <textarea
                 value={maintenanceMessage}
                 onChange={(e) => setMaintenanceMessage(e.target.value)}
                 rows={6}
-                className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none focus:border-violet-400"
+                className="pl-textarea"
               />
             </div>
 
             <button
               onClick={handleSaveMaintenance}
               disabled={savingMaintenance}
-              className="rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-500 disabled:opacity-60"
+              className="pl-btn pl-btn-primary disabled:opacity-60"
             >
               {savingMaintenance ? "Salvando..." : "Salvar manutenção"}
             </button>
@@ -276,38 +276,38 @@ export default function AdminUpdatesPage() {
         </div>
       </div>
 
-      <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-        <div className="text-sm font-semibold">Últimas atualizações</div>
+      <div className="pl-card p-5">
+        <div className="text-sm font-black text-[var(--panel-ink)]">Últimas atualizações</div>
 
         <div className="mt-4 space-y-3">
           {loading ? (
-            <div className="text-sm text-white/60">Carregando...</div>
+            <div className="pl-card-soft text-sm font-semibold text-[var(--panel-muted)]">Carregando...</div>
           ) : items.length === 0 ? (
-            <div className="text-sm text-white/60">Nenhuma atualização publicada.</div>
+            <div className="pl-card-soft text-sm font-semibold text-[var(--panel-muted)]">Nenhuma atualização publicada.</div>
           ) : (
             items.map((item) => (
               <div
                 key={item.id}
-                className="rounded-xl border border-white/10 bg-black/20 p-4"
+                className="rounded-xl border border-[var(--panel-line)] bg-[var(--panel-surface)] p-4"
               >
                 <div className="flex items-center justify-between gap-3">
-                  <div className="font-semibold text-white">{item.title}</div>
-                  <div className="text-xs text-white/45">
+                  <div className="font-black text-[var(--panel-ink)]">{item.title}</div>
+                  <div className="text-xs font-semibold text-[var(--panel-muted)]">
                     {new Date(item.created_at).toLocaleString("pt-BR")}
                   </div>
                 </div>
 
-                <div className="mt-2 whitespace-pre-line text-sm text-white/70">
+                <div className="mt-2 whitespace-pre-line text-sm font-semibold leading-6 text-[var(--panel-muted)]">
                   {item.content}
                 </div>
 
                 <div className="mt-3 text-xs">
                   {item.is_published ? (
-                    <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-1 text-emerald-200">
+                    <span className="pl-badge pl-badge-ok py-1">
                       Publicada
                     </span>
                   ) : (
-                    <span className="rounded-full border border-white/10 bg-white/10 px-2 py-1 text-white/70">
+                    <span className="pl-badge py-1">
                       Rascunho
                     </span>
                   )}
