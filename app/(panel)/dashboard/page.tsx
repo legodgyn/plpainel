@@ -28,15 +28,6 @@ type OrderRow = {
   mp_payment_id: string | null;
 };
 
-type InboxEmailRow = {
-  id: string;
-  domain: string;
-  from_email: string | null;
-  subject: string | null;
-  detected_code: string | null;
-  created_at: string;
-};
-
 type AnnouncementRow = {
   id: string;
   title: string;
@@ -104,7 +95,6 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [sites, setSites] = useState<SiteRow[]>([]);
   const [orders, setOrders] = useState<OrderRow[]>([]);
-  const [emails, setEmails] = useState<InboxEmailRow[]>([]);
   const [tokenBalance, setTokenBalance] = useState(0);
   const [copiedDomain, setCopiedDomain] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -133,12 +123,11 @@ export default function DashboardPage() {
         setLoading(false);
         setSites([]);
         setOrders([]);
-        setEmails([]);
         setErrorMsg("Usuario nao autenticado no dashboard.");
         return;
       }
 
-      const [sitesRes, tokenRes, ordersRes, emailsRes, settingsRes, announcementsRes, viewsRes] =
+      const [sitesRes, tokenRes, ordersRes, settingsRes, announcementsRes, viewsRes] =
         await Promise.all([
           supabase
             .from("sites")
@@ -159,12 +148,6 @@ export default function DashboardPage() {
             .eq("user_id", user.id)
             .order("created_at", { ascending: false })
             .limit(30),
-          supabase
-            .from("domain_inbox_emails")
-            .select("id, domain, from_email, subject, detected_code, created_at")
-            .eq("user_id", user.id)
-            .order("created_at", { ascending: false })
-            .limit(20),
           supabase
             .from("system_settings")
             .select("value")
@@ -193,7 +176,6 @@ export default function DashboardPage() {
 
       setTokenBalance(tokenRes.error ? 0 : tokenRes.data?.balance ?? 0);
       setOrders(ordersRes.error ? [] : ((ordersRes.data as OrderRow[]) ?? []));
-      setEmails(emailsRes.error ? [] : ((emailsRes.data as InboxEmailRow[]) ?? []));
 
       const maintenanceValue = settingsRes.data?.value as MaintenanceSetting | undefined;
       setMaintenanceEnabled(Boolean(maintenanceValue?.enabled));
@@ -277,7 +259,6 @@ export default function DashboardPage() {
       (site) => site.domain_mode === "custom_domain" && site.custom_domain
     ).length;
     const metaTags = sites.filter((site) => site.meta_verify_content).length;
-    const withCodes = emails.filter((email) => email.detected_code).length;
     const paidOrders = orders.filter((order) => normalizeOrderStatus(order) === "paid");
     const pendingOrders = orders.filter((order) => normalizeOrderStatus(order) === "pending");
     const recentPaidCents = paidOrders.reduce((sum, order) => sum + Number(order.total_cents || 0), 0);
@@ -288,13 +269,11 @@ export default function DashboardPage() {
       drafts: Math.max(0, sites.length - published),
       customDomains,
       metaTags,
-      inboxEmails: emails.length,
-      inboxCodes: withCodes,
       paidOrders: paidOrders.length,
       pendingOrders: pendingOrders.length,
       recentPaidCents,
     };
-  }, [emails, orders, sites]);
+  }, [orders, sites]);
 
   const creationChart = useMemo(() => {
     const days = Array.from({ length: 14 }, (_, index) => {
@@ -387,7 +366,7 @@ export default function DashboardPage() {
     if (metrics.customDomains === 0 && sites.length > 0) {
       items.push({
         title: "Dominio proprio",
-        text: "Conecte um dominio para ativar inbox dedicada.",
+        text: "Conecte um dominio proprio para reforcar sua marca.",
         href: "/sites/custom-domain",
         tone: "ok",
       });
@@ -415,11 +394,7 @@ export default function DashboardPage() {
   }, [metrics.customDomains, metrics.pendingOrders, sites, tokenBalance]);
 
   const siteCards = sites.slice(0, 5);
-  const recentEmails = emails.slice(0, 5);
   const recentOrders = orders.slice(0, 5);
-  const customInboxDomains = sites
-    .filter((site) => site.domain_mode === "custom_domain" && site.custom_domain)
-    .slice(0, 3);
 
   return (
     <div className="pl-page space-y-6">
@@ -446,7 +421,7 @@ export default function DashboardPage() {
         <div>
           <span className="pl-badge">Minha conta</span>
           <h1>Meu Dashboard</h1>
-          <p>Resumo individual dos seus sites, tokens, dominios, compras e inbox.</p>
+          <p>Resumo individual dos seus sites, tokens, dominios e compras.</p>
         </div>
 
         <div className="flex flex-wrap gap-2">
@@ -459,13 +434,12 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {[
           { label: "Tokens", value: tokenBalance, hint: "disponiveis para criar sites" },
           { label: "Sites", value: metrics.totalSites, hint: `${metrics.published} publicados` },
-          { label: "Dominios proprios", value: metrics.customDomains, hint: "com inbox dedicada" },
+          { label: "Dominios proprios", value: metrics.customDomains, hint: "conectados aos sites" },
           { label: "Meta tags", value: metrics.metaTags, hint: "sites com verificacao" },
-          { label: "Inbox", value: metrics.inboxEmails, hint: `${metrics.inboxCodes} com codigo` },
         ].map((card) => (
           <div key={card.label} className="pl-card-soft">
             <div className="text-sm font-bold text-[var(--panel-muted)]">{card.label}</div>
@@ -643,49 +617,7 @@ export default function DashboardPage() {
         </section>
       </div>
 
-      <div className="grid gap-5 xl:grid-cols-2">
-        <section className="pl-card min-h-[330px] overflow-hidden p-0">
-          <div className="flex items-start justify-between gap-4 border-b border-[var(--panel-line)] p-5">
-            <div>
-              <h2 className="text-xl font-black">Minha inbox e codigos</h2>
-              <p className="mt-1 text-sm text-[var(--panel-muted)]">Emails recentes recebidos pelos seus dominios.</p>
-            </div>
-            <Link href="/emails" className="pl-btn">
-              Abrir inbox
-            </Link>
-          </div>
-
-          <div className="space-y-3 p-5">
-            {recentEmails.length === 0 ? (
-              <div className="text-sm font-semibold text-[var(--panel-muted)]">
-                {customInboxDomains.length
-                  ? "Nenhum email recebido ainda."
-                  : "Conecte um dominio proprio para ativar a inbox interna."}
-              </div>
-            ) : (
-              recentEmails.map((email) => (
-                <Link
-                  key={email.id}
-                  href={`/emails/${encodeURIComponent(email.domain)}`}
-                  className="block rounded-2xl border border-[var(--panel-line)] bg-[var(--panel-surface)] p-4 transition hover:border-[var(--panel-nav-active-line)]"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="truncate font-black">{email.subject || "Sem assunto"}</div>
-                      <div className="mt-1 truncate text-sm text-[var(--panel-muted)]">
-                        {email.from_email || "Remetente desconhecido"} | {email.domain}
-                      </div>
-                    </div>
-                    {email.detected_code ? (
-                      <span className="pl-badge pl-badge-ok">{email.detected_code}</span>
-                    ) : null}
-                  </div>
-                </Link>
-              ))
-            )}
-          </div>
-        </section>
-
+      <div className="grid gap-5">
         <section className="pl-card min-h-[330px] overflow-hidden p-0">
           <div className="flex items-start justify-between gap-4 border-b border-[var(--panel-line)] p-5">
             <div>

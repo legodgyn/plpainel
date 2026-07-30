@@ -181,7 +181,7 @@ export default function SitesPage() {
       <div className="pl-page-title">
         <div>
           <h1>Meus Sites</h1>
-          <p>Gerencie sites publicados, domínios, SSL, emails e verificações em uma tela só.</p>
+          <p>Gerencie sites publicados, domínios, SSL e verificações em uma tela só.</p>
         </div>
         <button onClick={() => router.push("/sites/new")} className="pl-btn pl-btn-primary">
           Criar novo site

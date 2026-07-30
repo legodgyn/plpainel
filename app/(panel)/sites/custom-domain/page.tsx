@@ -123,10 +123,6 @@ function formatBRPhone(input: string) {
   return `(${ddd}) ${mobile.slice(0, 5)}-${mobile.slice(5, 9)}`;
 }
 
-function buildEmail(domain: string) {
-  return domain ? `contato@${domain}` : "contato@seudominio.com.br";
-}
-
 function fmtDateBR(iso?: string | null) {
   if (!iso) return "";
   try {
@@ -159,7 +155,7 @@ Atuamos com atendimento responsável, comunicação clara e foco em resultados. 
   }`;
 }
 
-function makePrivacy(company: string, cnpj: string, email: string, phone?: string) {
+function makePrivacy(company: string, cnpj: string, phone?: string) {
   return `POLÍTICA DE PRIVACIDADE
 
 ${company}
@@ -167,7 +163,7 @@ CNPJ: ${cnpj}
 
 Coletamos apenas dados necessários para atendimento, comunicação e execução dos serviços. Não comercializamos dados pessoais. O titular pode solicitar acesso, correção ou exclusão dos seus dados pelos canais oficiais.
 
-Contato: ${email}${phone ? ` | ${phone}` : ""}
+Contato: ${phone || "Canais oficiais exibidos no site."}
 
 ${company} - Todos os direitos reservados.`;
 }
@@ -187,6 +183,7 @@ function makeFooter(opts: {
   phone?: string | null;
 }) {
   const { company, cnpj, abertura, porte, natureza, situacao, tipo, capital, endereco, cep, email, phone } = opts;
+  const contact = [email, phone].filter(Boolean).join(" | ") || "-";
 
   return `${company} CNPJ: ${cnpj} | Data de Abertura: ${
     abertura ? fmtDateBR(abertura) : "-"
@@ -194,9 +191,7 @@ function makeFooter(opts: {
     natureza || "-"
   } | Situacao Cadastral: ${situacao || "-"} | Tipo: ${tipo || "-"} | Capital Social: ${
     capital || "-"
-  } | Endereco: ${endereco || "-"} | CEP: ${cep || "-"} | Contato: ${
-    email || "-"
-  }${phone ? ` ${phone}` : ""} | © ${new Date().getFullYear()} ${company}. Todos os direitos reservados.`;
+  } | Endereco: ${endereco || "-"} | CEP: ${cep || "-"} | Contato: ${contact} | © ${new Date().getFullYear()} ${company}. Todos os direitos reservados.`;
 }
 
 function safeStep(value: unknown) {
@@ -346,7 +341,6 @@ export default function CustomDomainWizardPage() {
   const [draftActive, setDraftActive] = useState(false);
 
   const domain = useMemo(() => cleanDomain(form.domain), [form.domain]);
-  const contactEmail = useMemo(() => buildEmail(domain), [domain]);
 
   useEffect(() => {
     let alive = true;
@@ -513,7 +507,7 @@ export default function CustomDomainWizardPage() {
         whatsapp: phone,
         mission: makeCompanyMission(companyTextInput),
         about: makeCompanyAbout(companyTextInput),
-        privacy: makePrivacy(company, formattedCnpj, contactEmail, phone),
+        privacy: makePrivacy(company, formattedCnpj, phone),
         footer: makeFooter({
           company,
           cnpj: formattedCnpj,
@@ -525,7 +519,7 @@ export default function CustomDomainWizardPage() {
           capital,
           endereco: address,
           cep,
-          email: contactEmail,
+          email: null,
           phone,
         }),
         opened_at: abertura,
@@ -577,7 +571,7 @@ export default function CustomDomainWizardPage() {
         body: JSON.stringify({
           ...form,
           domain,
-          email: contactEmail,
+          email: null,
         }),
       });
 
@@ -643,7 +637,7 @@ export default function CustomDomainWizardPage() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ domain, email: contactEmail }),
+        body: JSON.stringify({ domain }),
       });
       const sslJson = await sslRes.json().catch(() => ({}));
 

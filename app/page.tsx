@@ -506,7 +506,7 @@ export default async function HomePage() {
           <h1>Publique sites profissionais sem hospedagem, sem designer e sem complicação.</h1>
           <p>
             Com o PLPainel, você gera páginas por CNPJ, conecta domínio próprio,
-            ativa SSL e recebe códigos na inbox interna do painel.
+            ativa SSL e acompanha as verificações pelo painel.
           </p>
           <div className="pl-home-hero-actions">
             <Link className="pl-home-btn primary" href="/login">Começar agora</Link>
@@ -515,7 +515,7 @@ export default async function HomePage() {
           <div className="pl-home-proof">
             <span>✓ 1 token por site publicado</span>
             <span>✓ Domínio próprio com SSL</span>
-            <span>✓ Caixa interna para códigos</span>
+            <span>✓ Validação guiada no painel</span>
           </div>
         </div>
       </section>
@@ -525,7 +525,7 @@ export default async function HomePage() {
           <div className="pl-home-video-top">
             <div className="pl-home-video-title">
               <strong>Veja o fluxo completo antes de criar sua conta</strong>
-              <span>Um vídeo curto explicando criação, domínio, SSL e inbox interna.</span>
+              <span>Um vídeo curto explicando criação, domínio e SSL.</span>
             </div>
             <Link className="pl-home-btn primary" href="/login">Criar conta grátis</Link>
           </div>
@@ -554,7 +554,7 @@ export default async function HomePage() {
               ["01", "Crie sua conta", "Acesse o painel e compre os tokens que quiser usar."],
               ["02", "Informe o CNPJ", "O sistema busca os dados e monta a estrutura inicial do site."],
               ["03", "Publique o site", "Use um domínio da plataforma ou conecte o domínio próprio."],
-              ["04", "Valide e receba", "Use meta tag, SSL e inbox interna para receber mensagens e códigos."],
+              ["04", "Valide e publique", "Use meta tag e SSL para manter o site pronto para divulgação."],
             ].map(([number, title, text]) => (
               <article className="pl-home-step" key={number}>
                 <div className="pl-home-step-number">{number}</div>
@@ -581,7 +581,7 @@ export default async function HomePage() {
             <div className="pl-home-benefit"><b>Sem hospedagem manual</b><span>O site fica online pela estrutura da plataforma.</span></div>
             <div className="pl-home-benefit"><b>Domínio próprio</b><span>Fluxo guiado para DNS, SSL e subdomínios do cliente.</span></div>
             <div className="pl-home-benefit"><b>Conteúdo por CNPJ</b><span>Preenchimento mais rápido para publicar com menos atrito.</span></div>
-            <div className="pl-home-benefit"><b>Inbox interna</b><span>Recebimento de mensagens e códigos direto no painel.</span></div>
+            <div className="pl-home-benefit"><b>Verificação simples</b><span>Orientações diretas para validar o site com menos suporte.</span></div>
           </div>
         </div>
       </section>
@@ -590,7 +590,7 @@ export default async function HomePage() {
         <div className="pl-home-wrap pl-home-numbers">
           <div className="pl-home-number"><strong>R$5</strong><span>por site publicado</span></div>
           <div className="pl-home-number"><strong>SSL</strong><span>para domínio próprio</span></div>
-          <div className="pl-home-number"><strong>MX</strong><span>inbox interna opcional</span></div>
+          <div className="pl-home-number"><strong>DNS</strong><span>apontamento guiado</span></div>
         </div>
       </section>
 
@@ -615,8 +615,8 @@ export default async function HomePage() {
               <p>Sim, depois que o DNS aponta corretamente para o servidor.</p>
             </details>
             <details>
-              <summary>Como recebo códigos por e-mail?</summary>
-              <p>O domínio pode usar a inbox interna do painel com apontamento MX configurado.</p>
+              <summary>Como configuro o domínio próprio?</summary>
+              <p>O painel mostra o apontamento de DNS e valida o SSL depois que o domínio chega ao servidor.</p>
             </details>
           </div>
         </div>

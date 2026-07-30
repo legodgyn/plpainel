@@ -112,9 +112,6 @@ export default function MyDomainsPage() {
                 <button onClick={() => router.push("/sites/domain-subdomain")} className="pl-btn px-3 py-2 text-xs">
                   Criar subdomínio
                 </button>
-                <button onClick={() => router.push("/emails")} className="pl-btn px-3 py-2 text-xs">
-                  Emails
-                </button>
               </div>
             </article>
           ))

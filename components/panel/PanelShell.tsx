@@ -119,7 +119,6 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
         icon: "➕",
       },
       { href: "/domains/my", label: "Meus domínios", icon: "🌍" },
-      { href: "/emails", label: "Emails", icon: "✉️" },
     ],
     []
   );
@@ -519,7 +518,7 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
                 value={globalSearch}
                 onChange={(event) => setGlobalSearch(event.target.value)}
                 className="pl-input h-10 rounded-2xl py-2 pl-10 text-sm shadow-[var(--panel-shadow)]"
-                placeholder="Buscar site, domínio, email ou pedido..."
+                placeholder="Buscar site, domínio ou pedido..."
               />
             </form>
 
