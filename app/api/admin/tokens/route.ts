@@ -362,7 +362,7 @@ export async function POST(req: Request) {
     }
 
     const { data: currentRow, error: currentErr } = await supabaseAdmin
-      .from("user_tokens")
+      .from("user_token_balances")
       .select("user_id,balance")
       .eq("user_id", userId)
       .maybeSingle();
@@ -380,12 +380,16 @@ export async function POST(req: Request) {
         : Math.max(0, currentBalance - amount);
 
     const { error: upsertErr } = await supabaseAdmin
-      .from("user_tokens")
+      .from("user_token_balances")
       .upsert({ user_id: userId, balance: nextBalance }, { onConflict: "user_id" });
 
     if (upsertErr) {
       return NextResponse.json({ ok: false, error: upsertErr.message }, { status: 400 });
     }
+
+    await supabaseAdmin
+      .from("user_tokens")
+      .upsert({ user_id: userId, balance: nextBalance }, { onConflict: "user_id" });
 
     const data = await getUsers(supabaseAdmin);
     return NextResponse.json({

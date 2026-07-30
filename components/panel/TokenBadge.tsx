@@ -11,10 +11,10 @@ export default function TokenBadge() {
     if (!user) return setBalance(null);
 
     const { data, error } = await supabase
-      .from("user_tokens")
+      .from("user_token_balances")
       .select("balance")
       .eq("user_id", user.id)
-      .single();
+      .maybeSingle();
 
     if (error) {
       // se não existir linha ainda, mostra 0
