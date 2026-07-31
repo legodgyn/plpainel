@@ -42,6 +42,9 @@ const ROOT_DOMAINS = [
   "acm1.com.br",
   "acm2.com.br",
   "acm3.com.br",
+  "acm4.com.br",
+  "acm5.com.br",
+  "acm6.com.br",
 ];
 
 function cleanHost(host: string) {
