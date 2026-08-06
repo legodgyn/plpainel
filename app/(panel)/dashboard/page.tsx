@@ -37,7 +37,10 @@ type AnnouncementRow = {
 };
 
 type AnnouncementViewRow = { announcement_id: string };
-type MaintenanceSetting = { enabled?: boolean; message?: string };
+type MaintenanceSetting = { enabled?: boolean; title?: string; message?: string };
+
+const DEFAULT_BANNER_TITLE = "Aviso importante";
+const DEFAULT_BANNER_MESSAGE = "Confira este aviso antes de continuar usando a plataforma.";
 
 function money(cents: number) {
   return (cents / 100).toLocaleString("pt-BR", {
@@ -99,9 +102,8 @@ export default function DashboardPage() {
   const [copiedDomain, setCopiedDomain] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [maintenanceEnabled, setMaintenanceEnabled] = useState(false);
-  const [maintenanceMessage, setMaintenanceMessage] = useState(
-    "Nosso sistema esta em manutencao temporaria. Algumas funcoes podem apresentar instabilidade."
-  );
+  const [maintenanceTitle, setMaintenanceTitle] = useState(DEFAULT_BANNER_TITLE);
+  const [maintenanceMessage, setMaintenanceMessage] = useState(DEFAULT_BANNER_MESSAGE);
   const [showUpdatesModal, setShowUpdatesModal] = useState(false);
   const [unseenAnnouncements, setUnseenAnnouncements] = useState<AnnouncementRow[]>([]);
   const [markingViewed, setMarkingViewed] = useState(false);
@@ -179,10 +181,8 @@ export default function DashboardPage() {
 
       const maintenanceValue = settingsRes.data?.value as MaintenanceSetting | undefined;
       setMaintenanceEnabled(Boolean(maintenanceValue?.enabled));
-      setMaintenanceMessage(
-        maintenanceValue?.message ||
-          "Nosso sistema esta em manutencao temporaria. Algumas funcoes podem apresentar instabilidade."
-      );
+      setMaintenanceTitle(maintenanceValue?.title || DEFAULT_BANNER_TITLE);
+      setMaintenanceMessage(maintenanceValue?.message || DEFAULT_BANNER_MESSAGE);
 
       const allAnnouncements = (announcementsRes.data as AnnouncementRow[]) ?? [];
       const viewedIds = new Set(
@@ -400,7 +400,7 @@ export default function DashboardPage() {
     <div className="pl-page space-y-6">
       {maintenanceEnabled ? (
         <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-800">
-          <div className="font-bold">Manutencao temporaria</div>
+          <div className="font-bold">{maintenanceTitle}</div>
           <div className="mt-1">{maintenanceMessage}</div>
         </div>
       ) : null}

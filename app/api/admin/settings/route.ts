@@ -9,6 +9,9 @@ function env(name: string) {
   return v;
 }
 
+const DEFAULT_BANNER_TITLE = "Aviso importante";
+const DEFAULT_BANNER_MESSAGE = "Confira este aviso antes de continuar usando a plataforma.";
+
 async function assertAdmin(req: Request, supabaseAdmin: any) {
   const authHeader = req.headers.get("authorization") || "";
   const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
@@ -59,8 +62,8 @@ export async function GET(req: Request) {
       ok: true,
       data: data?.value || {
         enabled: false,
-        message:
-          "Nosso sistema está em manutenção temporária. Algumas funções podem apresentar instabilidade.",
+        title: DEFAULT_BANNER_TITLE,
+        message: DEFAULT_BANNER_MESSAGE,
       },
     });
   } catch (e: any) {
@@ -84,15 +87,15 @@ export async function POST(req: Request) {
     const body = await req.json().catch(() => ({} as any));
 
     const enabled = Boolean(body?.enabled);
-    const message =
-      String(body?.message || "").trim() ||
-      "Nosso sistema está em manutenção temporária. Algumas funções podem apresentar instabilidade.";
+    const title = String(body?.title || "").trim() || DEFAULT_BANNER_TITLE;
+    const message = String(body?.message || "").trim() || DEFAULT_BANNER_MESSAGE;
 
     const { error } = await supabaseAdmin.from("system_settings").upsert(
       {
         key: "maintenance_banner",
         value: {
           enabled,
+          title,
           message,
         },
         updated_at: new Date().toISOString(),
@@ -106,7 +109,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       ok: true,
-      data: { enabled, message },
+      data: { enabled, title, message },
     });
   } catch (e: any) {
     return NextResponse.json({ ok: false, error: e?.message || "Erro interno." }, { status: 500 });

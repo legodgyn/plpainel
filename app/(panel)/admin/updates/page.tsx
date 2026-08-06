@@ -11,10 +11,8 @@ type AnnouncementRow = {
   created_at: string;
 };
 
-type MaintenanceResponse = {
-  enabled: boolean;
-  message: string;
-};
+const DEFAULT_BANNER_TITLE = "Aviso importante";
+const DEFAULT_BANNER_MESSAGE = "Confira este aviso antes de continuar usando a plataforma.";
 
 export default function AdminUpdatesPage() {
   const supabase = useMemo(() => {
@@ -34,9 +32,8 @@ export default function AdminUpdatesPage() {
   const [isPublished, setIsPublished] = useState(true);
 
   const [maintenanceEnabled, setMaintenanceEnabled] = useState(false);
-  const [maintenanceMessage, setMaintenanceMessage] = useState(
-    "Nosso sistema está em manutenção temporária. Algumas funções podem apresentar instabilidade."
-  );
+  const [maintenanceTitle, setMaintenanceTitle] = useState(DEFAULT_BANNER_TITLE);
+  const [maintenanceMessage, setMaintenanceMessage] = useState(DEFAULT_BANNER_MESSAGE);
 
   const [items, setItems] = useState<AnnouncementRow[]>([]);
 
@@ -79,10 +76,8 @@ export default function AdminUpdatesPage() {
 
       if (maintenanceRes.ok && maintenanceJson?.ok) {
         setMaintenanceEnabled(Boolean(maintenanceJson.data?.enabled));
-        setMaintenanceMessage(
-          maintenanceJson.data?.message ||
-            "Nosso sistema está em manutenção temporária. Algumas funções podem apresentar instabilidade."
-        );
+        setMaintenanceTitle(maintenanceJson.data?.title || DEFAULT_BANNER_TITLE);
+        setMaintenanceMessage(maintenanceJson.data?.message || DEFAULT_BANNER_MESSAGE);
       }
     } finally {
       setLoading(false);
@@ -164,6 +159,7 @@ export default function AdminUpdatesPage() {
         },
         body: JSON.stringify({
           enabled: maintenanceEnabled,
+          title: maintenanceTitle.trim(),
           message: maintenanceMessage.trim(),
         }),
       });
@@ -171,11 +167,11 @@ export default function AdminUpdatesPage() {
       const json = await res.json().catch(() => ({}));
 
       if (!res.ok || !json?.ok) {
-        setMsg(json?.error || "Erro ao salvar modo manutenção.");
+        setMsg(json?.error || "Erro ao salvar aviso fixado.");
         return;
       }
 
-      setMsg("Modo manutenção atualizado com sucesso.");
+      setMsg("Aviso fixado atualizado com sucesso.");
       await load();
     } finally {
       setSavingMaintenance(false);
@@ -185,9 +181,9 @@ export default function AdminUpdatesPage() {
   return (
     <div className="pl-page space-y-6 text-[var(--panel-ink)]">
       <div className="pl-card p-6">
-        <h1 className="text-2xl font-black text-[var(--panel-ink)]">Atualizações e Manutenção</h1>
+        <h1 className="text-2xl font-black text-[var(--panel-ink)]">Atualizações e Avisos</h1>
         <p className="mt-1 text-sm font-semibold text-[var(--panel-muted)]">
-          Publique novidades do sistema e ative avisos de manutenção para os usuários.
+          Publique novidades do sistema e ative avisos fixados para os usuários.
         </p>
       </div>
 
@@ -243,7 +239,7 @@ export default function AdminUpdatesPage() {
         </div>
 
         <div className="pl-card p-5">
-          <div className="text-sm font-black text-[var(--panel-ink)]">Modo manutenção</div>
+          <div className="text-sm font-black text-[var(--panel-ink)]">Aviso fixado</div>
 
           <div className="mt-4 space-y-4">
             <label className="flex items-center gap-3 text-sm font-semibold text-[var(--panel-muted)]">
@@ -252,8 +248,18 @@ export default function AdminUpdatesPage() {
                 checked={maintenanceEnabled}
                 onChange={(e) => setMaintenanceEnabled(e.target.checked)}
               />
-              Ativar aviso de manutenção
+              Ativar aviso fixado no dashboard
             </label>
+
+            <div>
+              <label className="pl-label">Título do aviso</label>
+              <input
+                value={maintenanceTitle}
+                onChange={(e) => setMaintenanceTitle(e.target.value)}
+                placeholder="Ex: Aviso importante"
+                className="pl-input"
+              />
+            </div>
 
             <div>
               <label className="pl-label">Mensagem</label>
@@ -270,7 +276,7 @@ export default function AdminUpdatesPage() {
               disabled={savingMaintenance}
               className="pl-btn pl-btn-primary disabled:opacity-60"
             >
-              {savingMaintenance ? "Salvando..." : "Salvar manutenção"}
+              {savingMaintenance ? "Salvando..." : "Salvar aviso"}
             </button>
           </div>
         </div>
