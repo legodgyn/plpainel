@@ -399,9 +399,9 @@ export default function DashboardPage() {
   return (
     <div className="pl-page space-y-6">
       {maintenanceEnabled ? (
-        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-800">
-          <div className="font-bold">{maintenanceTitle}</div>
-          <div className="mt-1">{maintenanceMessage}</div>
+        <div className="pl-fixed-alert text-sm">
+          <div className="pl-fixed-alert-title">{maintenanceTitle}</div>
+          <div className="pl-fixed-alert-message">{maintenanceMessage}</div>
         </div>
       ) : null}
 
