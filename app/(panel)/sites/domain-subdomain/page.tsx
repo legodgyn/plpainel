@@ -62,16 +62,24 @@ function formatBRPhone(input: string) {
   return `(${ddd}) ${rest}`;
 }
 
+const MAX_DNS_LABEL_LENGTH = 63;
+
+function limitDnsLabel(value: string) {
+  return value.slice(0, MAX_DNS_LABEL_LENGTH).replace(/-+$/g, "");
+}
+
 function slugify(input: string) {
-  return String(input || "")
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .trim()
-    .replace(/[\s_]+/g, "-")
-    .replace(/[^\w-]+/g, "")
-    .replace(/--+/g, "-")
-    .replace(/^-+|-+$/g, "");
+  return limitDnsLabel(
+    String(input || "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .trim()
+      .replace(/[\s_]+/g, "-")
+      .replace(/[^a-z0-9-]+/g, "")
+      .replace(/--+/g, "-")
+      .replace(/^-+|-+$/g, "")
+  );
 }
 
 function buildEmailFromCompany(name: string) {

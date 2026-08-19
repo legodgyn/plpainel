@@ -9,13 +9,29 @@ const ROOT_DOMAINS = [
   "ehs3.com.br",
 ] as const;
 
+const MAX_DNS_LABEL_LENGTH = 63;
+
 function getBearerToken(req: Request) {
   const auth = req.headers.get("authorization") || "";
   return auth.startsWith("Bearer ") ? auth.slice(7) : null;
 }
 
-function cleanSlug(value: unknown) {
+function cleanSlugForLookup(value: unknown) {
   return String(value || "").trim().toLowerCase();
+}
+
+function normalizeDnsLabel(value: string) {
+  return String(value || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .replace(/[\s_]+/g, "-")
+    .replace(/[^a-z0-9-]+/g, "")
+    .replace(/--+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, MAX_DNS_LABEL_LENGTH)
+    .replace(/-+$/g, "");
 }
 
 function cleanDomain(value: unknown) {
@@ -52,11 +68,11 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json().catch(() => ({}));
-    const slug = cleanSlug(body.slug);
+    const lookupSlug = cleanSlugForLookup(body.slug);
     const siteId = String(body.siteId || "").trim();
     const requestedBaseDomain = cleanDomain(body.baseDomain);
 
-    if (!slug && !siteId) {
+    if (!lookupSlug && !siteId) {
       return NextResponse.json(
         { ok: false, error: "Site nao informado." },
         { status: 400 }
@@ -95,7 +111,7 @@ export async function POST(req: Request) {
     if (siteId) {
       query = query.eq("id", siteId);
     } else {
-      query = query.eq("slug", slug).order("created_at", { ascending: false }).limit(1);
+      query = query.eq("slug", lookupSlug).order("created_at", { ascending: false }).limit(1);
     }
 
     const { data: site, error: findError } = await query.maybeSingle();
@@ -104,6 +120,15 @@ export async function POST(req: Request) {
       return NextResponse.json(
         { ok: false, error: findError?.message || "Site criado, mas nao localizado." },
         { status: 404 }
+      );
+    }
+
+    const normalizedSlug = normalizeDnsLabel(site.slug || lookupSlug);
+
+    if (!normalizedSlug) {
+      return NextResponse.json(
+        { ok: false, error: "Subdominio invalido." },
+        { status: 400 }
       );
     }
 
@@ -151,7 +176,7 @@ export async function POST(req: Request) {
     const { data: existingSite, error: existingError } = await supabaseAdmin
       .from("sites")
       .select("id")
-      .eq("slug", site.slug)
+      .eq("slug", normalizedSlug)
       .eq("base_domain", baseDomain)
       .neq("id", site.id)
       .maybeSingle();
@@ -170,6 +195,7 @@ export async function POST(req: Request) {
     const { error: updateError } = await supabaseAdmin
       .from("sites")
       .update({
+        slug: normalizedSlug,
         base_domain: baseDomain,
         domain_mode: null,
         custom_domain: null,
@@ -185,7 +211,7 @@ export async function POST(req: Request) {
       ok: true,
       siteId: site.id,
       baseDomain,
-      publicUrl: `https://${site.slug}.${baseDomain}`,
+      publicUrl: `https://${normalizedSlug}.${baseDomain}`,
     });
   } catch (err) {
     return NextResponse.json(
